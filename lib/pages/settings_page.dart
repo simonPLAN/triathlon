@@ -16,6 +16,7 @@ class _SettingsPageState extends State<SettingsPage> {
   final Map<String, TextEditingController> roundsControllers = {};
   final Map<String, TextEditingController> durationControllers = {};
   final Map<String, TextEditingController> restControllers = {};
+  final Map<String, List<TextEditingController>> pointsControllers = {};
 
   TextEditingController _controllerFor(
     Map<String, TextEditingController> controllers,
@@ -36,10 +37,12 @@ class _SettingsPageState extends State<SettingsPage> {
       final config = data.config(sport);
 
       _controllerFor(roundsControllers, sport, config.rounds);
-
       _controllerFor(durationControllers, sport, config.durationSeconds);
-
       _controllerFor(restControllers, sport, config.restSeconds);
+
+      pointsControllers[sport] = config.pointsByPosition
+          .map((p) => TextEditingController(text: p.toString()))
+          .toList();
     }
   }
 
@@ -57,7 +60,72 @@ class _SettingsPageState extends State<SettingsPage> {
       controller.dispose();
     }
 
+    for (final list in pointsControllers.values) {
+      for (final controller in list) {
+        controller.dispose();
+      }
+    }
+
     super.dispose();
+  }
+
+  String positionLabel(int index) {
+    final rank = index + 1;
+    if (rank == 1) return '1er';
+    return '$rankème';
+  }
+
+  void _addPosition(String sport) {
+    setState(() {
+      final list = pointsControllers[sport] ?? [];
+      int nextVal = 0;
+      if (list.isNotEmpty) {
+        final lastVal = int.tryParse(list.last.text.trim()) ?? 1;
+        nextVal = (lastVal - 1).clamp(0, 999);
+      }
+      list.add(TextEditingController(text: nextVal.toString()));
+      pointsControllers[sport] = list;
+    });
+  }
+
+  void _removePosition(String sport) {
+    final list = pointsControllers[sport];
+    if (list != null && list.length > 1) {
+      setState(() {
+        final removed = list.removeLast();
+        removed.dispose();
+      });
+    }
+  }
+
+  void _applyPointsToAllSports(String sourceSport) {
+    final sourceList = pointsControllers[sourceSport];
+    if (sourceList == null || sourceList.isEmpty) return;
+
+    final sourceValues = sourceList.map((c) => c.text).toList();
+
+    setState(() {
+      for (final sport in sports) {
+        if (sport == sourceSport) continue;
+
+        final oldList = pointsControllers[sport];
+        if (oldList != null) {
+          for (final c in oldList) {
+            c.dispose();
+          }
+        }
+
+        pointsControllers[sport] = sourceValues
+            .map((val) => TextEditingController(text: val))
+            .toList();
+      }
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Barème de points copié sur toutes les épreuves.'),
+      ),
+    );
   }
 
   int? _readValue(
@@ -74,6 +142,7 @@ class _SettingsPageState extends State<SettingsPage> {
     final Map<String, int> roundsValues = {};
     final Map<String, int> durationValues = {};
     final Map<String, int> restValues = {};
+    final Map<String, List<int>> pointsValues = {};
 
     for (final sport in sports) {
       final config = data.config(sport);
@@ -110,9 +179,36 @@ class _SettingsPageState extends State<SettingsPage> {
         return;
       }
 
+      final pControllers = pointsControllers[sport] ?? [];
+      if (pControllers.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Ajoute au moins une position de points pour $sport.'),
+          ),
+        );
+        return;
+      }
+
+      final sportPoints = <int>[];
+      for (int i = 0; i < pControllers.length; i++) {
+        final val = int.tryParse(pControllers[i].text.trim());
+        if (val == null || val < 0) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Vérifie les points pour $sport : la position ${positionLabel(i)} doit être un nombre positif.',
+              ),
+            ),
+          );
+          return;
+        }
+        sportPoints.add(val);
+      }
+
       roundsValues[sport] = rounds;
       durationValues[sport] = duration;
       restValues[sport] = rest;
+      pointsValues[sport] = sportPoints;
     }
 
     try {
@@ -122,6 +218,7 @@ class _SettingsPageState extends State<SettingsPage> {
           rounds: roundsValues[sport]!,
           durationSeconds: durationValues[sport]!,
           restSeconds: restValues[sport]!,
+          pointsByPosition: pointsValues[sport]!,
         );
       }
 
@@ -161,7 +258,7 @@ class _SettingsPageState extends State<SettingsPage> {
         padding: const EdgeInsets.all(16),
         children: [
           const Text(
-            'Configure chaque épreuve indépendamment. '
+            'Configure chaque épreuve et le barème de points par position. '
             'Le compte à rebours démarre à la première arrivée.',
           ),
           const SizedBox(height: 16),
@@ -189,6 +286,9 @@ class _SettingsPageState extends State<SettingsPage> {
                   config.restSeconds,
                 );
 
+                final currentPointsControllers =
+                    pointsControllers[sport] ?? [];
+
                 return Card(
                   margin: const EdgeInsets.only(bottom: 16),
                   child: Padding(
@@ -214,6 +314,70 @@ class _SettingsPageState extends State<SettingsPage> {
                         _numberField(
                           label: 'Repos entre les manches (secondes)',
                           controller: restController,
+                        ),
+                        const SizedBox(height: 20),
+                        const Divider(),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Attribution des points par position',
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Définissez les points accordés selon le rang d\'arrivée (1er, 2ème, 3ème...).',
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                        const SizedBox(height: 12),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: [
+                            for (
+                              int i = 0;
+                              i < currentPointsControllers.length;
+                              i++
+                            )
+                              SizedBox(
+                                width: 100,
+                                child: TextField(
+                                  controller: currentPointsControllers[i],
+                                  keyboardType:
+                                      const TextInputType.numberWithOptions(
+                                    decimal: false,
+                                  ),
+                                  decoration: InputDecoration(
+                                    labelText: positionLabel(i),
+                                    suffixText: 'pts',
+                                    isDense: true,
+                                    border: const OutlineInputBorder(),
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            TextButton.icon(
+                              onPressed: () => _addPosition(sport),
+                              icon: const Icon(Icons.add),
+                              label: const Text('Ajouter'),
+                            ),
+                            const SizedBox(width: 8),
+                            TextButton.icon(
+                              onPressed: currentPointsControllers.length > 1
+                                  ? () => _removePosition(sport)
+                                  : null,
+                              icon: const Icon(Icons.remove),
+                              label: const Text('Supprimer'),
+                            ),
+                            const Spacer(),
+                            IconButton(
+                              tooltip: 'Copier ce barème sur tous les sports',
+                              icon: const Icon(Icons.copy_all),
+                              onPressed: () => _applyPointsToAllSports(sport),
+                            ),
+                          ],
                         ),
                       ],
                     ),
