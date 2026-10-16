@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../constants/sports.dart';
 import '../services/event_data.dart';
 
 class SportPage extends StatefulWidget {
@@ -34,7 +35,7 @@ class _SportPageState extends State<SportPage> {
 
   int get arrivalDuration {
     final duration = data.config(widget.sport).durationSeconds;
-    return duration > 0 ? duration : 180;
+    return duration > 0 ? duration : defaultDurationSeconds;
   }
 
   @override
@@ -51,20 +52,14 @@ class _SportPageState extends State<SportPage> {
     super.dispose();
   }
 
-  Future<void> addSelectedParticipant() async {
-    if (selectedParticipant == null || roundFinished || isFinishing) {
+  Future<void> addParticipantArrival(String name) async {
+    if (roundFinished || isFinishing || isFinished || isResting) {
       return;
     }
-
-    final name = selectedParticipant!;
 
     await data.addArrival(widget.sport, currentRound, name);
 
     if (!mounted) return;
-
-    setState(() {
-      selectedParticipant = null;
-    });
 
     if (!isRunning && data.arrivals(widget.sport, currentRound).isNotEmpty) {
       startArrivalTimer();
@@ -231,7 +226,7 @@ class _SportPageState extends State<SportPage> {
         title: Text(widget.sport),
         actions: [
           IconButton(
-            tooltip: 'Réinitialiser cette épreuve',
+            tooltip: AppTexts.tooltipResetSport,
             icon: const Icon(Icons.restart_alt),
             onPressed: resetSport,
           ),
@@ -250,21 +245,16 @@ class _SportPageState extends State<SportPage> {
               .where((p) => !arrivals.contains(p))
               .toList();
 
-          final dropdownValue =
-              availableParticipants.contains(selectedParticipant)
-                  ? selectedParticipant
-                  : null;
-
           String status;
 
           if (isFinished) {
-            status = 'Épreuve terminée';
+            status = AppTexts.statusFinished;
           } else if (isResting) {
-            status = 'Repos avant la prochaine manche';
+            status = AppTexts.statusResting;
           } else if (isRunning) {
-            status = 'Temps restant pour les arrivées';
+            status = AppTexts.statusRunning;
           } else {
-            status = 'En attente de la première arrivée';
+            status = AppTexts.statusWaiting;
           }
 
           return Padding(
@@ -274,8 +264,8 @@ class _SportPageState extends State<SportPage> {
               children: [
                 Text(
                   isFinished
-                      ? 'Épreuve terminée'
-                      : 'Manche ${currentRound + 1} / $roundCount',
+                      ? AppTexts.statusFinished
+                      : AppTexts.roundLabel(currentRound + 1, roundCount),
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.headlineSmall,
                 ),
@@ -298,8 +288,7 @@ class _SportPageState extends State<SportPage> {
                           ),
                         if (!isRunning && !isResting && !isFinished)
                           const Text(
-                            'Le compte à rebours démarre '
-                            'à la première arrivée.',
+                            AppTexts.countdownInfo,
                             textAlign: TextAlign.center,
                           ),
                         if (isFinished)
@@ -309,59 +298,75 @@ class _SportPageState extends State<SportPage> {
                   ),
                 ),
                 const SizedBox(height: 16),
+
                 if (!isFinished && !isResting) ...[
-                  DropdownButtonFormField<String>(
-                    key: ValueKey('participant_${widget.sport}_$currentRound'),
-                    initialValue: dropdownValue,
-                    isExpanded: true,
-                    decoration: const InputDecoration(
-                      labelText: 'Participant arrivé',
-                      border: OutlineInputBorder(),
-                    ),
-                    items: availableParticipants
-                        .map(
-                          (participant) => DropdownMenuItem<String>(
-                            value: participant,
-                            child: Text(participant),
+                  const Text(
+                    AppTexts.instructionTapParticipant,
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 8),
+                  SizedBox(
+                    height: 132,
+                    child: GridView.builder(
+                      itemCount: availableParticipants.length,
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 2,
+                            crossAxisSpacing: 8,
+                            mainAxisSpacing: 8,
+                            childAspectRatio: 3.2,
                           ),
-                        )
-                        .toList(),
-                    onChanged: roundFinished || isFinishing
-                        ? null
-                        : (value) {
-                            setState(() {
-                              selectedParticipant = value;
-                            });
-                          },
+                      itemBuilder: (context, index) {
+                        final participant = availableParticipants[index];
+
+                        return FilledButton(
+                          onPressed: roundFinished || isFinishing
+                              ? null
+                              : () => addParticipantArrival(participant),
+                          child: Text(
+                            participant,
+                            textAlign: TextAlign.center,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        );
+                      },
+                    ),
                   ),
-                  const SizedBox(height: 12),
-                  FilledButton.icon(
-                    onPressed:
-                        selectedParticipant == null ||
-                                roundFinished ||
-                                isFinishing
-                            ? null
-                            : addSelectedParticipant,
-                    icon: const Icon(Icons.add),
-                    label: const Text('Enregistrer l’arrivée'),
-                  ),
+
+                  if (arrivals.isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    OutlinedButton.icon(
+                      onPressed: roundFinished || isFinishing
+                          ? null
+                          : () async {
+                              await data.undoLastArrival(
+                                widget.sport,
+                                currentRound,
+                              );
+                            },
+                      icon: const Icon(Icons.undo),
+                      label: const Text(AppTexts.labelUndoLastArrival),
+                    ),
+                  ],
+
                   if (isRunning) ...[
                     const SizedBox(height: 8),
                     OutlinedButton(
                       onPressed: isFinishing ? null : finishCurrentRound,
-                      child: const Text('Terminer la manche maintenant'),
+                      child: const Text(AppTexts.labelFinishRoundNow),
                     ),
                   ],
                 ],
+
                 const SizedBox(height: 16),
                 Text(
-                  'Ordre des arrivées (${arrivals.length})',
+                  AppTexts.arrivalOrderWithCount(arrivals.length),
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
                 const SizedBox(height: 8),
                 Expanded(
                   child: arrivals.isEmpty
-                      ? const Center(child: Text('Aucune arrivée enregistrée.'))
+                      ? const Center(child: Text(AppTexts.msgNoArrivals))
                       : ListView.builder(
                           itemCount: arrivals.length,
                           itemBuilder: (context, index) {
@@ -377,7 +382,9 @@ class _SportPageState extends State<SportPage> {
                                   child: Text('${index + 1}'),
                                 ),
                                 title: Text(participant),
-                                subtitle: Text('Position ${index + 1}'),
+                                subtitle: Text(
+                                  AppTexts.arrivalPositionLabel(index + 1),
+                                ),
                               ),
                             );
                           },
@@ -387,7 +394,7 @@ class _SportPageState extends State<SportPage> {
                   FilledButton.icon(
                     onPressed: resetSport,
                     icon: const Icon(Icons.restart_alt),
-                    label: const Text('Recommencer cette épreuve'),
+                    label: const Text(AppTexts.labelRestartSport),
                   ),
               ],
             ),

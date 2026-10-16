@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 
+import '../constants/sports.dart';
 import '../models/sport_config.dart';
 import 'database_service.dart';
 import 'participant_service.dart';
@@ -36,7 +37,7 @@ class EventData extends ChangeNotifier {
   Future<void> load() async {
     final user = databaseService.currentUser;
     if (user == null) {
-      throw StateError('Aucun utilisateur Supabase connecté.');
+      throw StateError(AppTexts.errorNoSupabaseUser);
     }
 
     final remoteData = await databaseService.fetchRemoteState(user.id);
@@ -58,8 +59,9 @@ class EventData extends ChangeNotifier {
       _restoreFromJson(localData);
     }
 
-    final existingNames =
-        await databaseService.fetchExistingParticipantNames(user.id);
+    final existingNames = await databaseService.fetchExistingParticipantNames(
+      user.id,
+    );
 
     for (final name in legacyNames) {
       final cleaned = name.trim();
@@ -68,8 +70,9 @@ class EventData extends ChangeNotifier {
       }
     }
 
-    final loadedParticipants =
-        await databaseService.fetchAllParticipants(user.id);
+    final loadedParticipants = await databaseService.fetchAllParticipants(
+      user.id,
+    );
     participantService.setParticipants(loadedParticipants);
 
     await _save();
@@ -101,14 +104,16 @@ class EventData extends ChangeNotifier {
   Future<void> _save() async {
     final user = databaseService.currentUser;
     if (user == null) {
-      throw StateError('Aucun utilisateur Supabase connecté.');
+      throw StateError(AppTexts.errorNoSupabaseUser);
     }
     await databaseService.saveState(user.id, _toJson());
   }
 
   Future<bool> addParticipant(String name) async {
-    final success =
-        await participantService.addParticipant(databaseService, name);
+    final success = await participantService.addParticipant(
+      databaseService,
+      name,
+    );
     if (success) {
       await _save();
       notifyListeners();
@@ -117,8 +122,10 @@ class EventData extends ChangeNotifier {
   }
 
   Future<void> removeParticipant(String name) async {
-    final success =
-        await participantService.removeParticipant(databaseService, name);
+    final success = await participantService.removeParticipant(
+      databaseService,
+      name,
+    );
     if (success) {
       raceService.removeParticipantFromArrivals(name);
       await _save();
@@ -152,6 +159,42 @@ class EventData extends ChangeNotifier {
       config(sport),
       participants,
     );
+    if (success) {
+      await _save();
+      notifyListeners();
+    }
+  }
+
+  Future<void> undoLastArrival(String sport, int round) async {
+    final success = raceService.undoLastArrival(sport, round);
+
+    if (success) {
+      await _save();
+      notifyListeners();
+    }
+  }
+
+  Future<void> removeArrival(
+    String sport,
+    int round,
+    String participant,
+  ) async {
+    final success = raceService.removeArrival(sport, round, participant);
+
+    if (success) {
+      await _save();
+      notifyListeners();
+    }
+  }
+
+  Future<void> moveArrival(
+    String sport,
+    int round,
+    int oldIndex,
+    int newIndex,
+  ) async {
+    final success = raceService.moveArrival(sport, round, oldIndex, newIndex);
+
     if (success) {
       await _save();
       notifyListeners();

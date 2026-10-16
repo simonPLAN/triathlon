@@ -4,9 +4,9 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-class DatabaseService {
-  static const String storageKey = 'triathlon_data_v1';
+import '../constants/sports.dart';
 
+class DatabaseService {
   SupabaseClient get _client => Supabase.instance.client;
 
   User? get currentUser => _client.auth.currentUser;
@@ -38,8 +38,10 @@ class DatabaseService {
   }
 
   Future<Set<String>> fetchExistingParticipantNames(String userId) async {
-    final existingRows =
-        await _client.from('participants').select('nom').eq('user_id', userId);
+    final existingRows = await _client
+        .from('participants')
+        .select('nom')
+        .eq('user_id', userId);
 
     return {
       for (final row in existingRows) (row['nom'] as String).toLowerCase(),
@@ -47,10 +49,7 @@ class DatabaseService {
   }
 
   Future<void> insertParticipant(String userId, String name) async {
-    await _client.from('participants').insert({
-      'user_id': userId,
-      'nom': name,
-    });
+    await _client.from('participants').insert({'user_id': userId, 'nom': name});
   }
 
   Future<void> deleteParticipant(String userId, String name) async {

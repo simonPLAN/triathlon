@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../constants/sports.dart';
 import '../services/event_data.dart';
 
 class ParticipantsPage extends StatefulWidget {
@@ -31,11 +32,12 @@ class _ParticipantsPageState extends State<ParticipantsPage> {
     if (added) {
       controller.clear();
 
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('Participant ajouté')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text(AppTexts.msgParticipantAdded)),
+      );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Nom vide ou participant déjà présent')),
+        const SnackBar(content: Text(AppTexts.msgInvalidParticipant)),
       );
     }
   }
@@ -45,16 +47,16 @@ class _ParticipantsPageState extends State<ParticipantsPage> {
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
-          title: const Text('Supprimer le participant ?'),
-          content: Text('Supprimer $name et ses arrivées enregistrées ?'),
+          title: const Text(AppTexts.dialogRemoveParticipantTitle),
+          content: Text(AppTexts.removeParticipantContent(name)),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(dialogContext).pop(false),
-              child: const Text('Annuler'),
+              child: const Text(AppTexts.dialogCancel),
             ),
             FilledButton(
               onPressed: () => Navigator.of(dialogContext).pop(true),
-              child: const Text('Supprimer'),
+              child: const Text(AppTexts.dialogDelete),
             ),
           ],
         );
@@ -69,7 +71,7 @@ class _ParticipantsPageState extends State<ParticipantsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Participants')),
+      appBar: AppBar(title: const Text(AppTexts.appBarParticipants)),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -80,7 +82,7 @@ class _ParticipantsPageState extends State<ParticipantsPage> {
                   child: TextField(
                     controller: controller,
                     decoration: const InputDecoration(
-                      labelText: 'Nom du participant',
+                      labelText: AppTexts.labelParticipantName,
                       border: OutlineInputBorder(),
                     ),
                     onSubmitted: (_) => addParticipant(),
@@ -90,7 +92,7 @@ class _ParticipantsPageState extends State<ParticipantsPage> {
                 IconButton.filled(
                   onPressed: addParticipant,
                   icon: const Icon(Icons.add),
-                  tooltip: 'Ajouter',
+                  tooltip: AppTexts.tooltipAdd,
                 ),
               ],
             ),
@@ -101,7 +103,7 @@ class _ParticipantsPageState extends State<ParticipantsPage> {
                 builder: (context, _) {
                   if (data.participants.isEmpty) {
                     return const Center(
-                      child: Text('Aucun participant enregistré'),
+                      child: Text(AppTexts.msgNoParticipants),
                     );
                   }
 
@@ -115,7 +117,7 @@ class _ParticipantsPageState extends State<ParticipantsPage> {
                           leading: CircleAvatar(child: Text('${index + 1}')),
                           title: Text(name),
                           trailing: IconButton(
-                            tooltip: 'Supprimer',
+                            tooltip: AppTexts.tooltipDelete,
                             icon: const Icon(Icons.delete_outline),
                             onPressed: () => confirmRemove(name),
                           ),

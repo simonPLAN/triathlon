@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../constants/sports.dart';
+
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
 
@@ -32,7 +34,7 @@ class _LoginPageState extends State<LoginPage> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erreur : $e')),
+          SnackBar(content: Text('${AppTexts.errorLoginPrefix}$e')),
         );
       }
     } finally {
@@ -54,7 +56,7 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Connexion')),
+      appBar: AppBar(title: const Text(AppTexts.appBarLogin)),
       body: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 400),
@@ -69,7 +71,7 @@ class _LoginPageState extends State<LoginPage> {
                   controller: emailController,
                   keyboardType: TextInputType.emailAddress,
                   decoration: const InputDecoration(
-                    labelText: 'Adresse e-mail',
+                    labelText: AppTexts.labelEmail,
                     border: OutlineInputBorder(),
                   ),
                 ),
@@ -78,7 +80,7 @@ class _LoginPageState extends State<LoginPage> {
                   controller: passwordController,
                   obscureText: true,
                   decoration: const InputDecoration(
-                    labelText: 'Mot de passe',
+                    labelText: AppTexts.labelPassword,
                     border: OutlineInputBorder(),
                   ),
                   onSubmitted: (_) {
@@ -96,7 +98,9 @@ class _LoginPageState extends State<LoginPage> {
                   width: double.infinity,
                   child: ElevatedButton(
                     onPressed: loading ? null : login,
-                    child: Text(loading ? 'Connexion...' : 'Se connecter'),
+                    child: Text(
+                      loading ? AppTexts.labelLoggingIn : AppTexts.labelLogin,
+                    ),
                   ),
                 ),
               ],

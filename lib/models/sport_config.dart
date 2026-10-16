@@ -1,3 +1,5 @@
+import '../constants/sports.dart';
+
 class SportConfig {
   int rounds;
   int durationSeconds;
@@ -8,7 +10,7 @@ class SportConfig {
     required this.rounds,
     required this.durationSeconds,
     required this.restSeconds,
-    this.pointsByPosition = const [5, 4, 3, 2, 1],
+    this.pointsByPosition = defaultPointsByPosition,
   });
 
   Map<String, dynamic> toJson() => {
@@ -24,15 +26,18 @@ class SportConfig {
     if (rawPoints is List && rawPoints.isNotEmpty) {
       pointsList = rawPoints.map((e) => (e as num).toInt()).toList();
     } else {
-      pointsList = const [5, 4, 3, 2, 1];
+      pointsList = defaultPointsByPosition;
     }
 
     return SportConfig(
-      rounds: ((json['rounds'] as num?)?.toInt() ?? 1).clamp(1, 100),
+      rounds: ((json['rounds'] as num?)?.toInt() ?? defaultRounds)
+          .clamp(minRounds, maxRounds),
       durationSeconds:
-          ((json['durationSeconds'] as num?)?.toInt() ?? 180).clamp(0, 86400),
+          ((json['durationSeconds'] as num?)?.toInt() ?? defaultDurationSeconds)
+              .clamp(minDurationSeconds, maxDurationSeconds),
       restSeconds:
-          ((json['restSeconds'] as num?)?.toInt() ?? 90).clamp(0, 86400),
+          ((json['restSeconds'] as num?)?.toInt() ?? defaultRestSeconds)
+              .clamp(minRestSeconds, maxRestSeconds),
       pointsByPosition: pointsList,
     );
   }

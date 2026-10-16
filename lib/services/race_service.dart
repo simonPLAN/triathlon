@@ -59,6 +59,42 @@ class RaceService {
     return true;
   }
 
+  bool undoLastArrival(String sport, int round) {
+    if (isRoundCompleted(sport, round)) return false;
+
+    final list = _sportArrivals(sport)[round];
+    if (list == null || list.isEmpty) return false;
+
+    list.removeLast();
+    return true;
+  }
+
+  bool removeArrival(String sport, int round, String participant) {
+    if (isRoundCompleted(sport, round)) return false;
+
+    final list = _sportArrivals(sport)[round];
+    if (list == null) return false;
+
+    return list.remove(participant);
+  }
+
+  bool moveArrival(String sport, int round, int oldIndex, int newIndex) {
+    if (isRoundCompleted(sport, round)) return false;
+
+    final list = _sportArrivals(sport)[round];
+    if (list == null ||
+        oldIndex < 0 ||
+        oldIndex >= list.length ||
+        newIndex < 0 ||
+        newIndex >= list.length) {
+      return false;
+    }
+
+    final participant = list.removeAt(oldIndex);
+    list.insert(newIndex, participant);
+    return true;
+  }
+
   bool finishRound(String sport, int round, SportConfig config) {
     if (round < 0 || round >= config.rounds) return false;
 
@@ -102,8 +138,9 @@ class RaceService {
           sportData.forEach((key, value) {
             final round = int.tryParse(key.toString());
             if (round != null && value is List) {
-              _sportArrivals(sport)[round] =
-                  value.map((e) => e.toString()).toList();
+              _sportArrivals(sport)[round] = value
+                  .map((e) => e.toString())
+                  .toList();
             }
           });
         }

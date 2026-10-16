@@ -9,10 +9,7 @@ class ParticipantService {
       ..addAll(newParticipants);
   }
 
-  Future<bool> addParticipant(
-    DatabaseService dbService,
-    String name,
-  ) async {
+  Future<bool> addParticipant(DatabaseService dbService, String name) async {
     final cleaned = name.trim();
 
     if (cleaned.isEmpty ||
@@ -32,10 +29,7 @@ class ParticipantService {
     }
   }
 
-  Future<bool> removeParticipant(
-    DatabaseService dbService,
-    String name,
-  ) async {
+  Future<bool> removeParticipant(DatabaseService dbService, String name) async {
     final user = dbService.currentUser;
     if (user == null) return false;
 

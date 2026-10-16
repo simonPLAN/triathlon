@@ -26,7 +26,7 @@ class ResultsPage extends StatelessWidget {
     if (entries.isEmpty) {
       return const Padding(
         padding: EdgeInsets.all(16),
-        child: Text('Aucun participant inscrit.'),
+        child: Text(AppTexts.msgNoParticipantsInscribed),
       );
     }
 
@@ -37,7 +37,7 @@ class ResultsPage extends StatelessWidget {
             leading: CircleAvatar(child: Text('${i + 1}')),
             title: Text(entries[i].key),
             trailing: Text(
-              '${entries[i].value} pts',
+              AppTexts.ptsSuffix(entries[i].value),
               style: const TextStyle(fontWeight: FontWeight.bold),
             ),
           ),
@@ -50,7 +50,7 @@ class ResultsPage extends StatelessWidget {
     final data = EventData.instance;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Résultats et classements')),
+      appBar: AppBar(title: const Text(AppTexts.appBarResults)),
       body: AnimatedBuilder(
         animation: data,
         builder: (context, _) {
@@ -58,14 +58,14 @@ class ResultsPage extends StatelessWidget {
             padding: const EdgeInsets.all(16),
             children: [
               Text(
-                'Classement général',
+                AppTexts.titleGeneralRanking,
                 style: Theme.of(context).textTheme.headlineSmall,
               ),
               const SizedBox(height: 8),
               Card(child: scoreList(context, data.generalPoints())),
               const SizedBox(height: 20),
               Text(
-                'Classements par sport',
+                AppTexts.titleSportRankings,
                 style: Theme.of(context).textTheme.headlineSmall,
               ),
               const SizedBox(height: 8),
@@ -73,25 +73,24 @@ class ResultsPage extends StatelessWidget {
                 Card(
                   child: ExpansionTile(
                     leading: Icon(
-                      sport == 'Natation'
+                      sport == sportNatation
                           ? Icons.pool
-                          : sport == 'Vélo'
+                          : sport == sportVelo
                               ? Icons.directions_bike
                               : Icons.directions_run,
                     ),
                     title: Text(sport),
                     subtitle: Text(
-                      '${data.config(sport).rounds} manches • Barème : ${data.config(sport).pointsByPosition.join("-")} pts',
+                      AppTexts.sportSubtitle(
+                        data.config(sport).rounds,
+                        data.config(sport).pointsByPosition,
+                      ),
                     ),
                     children: [scoreList(context, data.pointsForSport(sport))],
                   ),
                 ),
               const SizedBox(height: 16),
-              const Text(
-                'Les points dépendent de l’ordre des arrivées '
-                'dans chaque manche selon le barème configuré. '
-                'Le classement général additionne les points des trois sports.',
-              ),
+              const Text(AppTexts.resultsExplanation),
             ],
           );
         },

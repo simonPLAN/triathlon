@@ -123,7 +123,7 @@ class _SettingsPageState extends State<SettingsPage> {
 
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
-        content: Text('Barème de points copié sur toutes les épreuves.'),
+        content: Text(AppTexts.msgPointsCopied),
       ),
     );
   }
@@ -158,21 +158,17 @@ class _SettingsPageState extends State<SettingsPage> {
       final rest = _readValue(restControllers, sport, config.restSeconds);
 
       if (rounds == null ||
-          rounds < 1 ||
-          rounds > 100 ||
+          rounds < minRounds ||
+          rounds > maxRounds ||
           duration == null ||
-          duration < 1 ||
-          duration > 86400 ||
+          duration < minDurationSeconds ||
+          duration > maxDurationSeconds ||
           rest == null ||
-          rest < 0 ||
-          rest > 86400) {
+          rest < minRestSeconds ||
+          rest > maxRestSeconds) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text(
-              'Vérifie les valeurs : manches entre 1 et 100, '
-              'durée entre 1 et 86400 secondes et repos '
-              'entre 0 et 86400 secondes.',
-            ),
+            content: Text(AppTexts.msgInvalidSettingsValues),
           ),
         );
 
@@ -183,7 +179,7 @@ class _SettingsPageState extends State<SettingsPage> {
       if (pControllers.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Ajoute au moins une position de points pour $sport.'),
+            content: Text(AppTexts.minPointsPositionError(sport)),
           ),
         );
         return;
@@ -196,7 +192,7 @@ class _SettingsPageState extends State<SettingsPage> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(
-                'Vérifie les points pour $sport : la position ${positionLabel(i)} doit être un nombre positif.',
+                AppTexts.pointsPositionError(sport, positionLabel(i)),
               ),
             ),
           );
@@ -225,13 +221,13 @@ class _SettingsPageState extends State<SettingsPage> {
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Réglages enregistrés avec succès !')),
+        const SnackBar(content: Text(AppTexts.msgSettingsSaved)),
       );
     } catch (e) {
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erreur lors de la sauvegarde : $e')),
+        SnackBar(content: Text('${AppTexts.msgSettingsSaveError}$e')),
       );
     }
   }
@@ -253,14 +249,11 @@ class _SettingsPageState extends State<SettingsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Réglages des épreuves')),
+      appBar: AppBar(title: const Text(AppTexts.appBarSettings)),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          const Text(
-            'Configure chaque épreuve et le barème de points par position. '
-            'Le compte à rebours démarre à la première arrivée.',
-          ),
+          const Text(AppTexts.settingsDescription),
           const SizedBox(height: 16),
           for (final sport in sports)
             Builder(
@@ -302,29 +295,29 @@ class _SettingsPageState extends State<SettingsPage> {
                         ),
                         const SizedBox(height: 16),
                         _numberField(
-                          label: 'Nombre de manches',
+                          label: AppTexts.labelRounds,
                           controller: roundsController,
                         ),
                         const SizedBox(height: 12),
                         _numberField(
-                          label: 'Compte à rebours (secondes)',
+                          label: AppTexts.labelCountdown,
                           controller: durationController,
                         ),
                         const SizedBox(height: 12),
                         _numberField(
-                          label: 'Repos entre les manches (secondes)',
+                          label: AppTexts.labelRest,
                           controller: restController,
                         ),
                         const SizedBox(height: 20),
                         const Divider(),
                         const SizedBox(height: 8),
                         Text(
-                          'Attribution des points par position',
+                          AppTexts.titlePointsAttribution,
                           style: Theme.of(context).textTheme.titleMedium,
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          'Définissez les points accordés selon le rang d\'arrivée (1er, 2ème, 3ème...).',
+                          AppTexts.subtitlePointsAttribution,
                           style: Theme.of(context).textTheme.bodySmall,
                         ),
                         const SizedBox(height: 12),
@@ -361,7 +354,7 @@ class _SettingsPageState extends State<SettingsPage> {
                             TextButton.icon(
                               onPressed: () => _addPosition(sport),
                               icon: const Icon(Icons.add),
-                              label: const Text('Ajouter'),
+                              label: const Text(AppTexts.labelAdd),
                             ),
                             const SizedBox(width: 8),
                             TextButton.icon(
@@ -369,11 +362,11 @@ class _SettingsPageState extends State<SettingsPage> {
                                   ? () => _removePosition(sport)
                                   : null,
                               icon: const Icon(Icons.remove),
-                              label: const Text('Supprimer'),
+                              label: const Text(AppTexts.labelDelete),
                             ),
                             const Spacer(),
                             IconButton(
-                              tooltip: 'Copier ce barème sur tous les sports',
+                              tooltip: AppTexts.tooltipCopyPoints,
                               icon: const Icon(Icons.copy_all),
                               onPressed: () => _applyPointsToAllSports(sport),
                             ),
@@ -389,7 +382,7 @@ class _SettingsPageState extends State<SettingsPage> {
           FilledButton.icon(
             onPressed: saveSettings,
             icon: const Icon(Icons.save),
-            label: const Text('Enregistrer les réglages'),
+            label: const Text(AppTexts.labelSaveSettings),
           ),
         ],
       ),

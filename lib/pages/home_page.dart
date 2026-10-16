@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../constants/sports.dart';
 import '../services/event_data.dart';
 import 'participants_page.dart';
 import 'results_page.dart';
@@ -13,10 +14,10 @@ class HomePage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Gestion du triathlon'),
+        title: const Text(AppTexts.appBarHome),
         actions: [
           IconButton(
-            tooltip: 'Réglages',
+            tooltip: AppTexts.tooltipSettings,
             icon: const Icon(Icons.settings),
             onPressed: () {
               Navigator.of(context).push(
@@ -42,11 +43,11 @@ class HomePage extends StatelessWidget {
                       const Icon(Icons.emoji_events, size: 56),
                       const SizedBox(height: 8),
                       Text(
-                        'Épreuve de triathlon',
+                        AppTexts.homeCardTitle,
                         style: Theme.of(context).textTheme.headlineSmall,
                       ),
                       const SizedBox(height: 8),
-                      Text('$count participant(s) inscrit(s)'),
+                      Text(AppTexts.participantsCount(count)),
                     ],
                   ),
                 ),
@@ -54,36 +55,36 @@ class HomePage extends StatelessWidget {
               const SizedBox(height: 12),
               _homeButton(
                 context,
-                title: 'Participants',
-                subtitle: 'Ajouter ou supprimer des participants',
+                title: AppTexts.appBarParticipants,
+                subtitle: AppTexts.homeSubtitleParticipants,
                 icon: Icons.people,
                 page: const ParticipantsPage(),
               ),
               _homeButton(
                 context,
-                title: 'Natation',
-                subtitle: 'Configurer et lancer la natation',
+                title: sportNatation,
+                subtitle: AppTexts.homeSubtitleNatation,
                 icon: Icons.pool,
-                page: const SportPage(sport: 'Natation'),
+                page: const SportPage(sport: sportNatation),
               ),
               _homeButton(
                 context,
-                title: 'Vélo',
-                subtitle: 'Configurer et lancer le vélo',
+                title: sportVelo,
+                subtitle: AppTexts.homeSubtitleVelo,
                 icon: Icons.directions_bike,
-                page: const SportPage(sport: 'Vélo'),
+                page: const SportPage(sport: sportVelo),
               ),
               _homeButton(
                 context,
-                title: 'Course à pied',
-                subtitle: 'Configurer et lancer la course à pied',
+                title: sportCourse,
+                subtitle: AppTexts.homeSubtitleCourse,
                 icon: Icons.directions_run,
-                page: const SportPage(sport: 'Course à pied'),
+                page: const SportPage(sport: sportCourse),
               ),
               _homeButton(
                 context,
-                title: 'Résultats et classements',
-                subtitle: 'Classements par sport et général',
+                title: AppTexts.appBarResults,
+                subtitle: AppTexts.homeSubtitleResults,
                 icon: Icons.leaderboard,
                 page: const ResultsPage(),
               ),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../constants/sports.dart';
 import '../services/event_data.dart';
 import 'home_page.dart';
 
@@ -27,7 +28,7 @@ class _DataLoadingPageState extends State<DataLoadingPage> {
         if (snapshot.hasError) {
           return Scaffold(
             body: Center(
-              child: Text('Erreur de chargement : ${snapshot.error}'),
+              child: Text('${AppTexts.errorLoading}${snapshot.error}'),
             ),
           );
         }
