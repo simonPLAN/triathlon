@@ -555,19 +555,16 @@ class _LoginPageState extends State<LoginPage> {
         email: emailController.text.trim(),
         password: passwordController.text,
       );
-    } on AuthException catch (e) {
-      setState(() {
-        errorMessage = e.message;
-      });
-    } catch (e) {
-      setState(() {
-        errorMessage = 'Erreur de connexion : $e';
-      });
-    } finally {
+
+      // Garde ici le code qui suit la connexion réussie.
+    } catch (e, stackTrace) {
+      debugPrint('ERREUR CONNEXION : $e');
+      debugPrint('$stackTrace');
+
       if (mounted) {
-        setState(() {
-          loading = false;
-        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erreur : $e')),
+        );
       }
     }
   }
