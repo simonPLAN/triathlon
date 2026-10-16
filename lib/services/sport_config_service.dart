@@ -3,12 +3,23 @@ import '../models/sport_config.dart';
 
 class SportConfigService {
   final Map<String, SportConfig> _configs = {
-    'Natation': SportConfig(rounds: 9, durationSeconds: 180, restSeconds: 90),
-    'Vélo': SportConfig(rounds: 3, durationSeconds: 180, restSeconds: 90),
+    'Natation': SportConfig(
+      rounds: 9,
+      durationSeconds: 180,
+      restSeconds: 90,
+      pointsByPosition: [5, 4, 3, 2, 1],
+    ),
+    'Vélo': SportConfig(
+      rounds: 3,
+      durationSeconds: 180,
+      restSeconds: 90,
+      pointsByPosition: [5, 4, 3, 2, 1],
+    ),
     'Course à pied': SportConfig(
       rounds: 2,
       durationSeconds: 180,
       restSeconds: 90,
+      pointsByPosition: [5, 4, 3, 2, 1],
     ),
   };
 
@@ -30,6 +41,7 @@ class SportConfigService {
     required int rounds,
     required int durationSeconds,
     required int restSeconds,
+    required List<int> pointsByPosition,
   }) {
     if (!sports.contains(sport)) {
       throw ArgumentError('Sport inconnu : $sport');
@@ -39,6 +51,7 @@ class SportConfigService {
       rounds: rounds.clamp(1, 100),
       durationSeconds: durationSeconds.clamp(1, 86400),
       restSeconds: restSeconds.clamp(0, 86400),
+      pointsByPosition: pointsByPosition,
     );
   }
 

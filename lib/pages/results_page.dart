@@ -80,15 +80,17 @@ class ResultsPage extends StatelessWidget {
                               : Icons.directions_run,
                     ),
                     title: Text(sport),
-                    subtitle: Text('${data.config(sport).rounds} manches'),
+                    subtitle: Text(
+                      '${data.config(sport).rounds} manches • Barème : ${data.config(sport).pointsByPosition.join("-")} pts',
+                    ),
                     children: [scoreList(context, data.pointsForSport(sport))],
                   ),
                 ),
               const SizedBox(height: 16),
               const Text(
                 'Les points dépendent de l’ordre des arrivées '
-                'dans chaque manche. Le classement général '
-                'additionne les points des trois sports.',
+                'dans chaque manche selon le barème configuré. '
+                'Le classement général additionne les points des trois sports.',
               ),
             ],
           );

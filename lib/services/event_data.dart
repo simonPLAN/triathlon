@@ -131,12 +131,14 @@ class EventData extends ChangeNotifier {
     required int rounds,
     required int durationSeconds,
     required int restSeconds,
+    required List<int> pointsByPosition,
   }) async {
     configService.updateConfig(
       sport,
       rounds: rounds,
       durationSeconds: durationSeconds,
       restSeconds: restSeconds,
+      pointsByPosition: pointsByPosition,
     );
     await _save();
     notifyListeners();
@@ -178,10 +180,19 @@ class EventData extends ChangeNotifier {
   }
 
   Map<String, int> pointsForSport(String sport) {
-    return scoringService.pointsForSport(sport, participants, raceService);
+    return scoringService.pointsForSport(
+      sport,
+      participants,
+      raceService,
+      config(sport),
+    );
   }
 
   Map<String, int> generalPoints() {
-    return scoringService.generalPoints(participants, raceService);
+    return scoringService.generalPoints(
+      participants,
+      raceService,
+      configService,
+    );
   }
 }
