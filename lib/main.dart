@@ -3,12 +3,16 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 const List<String> sports = ['Natation', 'Vélo', 'Course à pied'];
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await EventData.instance.load();
+  await Supabase.initialize(
+    url: 'https://dgjtfhslcbrgsdczlvdg.supabase.co',
+    publishableKey: 'sb_publishable_YkkAvzFAOUZKJQwUxZKl-A_HJsJLBWT',
+  );
   runApp(const TriathlonApp());
 }
 
@@ -37,7 +41,7 @@ class SportConfig {
     return SportConfig(
       rounds: ((json['rounds'] as num?)?.toInt() ?? 1).clamp(1, 100),
       durationSeconds: ((json['durationSeconds'] as num?)?.toInt() ?? 180)
-          .clamp(1, 86400),
+          .clamp(0, 86400),
       restSeconds: ((json['restSeconds'] as num?)?.toInt() ?? 90).clamp(
         0,
         86400,
@@ -119,107 +123,169 @@ class EventData extends ChangeNotifier {
   }
 
   Future<void> load() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final raw = prefs.getString(_storageKey);
+    final client = Supabase.instance.client;
+    final user = client.auth.currentUser;
 
-      if (raw == null || raw.isEmpty) return;
+    if (user == null) {
+      throw StateError('Aucun utilisateur Supabase connecté.');
+    }
 
-      final decoded = jsonDecode(raw);
+    final prefs = await SharedPreferences.getInstance();
+    final localRaw = prefs.getString(_storageKey);
 
-      if (decoded is! Map) return;
+    // Récupération de l'état actuel depuis Supabase.
+    final remoteRow = await client
+        .from('triathlon_state')
+        .select('data')
+        .eq('user_id', user.id)
+        .maybeSingle();
 
-      final Map<String, dynamic> json = Map<String, dynamic>.from(decoded);
+    final legacyNames = <String>[];
 
-      participants
-        ..clear()
-        ..addAll(
-          (json['participants'] as List<dynamic>? ?? []).map(
-            (e) => e.toString(),
-          ),
-        );
+    // Anciennes données déjà présentes dans Supabase.
+    if (remoteRow != null && remoteRow['data'] is Map) {
+      final remoteData = Map<String, dynamic>.from(remoteRow['data'] as Map);
 
-      final savedConfigs = json['configs'];
-
-      if (savedConfigs is Map) {
-        for (final sport in sports) {
-          final saved = savedConfigs[sport];
-
-          if (saved is Map) {
-            _configs[sport] = SportConfig.fromJson(
-              Map<String, dynamic>.from(saved),
-            );
-          }
-        }
+      final oldParticipants = remoteData['participants'];
+      if (oldParticipants is List) {
+        legacyNames.addAll(oldParticipants.whereType<String>());
       }
 
-      final savedArrivals = json['arrivals'];
+      _restoreFromJson(remoteData);
+    } else if (localRaw != null && localRaw.isNotEmpty) {
+      // Première connexion : récupération des anciennes données locales.
+      final decoded = jsonDecode(localRaw);
 
-      if (savedArrivals is Map) {
-        for (final sport in sports) {
-          final destination = _sportArrivals(sport);
-          destination.clear();
+      if (decoded is Map) {
+        final localData = Map<String, dynamic>.from(decoded);
 
-          final sportData = savedArrivals[sport];
+        final oldParticipants = localData['participants'];
+        if (oldParticipants is List) {
+          legacyNames.addAll(oldParticipants.whereType<String>());
+        }
 
-          if (sportData is Map) {
-            sportData.forEach((key, value) {
-              final round = int.tryParse(key.toString());
+        _restoreFromJson(localData);
+      }
+    }
 
-              if (round != null && value is List) {
-                destination[round] = value.map((e) => e.toString()).toList();
-              }
-            });
-          }
+    // Récupération des participants déjà enregistrés dans la nouvelle table.
+    final existingRows = await client
+        .from('participants')
+        .select('nom')
+        .eq('user_id', user.id);
+
+    final existingNames = <String>{
+      for (final row in existingRows) (row['nom'] as String).toLowerCase(),
+    };
+
+    // Migration des anciens participants, sans doublons.
+    for (final name in legacyNames) {
+      final cleaned = name.trim();
+
+      if (cleaned.isNotEmpty && existingNames.add(cleaned.toLowerCase())) {
+        await client.from('participants').insert({
+          'user_id': user.id,
+          'nom': cleaned,
+        });
+      }
+    }
+
+    // Chargement définitif de la liste depuis la table participants.
+    final participantRows = await client
+        .from('participants')
+        .select('nom')
+        .eq('user_id', user.id)
+        .order('created_at');
+
+    participants
+      ..clear()
+      ..addAll(participantRows.map((row) => row['nom'] as String));
+
+    // Enregistre l'état et nettoie l'ancien format côté cloud.
+    await _save();
+
+    notifyListeners();
+  }
+
+  void _restoreFromJson(Map<String, dynamic> json) {
+    participants
+      ..clear()
+      ..addAll(
+        (json['participants'] as List<dynamic>? ?? []).map((e) => e.toString()),
+      );
+
+    final savedConfigs = json['configs'];
+
+    if (savedConfigs is Map) {
+      for (final sport in sports) {
+        final saved = savedConfigs[sport];
+
+        if (saved is Map) {
+          _configs[sport] = SportConfig.fromJson(
+            Map<String, dynamic>.from(saved),
+          );
         }
       }
+    }
 
-      final savedCompleted = json['completedRounds'];
+    for (final sport in sports) {
+      _sportArrivals(sport).clear();
+      _sportCompletedRounds(sport).clear();
+    }
 
-      if (savedCompleted is Map) {
-        for (final sport in sports) {
-          final destination = _sportCompletedRounds(sport);
-          destination.clear();
+    final savedArrivals = json['arrivals'];
 
-          final rounds = savedCompleted[sport];
+    if (savedArrivals is Map) {
+      for (final sport in sports) {
+        final sportData = savedArrivals[sport];
 
-          if (rounds is List) {
-            for (final round in rounds) {
-              final value = int.tryParse(round.toString());
+        if (sportData is Map) {
+          sportData.forEach((key, value) {
+            final round = int.tryParse(key.toString());
 
-              if (value != null) {
-                destination.add(value);
-              }
+            if (round != null && value is List) {
+              _sportArrivals(sport)[round] = value
+                  .map((e) => e.toString())
+                  .toList();
+            }
+          });
+        }
+      }
+    }
+
+    final savedCompleted = json['completedRounds'];
+
+    if (savedCompleted is Map) {
+      for (final sport in sports) {
+        final rounds = savedCompleted[sport];
+
+        if (rounds is List) {
+          for (final round in rounds) {
+            final value = int.tryParse(round.toString());
+
+            if (value != null) {
+              _sportCompletedRounds(sport).add(value);
             }
           }
         }
       }
-
-      notifyListeners();
-    } catch (e, stackTrace) {
-      debugPrint('Erreur de chargement des données : $e');
-      debugPrintStack(stackTrace: stackTrace);
     }
   }
 
-  Future<void> _save() async {
-    final prefs = await SharedPreferences.getInstance();
-
-    final Map<String, dynamic> savedArrivals = {};
-    final Map<String, dynamic> savedCompleted = {};
+  Map<String, dynamic> _toJson() {
+    final savedArrivals = <String, dynamic>{};
+    final savedCompleted = <String, dynamic>{};
 
     for (final sport in sports) {
-      final sportArrivals = _sportArrivals(sport);
-
       savedArrivals[sport] = {
-        for (final entry in sportArrivals.entries)
+        for (final entry in _sportArrivals(sport).entries)
           entry.key.toString(): entry.value,
       };
 
       savedCompleted[sport] = _sportCompletedRounds(sport).toList();
     }
 
-    final json = {
+    return {
       'participants': participants,
       'configs': {
         for (final entry in _configs.entries) entry.key: entry.value.toJson(),
@@ -227,8 +293,38 @@ class EventData extends ChangeNotifier {
       'arrivals': savedArrivals,
       'completedRounds': savedCompleted,
     };
+  }
 
-    await prefs.setString(_storageKey, jsonEncode(json));
+  Future<void> _save() async {
+    try {
+      final client = Supabase.instance.client;
+      final user = client.auth.currentUser;
+
+      if (user == null) {
+        throw StateError('Aucun utilisateur Supabase connecté.');
+      }
+
+      final json = _toJson();
+
+      // Le cache local conserve les données pour la récupération.
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_storageKey, jsonEncode(json));
+
+      // Les participants sont maintenant dans leur propre table.
+      final cloudJson = Map<String, dynamic>.from(json)..remove('participants');
+
+      await client.from('triathlon_state').upsert({
+        'user_id': user.id,
+        'data': cloudJson,
+        'updated_at': DateTime.now().toUtc().toIso8601String(),
+      });
+
+      debugPrint('SUPABASE : sauvegarde réussie pour ${user.id}');
+    } catch (e, stackTrace) {
+      debugPrint('ERREUR SAUVEGARDE : $e');
+      debugPrint('$stackTrace');
+      rethrow;
+    }
   }
 
   Future<bool> addParticipant(String name) async {
@@ -239,24 +335,57 @@ class EventData extends ChangeNotifier {
       return false;
     }
 
-    participants.add(cleaned);
-    await _save();
-    notifyListeners();
+    final user = Supabase.instance.client.auth.currentUser;
 
-    return true;
+    if (user == null) {
+      return false;
+    }
+
+    try {
+      await Supabase.instance.client.from('participants').insert({
+        'user_id': user.id,
+        'nom': cleaned,
+      });
+
+      participants.add(cleaned);
+
+      await _save();
+      notifyListeners();
+
+      return true;
+    } catch (e) {
+      debugPrint('Erreur ajout participant : $e');
+      return false;
+    }
   }
 
   Future<void> removeParticipant(String name) async {
-    participants.remove(name);
+    final user = Supabase.instance.client.auth.currentUser;
 
-    for (final sport in sports) {
-      for (final list in _sportArrivals(sport).values) {
-        list.remove(name);
-      }
+    if (user == null) {
+      return;
     }
 
-    await _save();
-    notifyListeners();
+    try {
+      await Supabase.instance.client
+          .from('participants')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('nom', name);
+
+      participants.remove(name);
+
+      for (final sport in sports) {
+        for (final list in _sportArrivals(sport).values) {
+          list.remove(name);
+        }
+      }
+
+      await _save();
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Erreur suppression participant : $e');
+    }
   }
 
   Future<void> updateConfig(
@@ -378,7 +507,172 @@ class TriathlonApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.teal),
         useMaterial3: true,
       ),
-      home: const HomePage(),
+      home: const AuthGate(),
+    );
+  }
+}
+
+class AuthGate extends StatelessWidget {
+  const AuthGate({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<AuthState>(
+      stream: Supabase.instance.client.auth.onAuthStateChange,
+      builder: (context, snapshot) {
+        if (Supabase.instance.client.auth.currentSession == null) {
+          return const LoginPage();
+        }
+
+        return const DataLoadingPage();
+      },
+    );
+  }
+}
+
+class LoginPage extends StatefulWidget {
+  const LoginPage({super.key});
+
+  @override
+  State<LoginPage> createState() => _LoginPageState();
+}
+
+class _LoginPageState extends State<LoginPage> {
+  final emailController = TextEditingController();
+  final passwordController = TextEditingController();
+
+  bool loading = false;
+  String? errorMessage;
+
+  Future<void> login() async {
+    setState(() {
+      loading = true;
+      errorMessage = null;
+    });
+
+    try {
+      await Supabase.instance.client.auth.signInWithPassword(
+        email: emailController.text.trim(),
+        password: passwordController.text,
+      );
+    } on AuthException catch (e) {
+      setState(() {
+        errorMessage = e.message;
+      });
+    } catch (e) {
+      setState(() {
+        errorMessage = 'Erreur de connexion : $e';
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          loading = false;
+        });
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    emailController.dispose();
+    passwordController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Connexion')),
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 400),
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.directions_bike, size: 64),
+                const SizedBox(height: 24),
+                TextField(
+                  controller: emailController,
+                  keyboardType: TextInputType.emailAddress,
+                  decoration: const InputDecoration(
+                    labelText: 'Adresse e-mail',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: passwordController,
+                  obscureText: true,
+                  decoration: const InputDecoration(
+                    labelText: 'Mot de passe',
+                    border: OutlineInputBorder(),
+                  ),
+                  onSubmitted: (_) {
+                    if (!loading) login();
+                  },
+                ),
+                const SizedBox(height: 16),
+                if (errorMessage != null)
+                  Text(
+                    errorMessage!,
+                    style: const TextStyle(color: Colors.red),
+                  ),
+                const SizedBox(height: 8),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: loading ? null : login,
+                    child: Text(loading ? 'Connexion...' : 'Se connecter'),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class DataLoadingPage extends StatefulWidget {
+  const DataLoadingPage({super.key});
+
+  @override
+  State<DataLoadingPage> createState() => _DataLoadingPageState();
+}
+
+class _DataLoadingPageState extends State<DataLoadingPage> {
+  late final Future<void> loadingFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    loadingFuture = EventData.instance.load();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<void>(
+      future: loadingFuture,
+      builder: (context, snapshot) {
+        if (snapshot.hasError) {
+          return Scaffold(
+            body: Center(
+              child: Text('Erreur de chargement : ${snapshot.error}'),
+            ),
+          );
+        }
+
+        if (snapshot.connectionState != ConnectionState.done) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        return const HomePage();
+      },
     );
   }
 }
