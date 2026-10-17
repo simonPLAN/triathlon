@@ -85,14 +85,23 @@ class AppTexts {
 
   // Page de gestion des participants
   static const String labelParticipantName = 'Nom du participant';
+  static const String labelCoefficient = 'Coefficient';
+  static const String labelCoefficientHint = 'Ex: 1.5 (1.0 par défaut)';
   static const String msgParticipantAdded = 'Participant ajouté';
   static const String msgInvalidParticipant = 'Nom vide ou participant déjà présent';
+  static const String msgInvalidCoefficient = 'Le coefficient doit être un nombre positif';
   static const String msgNoParticipants = 'Aucun participant enregistré';
   static const String dialogRemoveParticipantTitle = 'Supprimer le participant ?';
+  static const String dialogEditParticipantTitle = 'Modifier le coefficient';
   static const String dialogCancel = 'Annuler';
   static const String dialogDelete = 'Supprimer';
+  static const String dialogSave = 'Enregistrer';
   static const String tooltipAdd = 'Ajouter';
   static const String tooltipDelete = 'Supprimer';
+  static const String tooltipEditParticipant = 'Modifier le coefficient';
+
+  static String participantCoefficientLabel(double coef) =>
+      'Coef : x${coef == coef.toInt() ? coef.toInt().toString() : coef.toString()}';
 
   static String removeParticipantContent(String name) =>
       'Supprimer $name et ses arrivées enregistrées ?';
@@ -123,7 +132,7 @@ class AppTexts {
   static const String titleSportRankings = 'Classements par sport';
   static const String msgNoParticipantsInscribed = 'Aucun participant inscrit.';
   static const String resultsExplanation =
-      'Les points dépendent de l’ordre des arrivées dans chaque manche selon le barème configuré. '
+      'Les points dépendent de l’ordre des arrivées dans chaque manche selon le barème configuré et le coefficient éventuel de chaque participant. '
       'Le classement général additionne les points des trois sports.';
 
   static String ptsSuffix(int points) => '$points pts';

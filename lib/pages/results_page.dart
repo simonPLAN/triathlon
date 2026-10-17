@@ -20,7 +20,11 @@ class ResultsPage extends StatelessWidget {
     return entries;
   }
 
-  Widget scoreList(BuildContext context, Map<String, int> scores) {
+  Widget scoreList(
+    BuildContext context,
+    Map<String, int> scores,
+    EventData data,
+  ) {
     final entries = sortedScores(scores);
 
     if (entries.isEmpty) {
@@ -33,13 +37,24 @@ class ResultsPage extends StatelessWidget {
     return Column(
       children: [
         for (int i = 0; i < entries.length; i++)
-          ListTile(
-            leading: CircleAvatar(child: Text('${i + 1}')),
-            title: Text(entries[i].key),
-            trailing: Text(
-              AppTexts.ptsSuffix(entries[i].value),
-              style: const TextStyle(fontWeight: FontWeight.bold),
-            ),
+          Builder(
+            builder: (context) {
+              final name = entries[i].key;
+              final coef = data.getCoefficient(name);
+              final hasCoef = coef != 1.0;
+
+              return ListTile(
+                leading: CircleAvatar(child: Text('${i + 1}')),
+                title: Text(name),
+                subtitle: hasCoef
+                    ? Text(AppTexts.participantCoefficientLabel(coef))
+                    : null,
+                trailing: Text(
+                  AppTexts.ptsSuffix(entries[i].value),
+                  style: const TextStyle(fontWeight: FontWeight.bold),
+                ),
+              );
+            },
           ),
       ],
     );
@@ -62,7 +77,7 @@ class ResultsPage extends StatelessWidget {
                 style: Theme.of(context).textTheme.headlineSmall,
               ),
               const SizedBox(height: 8),
-              Card(child: scoreList(context, data.generalPoints())),
+              Card(child: scoreList(context, data.generalPoints(), data)),
               const SizedBox(height: 20),
               Text(
                 AppTexts.titleSportRankings,
@@ -86,7 +101,9 @@ class ResultsPage extends StatelessWidget {
                         data.config(sport).pointsByPosition,
                       ),
                     ),
-                    children: [scoreList(context, data.pointsForSport(sport))],
+                    children: [
+                      scoreList(context, data.pointsForSport(sport), data),
+                    ],
                   ),
                 ),
               const SizedBox(height: 16),

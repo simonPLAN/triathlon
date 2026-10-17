@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 
 import '../constants/sports.dart';
+import '../models/participant.dart';
 import '../models/sport_config.dart';
 import 'database_service.dart';
 import 'participant_service.dart';
@@ -22,6 +23,13 @@ class EventData extends ChangeNotifier {
   final ScoringService scoringService = ScoringService();
 
   List<String> get participants => participantService.participants;
+
+  List<Participant> get participantModels =>
+      participantService.participantModels;
+
+  Map<String, double> get coefficients => participantService.coefficients;
+
+  double getCoefficient(String name) => participantService.getCoefficient(name);
 
   SportConfig config(String sport) => configService.config(sport);
 
@@ -48,13 +56,25 @@ class EventData extends ChangeNotifier {
     if (remoteData != null) {
       final oldParticipants = remoteData['participants'];
       if (oldParticipants is List) {
-        legacyNames.addAll(oldParticipants.whereType<String>());
+        for (final item in oldParticipants) {
+          if (item is String) {
+            legacyNames.add(item);
+          } else if (item is Map && item['name'] is String) {
+            legacyNames.add(item['name'] as String);
+          }
+        }
       }
       _restoreFromJson(remoteData);
     } else if (localData != null) {
       final oldParticipants = localData['participants'];
       if (oldParticipants is List) {
-        legacyNames.addAll(oldParticipants.whereType<String>());
+        for (final item in oldParticipants) {
+          if (item is String) {
+            legacyNames.add(item);
+          } else if (item is Map && item['name'] is String) {
+            legacyNames.add(item['name'] as String);
+          }
+        }
       }
       _restoreFromJson(localData);
     }
@@ -66,7 +86,7 @@ class EventData extends ChangeNotifier {
     for (final name in legacyNames) {
       final cleaned = name.trim();
       if (cleaned.isNotEmpty && existingNames.add(cleaned.toLowerCase())) {
-        await databaseService.insertParticipant(user.id, cleaned);
+        await databaseService.insertParticipant(user.id, cleaned, 1.0);
       }
     }
 
@@ -81,9 +101,7 @@ class EventData extends ChangeNotifier {
 
   void _restoreFromJson(Map<String, dynamic> json) {
     participantService.setParticipants(
-      (json['participants'] as List<dynamic>? ?? [])
-          .map((e) => e.toString())
-          .toList(),
+      json['participants'] as List<dynamic>? ?? [],
     );
     configService.restoreFromJson(json['configs'] as Map<String, dynamic>?);
     raceService.restoreFromJson(
@@ -94,7 +112,7 @@ class EventData extends ChangeNotifier {
 
   Map<String, dynamic> _toJson() {
     return {
-      'participants': participants,
+      'participants': participantService.toJson(),
       'configs': configService.toJson(),
       'arrivals': raceService.arrivalsToJson(),
       'completedRounds': raceService.completedRoundsToJson(),
@@ -109,10 +127,24 @@ class EventData extends ChangeNotifier {
     await databaseService.saveState(user.id, _toJson());
   }
 
-  Future<bool> addParticipant(String name) async {
+  Future<bool> addParticipant(String name, {double coefficient = 1.0}) async {
     final success = await participantService.addParticipant(
       databaseService,
       name,
+      coefficient: coefficient,
+    );
+    if (success) {
+      await _save();
+      notifyListeners();
+    }
+    return success;
+  }
+
+  Future<bool> updateParticipant(String name, double coefficient) async {
+    final success = await participantService.updateParticipant(
+      databaseService,
+      name,
+      coefficient,
     );
     if (success) {
       await _save();
@@ -228,6 +260,7 @@ class EventData extends ChangeNotifier {
       participants,
       raceService,
       config(sport),
+      coefficients: coefficients,
     );
   }
 
@@ -236,6 +269,7 @@ class EventData extends ChangeNotifier {
       participants,
       raceService,
       configService,
+      coefficients: coefficients,
     );
   }
 }
