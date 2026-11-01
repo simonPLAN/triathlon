@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../application/use_cases/connecter_utilisateur.dart';
 import '../../application/use_cases/inscrire_athlete.dart';
-import '../windgets/inscription_athlete_dialog.dart';
+import '../widgets/inscription_athlete_dialog.dart';
 
 class ConnexionPage extends StatefulWidget {
   const ConnexionPage({

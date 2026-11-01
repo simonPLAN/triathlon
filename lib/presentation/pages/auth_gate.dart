@@ -6,8 +6,13 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../application/use_cases/connecter_utilisateur.dart';
 import '../../application/use_cases/deconnecter_utilisateur.dart';
 import '../../application/use_cases/inscrire_athlete.dart';
+import '../../application/use_cases/obtenir_profil_connecte.dart';
+import '../../domain/entities/profil_utilisateur.dart';
 import '../controllers/athlete_controller.dart';
+import '../controllers/competition_controller.dart';
 import 'athletes_page.dart';
+import 'coach/coach_dashboard_page.dart';
+import 'competition/competitions_page.dart';
 import 'connexion_page.dart';
 
 class AuthGate extends StatefulWidget {
@@ -15,9 +20,11 @@ class AuthGate extends StatefulWidget {
     super.key,
     required this.clientSupabase,
     required this.athleteController,
+    required this.competitionController,
     required this.connecterUtilisateur,
     required this.deconnecterUtilisateur,
     required this.inscrireAthlete,
+    required this.obtenirProfilConnecte,
   });
 
   final SupabaseClient clientSupabase;
@@ -25,6 +32,8 @@ class AuthGate extends StatefulWidget {
   final ConnecterUtilisateur connecterUtilisateur;
   final DeconnecterUtilisateur deconnecterUtilisateur;
   final InscrireAthlete inscrireAthlete;
+  final ObtenirProfilConnecte obtenirProfilConnecte;
+  final CompetitionController competitionController;
 
   @override
   State<AuthGate> createState() {
@@ -35,15 +44,76 @@ class AuthGate extends StatefulWidget {
 class _AuthGateState extends State<AuthGate> {
   StreamSubscription<AuthState>? _abonnementAuth;
 
+  Future<ProfilUtilisateur>? _profilFuture;
+
   @override
   void initState() {
     super.initState();
 
-    _abonnementAuth = widget.clientSupabase.auth.onAuthStateChange.listen((_) {
-      if (mounted) {
-        setState(() {});
+    _preparerChargementProfil();
+
+    _abonnementAuth = widget.clientSupabase.auth.onAuthStateChange.listen((
+      authState,
+    ) {
+      if (!mounted) {
+        return;
       }
+
+      setState(() {
+        if (authState.session == null) {
+          widget.competitionController.reinitialiser();
+          _profilFuture = null;
+        } else {
+          _profilFuture = widget.obtenirProfilConnecte.executer();
+        }
+      });
     });
+  }
+
+  void _preparerChargementProfil() {
+    final session = widget.clientSupabase.auth.currentSession;
+
+    if (session != null) {
+      _profilFuture = widget.obtenirProfilConnecte.executer();
+    }
+  }
+
+  Future<void> _rechargerProfil() async {
+    setState(() {
+      _profilFuture = widget.obtenirProfilConnecte.executer();
+    });
+
+    await _profilFuture;
+  }
+
+  void _ouvrirAthletes(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (context) {
+          return AthletesPage(
+            controller: widget.athleteController,
+            inscrireAthlete: widget.inscrireAthlete,
+            deconnecterUtilisateur: widget.deconnecterUtilisateur,
+          );
+        },
+      ),
+    );
+  }
+
+  void _ouvrirCompetitions(
+    BuildContext context,
+    ProfilUtilisateur profilCoach,
+  ) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (context) {
+          return CompetitionsPage(
+            controller: widget.competitionController,
+            profilCoach: profilCoach,
+          );
+        },
+      ),
+    );
   }
 
   @override
@@ -63,11 +133,128 @@ class _AuthGateState extends State<AuthGate> {
       );
     }
 
-    return AthletesPage(
-      key: ValueKey(session.user.id),
-      controller: widget.athleteController,
-      inscrireAthlete: widget.inscrireAthlete,
-      deconnecterUtilisateur: widget.deconnecterUtilisateur,
+    final profilFuture = _profilFuture;
+
+    if (profilFuture == null) {
+      return const _PageChargementProfil();
+    }
+
+    return FutureBuilder<ProfilUtilisateur>(
+      future: profilFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState != ConnectionState.done) {
+          return const _PageChargementProfil();
+        }
+
+        if (snapshot.hasError) {
+          return _PageErreurProfil(
+            message: snapshot.error.toString().replaceFirst('Exception: ', ''),
+            onReessayer: _rechargerProfil,
+            onDeconnecter: widget.deconnecterUtilisateur.executer,
+          );
+        }
+
+        final profil = snapshot.data;
+
+        if (profil == null) {
+          return _PageErreurProfil(
+            message: 'Le profil utilisateur est introuvable.',
+            onReessayer: _rechargerProfil,
+            onDeconnecter: widget.deconnecterUtilisateur.executer,
+          );
+        }
+
+        if (profil.estCoach) {
+          return CoachDashboardPage(
+            profil: profil,
+            deconnecterUtilisateur: widget.deconnecterUtilisateur,
+            onVoirCompetitions: () {
+              _ouvrirCompetitions(context, profil);
+            },
+            onVoirAthletes: () {
+              _ouvrirAthletes(context);
+            },
+          );
+        }
+
+        return AthletesPage(
+          key: ValueKey(session.user.id),
+          controller: widget.athleteController,
+          inscrireAthlete: widget.inscrireAthlete,
+          deconnecterUtilisateur: widget.deconnecterUtilisateur,
+        );
+      },
+    );
+  }
+}
+
+class _PageChargementProfil extends StatelessWidget {
+  const _PageChargementProfil();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Scaffold(
+      body: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            CircularProgressIndicator(),
+            SizedBox(height: 16),
+            Text('Chargement du profil...'),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _PageErreurProfil extends StatelessWidget {
+  const _PageErreurProfil({
+    required this.message,
+    required this.onReessayer,
+    required this.onDeconnecter,
+  });
+
+  final String message;
+  final Future<void> Function() onReessayer;
+  final Future<void> Function() onDeconnecter;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Erreur de profil'),
+        actions: [
+          IconButton(
+            tooltip: 'Se déconnecter',
+            onPressed: onDeconnecter,
+            icon: const Icon(Icons.logout),
+          ),
+        ],
+      ),
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.account_circle_outlined,
+                size: 64,
+                color: Theme.of(context).colorScheme.error,
+              ),
+              const SizedBox(height: 16),
+              Text(message, textAlign: TextAlign.center),
+              const SizedBox(height: 24),
+              FilledButton.icon(
+                onPressed: onReessayer,
+                icon: const Icon(Icons.refresh),
+                label: const Text('Réessayer'),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
