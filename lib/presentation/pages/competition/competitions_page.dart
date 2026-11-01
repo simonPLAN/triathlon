@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 
+import '../../../domain/entities/competition.dart';
 import '../../../domain/entities/profil_utilisateur.dart';
 import '../../controllers/competition_controller.dart';
 import '../../widgets/competition/carte_competition.dart';
 import 'creer_competition_page.dart';
+import 'detail_competition_page.dart';
 
 class CompetitionsPage extends StatefulWidget {
   const CompetitionsPage({
@@ -80,16 +82,24 @@ class _CompetitionsPageState extends State<CompetitionsPage> {
     );
   }
 
-  void _ouvrirDetail(int index) {
-    final competition = _controller.competitions[index];
+  Future<void> _ouvrirDetail(Competition competition) async {
+    final competitionSupprimee = await Navigator.of(context).push<bool>(
+      MaterialPageRoute<bool>(
+        builder: (context) {
+          return DetailCompetitionPage(
+            competition: competition,
+            controller: _controller,
+          );
+        },
+      ),
+    );
+
+    if (competitionSupprimee != true || !mounted) {
+      return;
+    }
 
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          'Le détail de « ${competition.nom} » '
-          'sera ajouté prochainement.',
-        ),
-      ),
+      const SnackBar(content: Text('La compétition a été supprimée.')),
     );
   }
 
@@ -144,7 +154,7 @@ class _CompetitionsPageState extends State<CompetitionsPage> {
 
           return CarteCompetition(
             competition: competition,
-            onTap: () => _ouvrirDetail(index),
+            onTap: () => _ouvrirDetail(competition),
           );
         },
       ),

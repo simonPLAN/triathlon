@@ -1,26 +1,50 @@
 import 'package:flutter/foundation.dart';
 
+import '../../application/use_cases/competition/changer_statut_competition.dart';
 import '../../application/use_cases/competition/creer_competition.dart';
 import '../../application/use_cases/competition/lister_competitions.dart';
+import '../../application/use_cases/competition/modifier_competition.dart';
+import '../../application/use_cases/competition/supprimer_competition.dart';
 import '../../domain/entities/competition.dart';
+import '../../domain/entities/statut_competition.dart';
 
 class CompetitionController extends ChangeNotifier {
-  CompetitionController({
-    required this._creerCompetition,
-    required this._listerCompetitions,
-  });
+  CompetitionController(
+    this._creerCompetition,
+    this._listerCompetitions,
+    this._modifierCompetition,
+    this._changerStatutCompetition,
+    this._supprimerCompetition,
+  );
 
   final CreerCompetition _creerCompetition;
   final ListerCompetitions _listerCompetitions;
-
+  final ModifierCompetition _modifierCompetition;
   List<Competition> _competitions = const [];
-
+  final ChangerStatutCompetition _changerStatutCompetition;
   bool _chargement = false;
   bool _creationEnCours = false;
+  bool _modificationEnCours = false;
   String? _erreur;
+  bool _changementStatutEnCours = false;
+  final SupprimerCompetition _supprimerCompetition;
 
   List<Competition> get competitions {
     return List.unmodifiable(_competitions);
+  }
+
+  bool _suppressionEnCours = false;
+
+  bool get modificationEnCours {
+    return _modificationEnCours;
+  }
+
+  bool get suppressionEnCours {
+    return _suppressionEnCours;
+  }
+
+  bool get changementStatutEnCours {
+    return _changementStatutEnCours;
   }
 
   bool get chargement => _chargement;
@@ -32,6 +56,43 @@ class CompetitionController extends ChangeNotifier {
   bool get estVide => _competitions.isEmpty;
 
   bool get aUneErreur => _erreur != null;
+
+  Future<bool> supprimer(Competition competition) async {
+    if (_suppressionEnCours) {
+      return false;
+    }
+
+    _suppressionEnCours = true;
+    _erreur = null;
+    notifyListeners();
+
+    try {
+      await _supprimerCompetition.executer(competition);
+
+      _competitions = _competitions
+          .where((element) => element.id != competition.id)
+          .toList(growable: false);
+
+      return true;
+    } on ArgumentError catch (exception) {
+      _erreur =
+          exception.message?.toString() ??
+          'La compétition ne peut pas être supprimée.';
+
+      return false;
+    } on StateError catch (exception) {
+      _erreur = _extraireMessageErreur(exception);
+
+      return false;
+    } catch (exception) {
+      _erreur = _extraireMessageErreur(exception);
+
+      return false;
+    } finally {
+      _suppressionEnCours = false;
+      notifyListeners();
+    }
+  }
 
   Future<void> charger() async {
     if (_chargement) {
@@ -142,7 +203,127 @@ class CompetitionController extends ChangeNotifier {
     _competitions = const [];
     _chargement = false;
     _creationEnCours = false;
+    _modificationEnCours = false;
+    _changementStatutEnCours = false;
+    _erreur = null;
+    _suppressionEnCours = false;
+    notifyListeners();
+  }
+
+  void _remplacerCompetitionDansListe(Competition competition) {
+    final index = _competitions.indexWhere(
+      (element) => element.id == competition.id,
+    );
+
+    if (index < 0) {
+      _competitions = [..._competitions, competition];
+
+      _trierCompetitions();
+      return;
+    }
+
+    final nouvelleListe = [..._competitions];
+
+    nouvelleListe[index] = competition;
+    _competitions = nouvelleListe;
+
+    _trierCompetitions();
+  }
+
+  Future<Competition?> modifier({
+    required Competition competition,
+    required String nom,
+    required DateTime dateCompetition,
+    String? description,
+    String? lieu,
+  }) async {
+    if (_modificationEnCours) {
+      return null;
+    }
+
+    _modificationEnCours = true;
     _erreur = null;
     notifyListeners();
+
+    try {
+      final competitionModifiee = await _modifierCompetition.executer(
+        competition: competition,
+        nom: nom,
+        description: description,
+        lieu: lieu,
+        dateCompetition: dateCompetition,
+      );
+
+      final index = _competitions.indexWhere(
+        (element) => element.id == competitionModifiee.id,
+      );
+
+      if (index >= 0) {
+        final nouvelleListe = [..._competitions];
+
+        nouvelleListe[index] = competitionModifiee;
+        _competitions = nouvelleListe;
+      } else {
+        _competitions = [..._competitions, competitionModifiee];
+      }
+
+      _trierCompetitions();
+
+      return competitionModifiee;
+    } on ArgumentError catch (exception) {
+      _erreur =
+          exception.message?.toString() ??
+          'Les informations saisies sont invalides.';
+
+      return null;
+    } catch (exception) {
+      _erreur = _extraireMessageErreur(exception);
+
+      return null;
+    } finally {
+      _modificationEnCours = false;
+      notifyListeners();
+    }
+  }
+
+  Future<Competition?> changerStatut({
+    required Competition competition,
+    required StatutCompetition nouveauStatut,
+  }) async {
+    if (_changementStatutEnCours) {
+      return null;
+    }
+
+    _changementStatutEnCours = true;
+    _erreur = null;
+    notifyListeners();
+
+    try {
+      final competitionActualisee = await _changerStatutCompetition.executer(
+        competition: competition,
+        nouveauStatut: nouveauStatut,
+      );
+
+      _remplacerCompetitionDansListe(competitionActualisee);
+
+      return competitionActualisee;
+    } on ArgumentError catch (exception) {
+      _erreur =
+          exception.message?.toString() ??
+          'Le changement de statut est invalide.';
+
+      return null;
+    } on StateError catch (exception) {
+      _erreur = _extraireMessageErreur(exception);
+
+      return null;
+    } catch (exception) {
+      _erreur = _extraireMessageErreur(exception);
+
+      return null;
+    } finally {
+      _changementStatutEnCours = false;
+      notifyListeners();
+    }
   }
 }

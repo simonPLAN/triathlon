@@ -31,6 +31,8 @@ class Competition {
     return statut == StatutCompetition.ouverte;
   }
 
+  static const _nonRenseigne = Object();
+
   bool get estEnCours {
     return statut == StatutCompetition.enCours;
   }
@@ -43,11 +45,59 @@ class Competition {
     return statut == StatutCompetition.annulee;
   }
 
+  Competition ouvrir() {
+    if (statut != StatutCompetition.brouillon) {
+      throw StateError('Seule une compétition en brouillon peut être ouverte.');
+    }
+
+    return copierAvec(
+      statut: StatutCompetition.ouverte,
+      dateModification: DateTime.now(),
+    );
+  }
+
+  Competition demarrer() {
+    if (statut != StatutCompetition.ouverte) {
+      throw StateError('Seule une compétition ouverte peut être démarrée.');
+    }
+
+    return copierAvec(
+      statut: StatutCompetition.enCours,
+      dateModification: DateTime.now(),
+    );
+  }
+
+  Competition terminer() {
+    if (statut != StatutCompetition.enCours) {
+      throw StateError('Seule une compétition en cours peut être terminée.');
+    }
+
+    return copierAvec(
+      statut: StatutCompetition.terminee,
+      dateModification: DateTime.now(),
+    );
+  }
+
+  Competition annuler() {
+    if (statut == StatutCompetition.terminee) {
+      throw StateError('Une compétition terminée ne peut plus être annulée.');
+    }
+
+    if (statut == StatutCompetition.annulee) {
+      throw StateError('Cette compétition est déjà annulée.');
+    }
+
+    return copierAvec(
+      statut: StatutCompetition.annulee,
+      dateModification: DateTime.now(),
+    );
+  }
+
   Competition copierAvec({
     String? id,
     String? nom,
-    String? description,
-    String? lieu,
+    Object? description = _nonRenseigne,
+    Object? lieu = _nonRenseigne,
     DateTime? dateCompetition,
     StatutCompetition? statut,
     String? coachId,
@@ -57,8 +107,10 @@ class Competition {
     return Competition(
       id: id ?? this.id,
       nom: nom ?? this.nom,
-      description: description ?? this.description,
-      lieu: lieu ?? this.lieu,
+      description: identical(description, _nonRenseigne)
+          ? this.description
+          : description as String?,
+      lieu: identical(lieu, _nonRenseigne) ? this.lieu : lieu as String?,
       dateCompetition: dateCompetition ?? this.dateCompetition,
       statut: statut ?? this.statut,
       coachId: coachId ?? this.coachId,

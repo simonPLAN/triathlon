@@ -4,8 +4,11 @@ import 'package:triathlon/presentation/controllers/competition_controller.dart';
 
 import 'app.dart';
 import 'application/use_cases/ajouter_athlete.dart';
+import 'application/use_cases/competition/changer_statut_competition.dart';
 import 'application/use_cases/competition/creer_competition.dart';
 import 'application/use_cases/competition/lister_competitions.dart';
+import 'application/use_cases/competition/modifier_competition.dart';
+import 'application/use_cases/competition/supprimer_competition.dart';
 import 'application/use_cases/connecter_utilisateur.dart';
 import 'application/use_cases/deconnecter_utilisateur.dart';
 import 'application/use_cases/inscrire_athlete.dart';
@@ -28,8 +31,11 @@ Future<void> main() async {
   final competitionRepository = CompetitionRepositorySupabase(clientSupabase);
 
   final competitionController = CompetitionController(
-    creerCompetition: CreerCompetition(competitionRepository),
-    listerCompetitions: ListerCompetitions(competitionRepository),
+    CreerCompetition(competitionRepository),
+    ListerCompetitions(competitionRepository),
+    ModifierCompetition(competitionRepository),
+    ChangerStatutCompetition(competitionRepository),
+    SupprimerCompetition(competitionRepository),
   );
   final athleteRepository = AthleteRepositorySupabase(clientSupabase);
 
