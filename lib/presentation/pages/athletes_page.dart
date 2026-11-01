@@ -103,7 +103,7 @@ class _AthletesPageState extends State<AthletesPage> {
           return ListView.separated(
             padding: const EdgeInsets.all(16),
             itemCount: controller.athletes.length,
-            separatorBuilder: (_, __) => const Divider(),
+            separatorBuilder: (_, _) => const Divider(),
             itemBuilder: (context, index) {
               final athlete = controller.athletes[index];
               return ListTile(

@@ -6,10 +6,9 @@ import '../../domain/entities/athlete.dart';
 
 class AthleteController extends ChangeNotifier {
   AthleteController({
-    required AjouterAthlete ajouterAthlete,
-    required ListerAthletes listerAthletes,
-  })  : _ajouterAthlete = ajouterAthlete,
-        _listerAthletes = listerAthletes;
+    required this._ajouterAthlete,
+    required this._listerAthletes,
+  });
 
   final AjouterAthlete _ajouterAthlete;
   final ListerAthletes _listerAthletes;
