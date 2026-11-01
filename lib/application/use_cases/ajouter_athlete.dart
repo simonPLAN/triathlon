@@ -6,10 +6,7 @@ class AjouterAthlete {
 
   final AthleteRepository _repository;
 
-  Future<void> executer({
-    required String prenom,
-    required String nom,
-  }) async {
+  Future<void> executer({required String prenom, required String nom}) async {
     final prenomNettoye = prenom.trim();
     final nomNettoye = nom.trim();
 

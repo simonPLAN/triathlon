@@ -32,10 +32,7 @@ class AthleteController extends ChangeNotifier {
     }
   }
 
-  Future<bool> ajouter({
-    required String prenom,
-    required String nom,
-  }) async {
+  Future<bool> ajouter({required String prenom, required String nom}) async {
     erreur = null;
     try {
       await _ajouterAthlete.executer(prenom: prenom, nom: nom);
