@@ -3,8 +3,10 @@ import 'package:flutter/material.dart';
 import '../../../domain/entities/competition.dart';
 import '../../../domain/entities/statut_competition.dart';
 import '../../controllers/competition_controller.dart';
+import '../../controllers/inscription_controller.dart';
 import '../../widgets/competition/actions_statut_competition.dart';
 import '../../widgets/competition/badge_statut_competition.dart';
+import '../inscription/inscriptions_page.dart';
 import 'modifier_competition_page.dart';
 
 class DetailCompetitionPage extends StatefulWidget {
@@ -12,10 +14,12 @@ class DetailCompetitionPage extends StatefulWidget {
     super.key,
     required this.competition,
     required this.controller,
+    required this.inscriptionController,
   });
 
   final Competition competition;
   final CompetitionController controller;
+  final InscriptionController inscriptionController;
 
   @override
   State<DetailCompetitionPage> createState() {
@@ -30,6 +34,21 @@ class _DetailCompetitionPageState extends State<DetailCompetitionPage> {
   void initState() {
     super.initState();
     _competition = widget.competition;
+  }
+
+  Future<void> _ouvrirInscriptions() async {
+    widget.inscriptionController.reinitialiser();
+
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(
+        builder: (context) {
+          return InscriptionsPage(
+            competition: _competition,
+            controller: widget.inscriptionController,
+          );
+        },
+      ),
+    );
   }
 
   Future<void> _supprimerCompetition() async {
@@ -239,12 +258,7 @@ class _DetailCompetitionPageState extends State<DetailCompetitionPage> {
             Text('Organisation', style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 12),
             _ActionsCompetition(
-              onVoirAthletes: () {
-                _fonctionnaliteEnPreparation(
-                  context,
-                  'La gestion des athlètes inscrits',
-                );
-              },
+              onVoirAthletes: _ouvrirInscriptions,
               onVoirEpreuves: () {
                 _fonctionnaliteEnPreparation(
                   context,

@@ -10,6 +10,9 @@ import '../../application/use_cases/obtenir_profil_connecte.dart';
 import '../../domain/entities/profil_utilisateur.dart';
 import '../controllers/athlete_controller.dart';
 import '../controllers/competition_controller.dart';
+import '../controllers/competitions_ouvertes_controller.dart';
+import '../controllers/inscription_controller.dart';
+import 'athlete/athlete_dashboard_page.dart';
 import 'athletes_page.dart';
 import 'coach/coach_dashboard_page.dart';
 import 'competition/competitions_page.dart';
@@ -25,6 +28,8 @@ class AuthGate extends StatefulWidget {
     required this.deconnecterUtilisateur,
     required this.inscrireAthlete,
     required this.obtenirProfilConnecte,
+    required this.inscriptionController,
+    required this.competitionsOuvertesController,
   });
 
   final SupabaseClient clientSupabase;
@@ -34,6 +39,8 @@ class AuthGate extends StatefulWidget {
   final InscrireAthlete inscrireAthlete;
   final ObtenirProfilConnecte obtenirProfilConnecte;
   final CompetitionController competitionController;
+  final InscriptionController inscriptionController;
+  final CompetitionsOuvertesController competitionsOuvertesController;
 
   @override
   State<AuthGate> createState() {
@@ -62,6 +69,8 @@ class _AuthGateState extends State<AuthGate> {
       setState(() {
         if (authState.session == null) {
           widget.competitionController.reinitialiser();
+          widget.competitionsOuvertesController.reinitialiser();
+          widget.inscriptionController.reinitialiser();
           _profilFuture = null;
         } else {
           _profilFuture = widget.obtenirProfilConnecte.executer();
@@ -109,6 +118,7 @@ class _AuthGateState extends State<AuthGate> {
         builder: (context) {
           return CompetitionsPage(
             controller: widget.competitionController,
+            inscriptionController: widget.inscriptionController,
             profilCoach: profilCoach,
           );
         },
@@ -177,10 +187,11 @@ class _AuthGateState extends State<AuthGate> {
           );
         }
 
-        return AthletesPage(
+        return AthleteDashboardPage(
           key: ValueKey(session.user.id),
-          controller: widget.athleteController,
-          inscrireAthlete: widget.inscrireAthlete,
+          profil: profil,
+          competitionsController: widget.competitionsOuvertesController,
+          inscriptionController: widget.inscriptionController,
           deconnecterUtilisateur: widget.deconnecterUtilisateur,
         );
       },

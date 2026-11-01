@@ -13,6 +13,9 @@ abstract interface class CompetitionRepository {
   /// Enregistre les modifications d’une compétition existante.
   Future<Competition> modifier(Competition competition);
 
+  /// Récupère toutes les compétitions ouvertes aux inscriptions.
+  Future<List<Competition>> obtenirOuvertes();
+
   /// Supprime une compétition.
   Future<void> supprimer(String id);
 }

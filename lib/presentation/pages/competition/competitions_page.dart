@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../domain/entities/competition.dart';
 import '../../../domain/entities/profil_utilisateur.dart';
 import '../../controllers/competition_controller.dart';
+import '../../controllers/inscription_controller.dart';
 import '../../widgets/competition/carte_competition.dart';
 import 'creer_competition_page.dart';
 import 'detail_competition_page.dart';
@@ -11,10 +12,12 @@ class CompetitionsPage extends StatefulWidget {
   const CompetitionsPage({
     super.key,
     required this.controller,
+    required this.inscriptionController,
     required this.profilCoach,
   });
 
   final CompetitionController controller;
+  final InscriptionController inscriptionController;
   final ProfilUtilisateur profilCoach;
 
   @override
@@ -89,6 +92,7 @@ class _CompetitionsPageState extends State<CompetitionsPage> {
           return DetailCompetitionPage(
             competition: competition,
             controller: _controller,
+            inscriptionController: widget.inscriptionController,
           );
         },
       ),

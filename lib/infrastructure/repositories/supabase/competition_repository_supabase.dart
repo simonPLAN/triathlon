@@ -133,6 +133,31 @@ class CompetitionRepositorySupabase implements CompetitionRepository {
   }
 
   @override
+  Future<List<Competition>> obtenirOuvertes() async {
+    _utilisateurConnecte();
+
+    try {
+      final donnees = await _client
+          .from(_nomTable)
+          .select(
+            'id, nom, description, lieu, date_competition, '
+            'statut, coach_id, date_creation, date_modification',
+          )
+          .eq('statut', 'ouverte')
+          .order('date_competition', ascending: true);
+
+      return donnees
+          .map<Competition>(_convertirDepuisSupabase)
+          .toList(growable: false);
+    } on PostgrestException catch (exception) {
+      throw Exception(
+        'Impossible de charger les compétitions ouvertes : '
+        '${exception.message}',
+      );
+    }
+  }
+
+  @override
   Future<void> supprimer(String id) async {
     final utilisateur = _utilisateurConnecte();
     final idNettoye = id.trim();
