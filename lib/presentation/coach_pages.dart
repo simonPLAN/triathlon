@@ -105,8 +105,9 @@ class TousAthletes extends StatelessWidget {
       builder: (c, s) {
         if (!s.hasData) return const Busy();
         final rows = s.data!;
-        if (rows.isEmpty)
+        if (rows.isEmpty) {
           return const Center(child: Text('Aucun athlète enregistré.'));
+        }
         return ListView.builder(
           itemCount: rows.length,
           itemBuilder: (_, i) => ListTile(
@@ -152,8 +153,9 @@ class _CoachCompetitionsState extends State<CoachCompetitions> {
       builder: (c, s) {
         if (s.hasError) return Center(child: Text('${s.error}'));
         if (!s.hasData) return const Busy();
-        if (s.data!.isEmpty)
+        if (s.data!.isEmpty) {
           return const Center(child: Text('Aucune compétition.'));
+        }
         return ListView.builder(
           padding: const EdgeInsets.all(12),
           itemCount: s.data!.length,

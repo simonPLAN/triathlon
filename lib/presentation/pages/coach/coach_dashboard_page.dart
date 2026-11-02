@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import '../../../application/use_cases/deconnecter_utilisateur.dart';
 import '../../../domain/entities/profil_utilisateur.dart';
 import '../../widgets/coach/entete_coach.dart';
-import '../../widgets/coach/etapes_coach.dart';
 import '../../widgets/coach/grille_actions_coach.dart';
 
 class CoachDashboardPage extends StatelessWidget {
@@ -24,10 +23,7 @@ class CoachDashboardPage extends StatelessWidget {
     try {
       await deconnecterUtilisateur.executer();
     } catch (exception) {
-      if (!context.mounted) {
-        return;
-      }
-
+      if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(exception.toString().replaceFirst('Exception: ', '')),
@@ -36,60 +32,53 @@ class CoachDashboardPage extends StatelessWidget {
     }
   }
 
-  void _afficherFonctionnaliteEnPreparation(
-    BuildContext context,
-    String fonctionnalite,
-  ) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('$fonctionnalite sera ajoutée prochainement.')),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
+      backgroundColor: theme.colorScheme.surface,
       appBar: AppBar(
         title: const Text('Espace coach'),
         actions: [
           IconButton(
             tooltip: 'Se déconnecter',
             onPressed: () => _deconnecter(context),
-            icon: const Icon(Icons.logout),
+            icon: const Icon(Icons.logout_outlined),
           ),
+          const SizedBox(width: 8),
         ],
       ),
       body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            EnteteCoach(profil: profil),
-            const SizedBox(height: 24),
-            Text('Gestion', style: Theme.of(context).textTheme.titleLarge),
-            const SizedBox(height: 12),
-            GrilleActionsCoach(
-              onVoirCompetitions: onVoirCompetitions,
-              onVoirAthletes: onVoirAthletes,
-              onVoirManches: () {
-                _afficherFonctionnaliteEnPreparation(
-                  context,
-                  'La gestion des manches',
-                );
-              },
-              onVoirResultats: () {
-                _afficherFonctionnaliteEnPreparation(
-                  context,
-                  'La gestion des résultats',
-                );
-              },
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 960),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  EnteteCoach(profil: profil),
+                  const SizedBox(height: 32),
+                  Text(
+                    'Votre espace de gestion',
+                    style: theme.textTheme.titleLarge,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Retrouvez vos événements et les athlètes de votre club.',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  GrilleActionsCoach(
+                    onVoirCompetitions: onVoirCompetitions,
+                    onVoirAthletes: onVoirAthletes,
+                  ),
+                ],
+              ),
             ),
-            const SizedBox(height: 24),
-            Text(
-              'Démarrage rapide',
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-            const SizedBox(height: 12),
-            const EtapesCoach(),
-          ],
+          ),
         ),
       ),
     );

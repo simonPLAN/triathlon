@@ -9,52 +9,51 @@ class EnteteCoach extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      color: Theme.of(context).colorScheme.primaryContainer,
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Row(
-          children: [
-            CircleAvatar(
-              radius: 30,
-              backgroundColor: Theme.of(context).colorScheme.primary,
-              child: Text(
-                _initiales,
-                style: TextStyle(
-                  color: Theme.of(context).colorScheme.onPrimary,
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
+    final theme = Theme.of(context);
+    final couleurs = theme.colorScheme;
+    return Container(
+      padding: const EdgeInsets.all(28),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [couleurs.primaryContainer, couleurs.secondaryContainer],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(28),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.sports_outlined, color: couleurs.onPrimaryContainer),
+              const SizedBox(width: 8),
+              Text(
+                'COACH',
+                style: theme.textTheme.labelLarge?.copyWith(
+                  color: couleurs.onPrimaryContainer,
+                  letterSpacing: 2,
                 ),
               ),
+            ],
+          ),
+          const SizedBox(height: 24),
+          Text(
+            'Bonjour ${profil.prenom}',
+            style: theme.textTheme.headlineMedium?.copyWith(
+              fontWeight: FontWeight.bold,
+              color: couleurs.onPrimaryContainer,
             ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Bonjour ${profil.prenom}',
-                    style: Theme.of(context).textTheme.headlineSmall,
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Compte coach',
-                    style: Theme.of(context).textTheme.bodyLarge,
-                  ),
-                ],
-              ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'Vos compétitions, votre équipe, une seule vue.',
+            style: theme.textTheme.bodyLarge?.copyWith(
+              color: couleurs.onPrimaryContainer,
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
-  }
-
-  String get _initiales {
-    final initialePrenom = profil.prenom.isEmpty ? '' : profil.prenom[0];
-
-    final initialeNom = profil.nom.isEmpty ? '' : profil.nom[0];
-
-    return '$initialePrenom$initialeNom'.toUpperCase();
   }
 }

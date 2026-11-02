@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'resultats_athlete_page.dart';
+
 import '../../../application/use_cases/deconnecter_utilisateur.dart';
 import '../../../domain/entities/competition.dart';
 import '../../../domain/entities/inscription.dart';
@@ -32,6 +34,28 @@ class AthleteDashboardPage extends StatefulWidget {
 }
 
 class _AthleteDashboardPageState extends State<AthleteDashboardPage> {
+  bool _mesCompetitions = true;
+  List<Competition> get _competitionsAffichees => _mesCompetitions
+      ? _competitionsController.inscrites
+      : _competitionsController.competitions;
+
+  List<Competition> get _toutesCompetitions => {
+    for (final c in _competitionsController.competitions) c.id: c,
+    for (final c in _competitionsController.inscrites) c.id: c,
+  }.values.toList();
+
+  void _ouvrirResultats(Competition competition) {
+    Navigator.of(context).push<void>(
+      MaterialPageRoute(
+        builder: (_) => ResultatsAthletePage(
+          competition: competition,
+          controller: _competitionsController,
+          athleteId: widget.profil.id,
+        ),
+      ),
+    );
+  }
+
   CompetitionsOuvertesController get _competitionsController {
     return widget.competitionsController;
   }
@@ -102,6 +126,7 @@ class _AthleteDashboardPageState extends State<AthleteDashboardPage> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('Tu es désinscrit de « ${competition.nom} ».')),
     );
+    await _recharger();
   }
 
   @override
@@ -138,7 +163,7 @@ class _AthleteDashboardPageState extends State<AthleteDashboardPage> {
     }
 
     await _inscriptionController.verifierInscriptionsUtilisateur(
-      _competitionsController.competitions,
+      _toutesCompetitions,
     );
   }
 
@@ -152,7 +177,7 @@ class _AthleteDashboardPageState extends State<AthleteDashboardPage> {
     }
 
     await _inscriptionController.verifierInscriptionsUtilisateur(
-      _competitionsController.competitions,
+      _toutesCompetitions,
     );
   }
 
@@ -233,6 +258,7 @@ class _AthleteDashboardPageState extends State<AthleteDashboardPage> {
         ),
       ),
     );
+    await _recharger();
   }
 
   void _afficherErreur(String message) {
@@ -274,6 +300,24 @@ class _AthleteDashboardPageState extends State<AthleteDashboardPage> {
         child: Column(
           children: [
             _EnteteAthlete(profil: widget.profil),
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: Wrap(
+                spacing: 8,
+                children: [
+                  ChoiceChip(
+                    label: const Text('Mes compétitions'),
+                    selected: _mesCompetitions,
+                    onSelected: (_) => setState(() => _mesCompetitions = true),
+                  ),
+                  ChoiceChip(
+                    label: const Text('Inscriptions ouvertes'),
+                    selected: !_mesCompetitions,
+                    onSelected: (_) => setState(() => _mesCompetitions = false),
+                  ),
+                ],
+              ),
+            ),
             Expanded(child: _construireContenu()),
           ],
         ),
@@ -282,33 +326,53 @@ class _AthleteDashboardPageState extends State<AthleteDashboardPage> {
   }
 
   Widget _construireContenu() {
-    if (_competitionsController.chargement &&
-        _competitionsController.competitions.isEmpty) {
+    if (_competitionsController.chargement && _competitionsAffichees.isEmpty) {
       return const _ChargementCompetitions();
     }
 
-    if (_competitionsController.erreur != null &&
-        _competitionsController.competitions.isEmpty) {
+    if (!_mesCompetitions &&
+        _competitionsController.erreur != null &&
+        _competitionsAffichees.isEmpty) {
       return _ErreurCompetitions(
         message: _competitionsController.erreur!,
         onReessayer: _recharger,
       );
     }
 
-    if (_competitionsController.competitions.isEmpty) {
-      return const _AucuneCompetitionOuverte();
+    if (_mesCompetitions &&
+        _competitionsController.erreurInscriptions != null) {
+      return _ErreurCompetitions(
+        message: _competitionsController.erreurInscriptions!,
+        onReessayer: _recharger,
+      );
+    }
+    if (_competitionsAffichees.isEmpty) {
+      if (!_mesCompetitions) return const _AucuneCompetitionOuverte();
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('Tu n’es inscrit à aucune compétition.'),
+            const SizedBox(height: 12),
+            TextButton(
+              onPressed: () => setState(() => _mesCompetitions = false),
+              child: const Text('Voir les inscriptions ouvertes'),
+            ),
+          ],
+        ),
+      );
     }
 
     return RefreshIndicator(
       onRefresh: _recharger,
       child: ListView.separated(
         padding: const EdgeInsets.all(16),
-        itemCount: _competitionsController.competitions.length,
+        itemCount: _competitionsAffichees.length,
         separatorBuilder: (_, _) {
           return const SizedBox(height: 12);
         },
         itemBuilder: (context, index) {
-          final competition = _competitionsController.competitions[index];
+          final competition = _competitionsAffichees[index];
 
           final inscription = _inscriptionController.inscriptionUtilisateurPour(
             competition.id,
@@ -327,10 +391,13 @@ class _AthleteDashboardPageState extends State<AthleteDashboardPage> {
             verificationEffectuee: verificationEffectuee,
             inscriptionEnCours: _inscriptionController.inscriptionEnCours,
             desinscriptionEnCours: _inscriptionController.desinscriptionEnCours,
-            onInscrire: () {
-              _inscrire(competition);
-            },
-            onDesinscrire: inscription == null
+            onInscrire: competition.estOuverte
+                ? () => _inscrire(competition)
+                : null,
+            onVoirResultats: inscription != null || _mesCompetitions
+                ? () => _ouvrirResultats(competition)
+                : null,
+            onDesinscrire: inscription == null || !competition.estOuverte
                 ? null
                 : () {
                     _desinscrire(competition, inscription);
@@ -366,10 +433,7 @@ class _EnteteAthlete extends StatelessWidget {
                   style: Theme.of(context).textTheme.titleLarge,
                 ),
                 const SizedBox(height: 2),
-                const Text(
-                  'Compétitions ouvertes '
-                  'aux inscriptions',
-                ),
+                const Text('Tes compétitions et tes résultats'),
               ],
             ),
           ),
@@ -397,6 +461,7 @@ class _CarteCompetitionAthlete extends StatelessWidget {
     required this.desinscriptionEnCours,
     required this.onInscrire,
     required this.onDesinscrire,
+    this.onVoirResultats,
   });
 
   final Competition competition;
@@ -405,8 +470,9 @@ class _CarteCompetitionAthlete extends StatelessWidget {
   final bool verificationEffectuee;
   final bool inscriptionEnCours;
   final bool desinscriptionEnCours;
-  final VoidCallback onInscrire;
+  final VoidCallback? onInscrire;
   final VoidCallback? onDesinscrire;
+  final VoidCallback? onVoirResultats;
 
   @override
   Widget build(BuildContext context) {
@@ -473,6 +539,14 @@ class _CarteCompetitionAthlete extends StatelessWidget {
               onInscrire: onInscrire,
               onDesinscrire: onDesinscrire,
             ),
+            if (onVoirResultats != null) ...[
+              const SizedBox(height: 8),
+              FilledButton.icon(
+                onPressed: onVoirResultats,
+                icon: const Icon(Icons.leaderboard_outlined),
+                label: const Text('Voir les résultats'),
+              ),
+            ],
           ],
         ),
       ),
@@ -504,7 +578,7 @@ class _SectionInscriptionAthlete extends StatelessWidget {
   final bool verificationEffectuee;
   final bool inscriptionEnCours;
   final bool desinscriptionEnCours;
-  final VoidCallback onInscrire;
+  final VoidCallback? onInscrire;
   final VoidCallback? onDesinscrire;
 
   @override
@@ -575,19 +649,20 @@ class _SectionInscriptionAthlete extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 8),
-          OutlinedButton.icon(
-            onPressed: desinscriptionEnCours ? null : onDesinscrire,
-            icon: desinscriptionEnCours
-                ? const SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Icon(Icons.person_remove_outlined),
-            label: Text(
-              desinscriptionEnCours ? 'Désinscription...' : 'Se désinscrire',
+          if (onDesinscrire != null)
+            OutlinedButton.icon(
+              onPressed: desinscriptionEnCours ? null : onDesinscrire,
+              icon: desinscriptionEnCours
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.person_remove_outlined),
+              label: Text(
+                desinscriptionEnCours ? 'Désinscription...' : 'Se désinscrire',
+              ),
             ),
-          ),
         ],
       );
     }

@@ -199,12 +199,14 @@ class AppRepository {
         .update({
           'statut': mancheStatutTo(statut ?? m.statut),
           'heure_depart':
-              depart?.toIso8601String() ?? m.heureDepart?.toIso8601String(),
+              depart?.toUtc().toIso8601String() ??
+              m.heureDepart?.toUtc().toIso8601String(),
           'heure_premiere_arrivee':
-              premiere?.toIso8601String() ??
-              m.heurePremiereArrivee?.toIso8601String(),
+              premiere?.toUtc().toIso8601String() ??
+              m.heurePremiereArrivee?.toUtc().toIso8601String(),
           'heure_fin_delai':
-              fin?.toIso8601String() ?? m.heureFinDelai?.toIso8601String(),
+              fin?.toUtc().toIso8601String() ??
+              m.heureFinDelai?.toUtc().toIso8601String(),
           'resultats_publies': publies ?? m.resultatsPublies,
         })
         .eq('id', m.id)
@@ -320,7 +322,7 @@ class AppRepository {
           'athlete_id': athlete.id,
           'position': position,
           'points': points,
-          'heure_arrivee': now.toIso8601String(),
+          'heure_arrivee': now.toUtc().toIso8601String(),
           'temps_total_millisecondes': total,
           'ecart_premier_millisecondes': now.difference(first).inMilliseconds,
           'statut': 'arrive',

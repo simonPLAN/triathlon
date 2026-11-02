@@ -93,9 +93,13 @@ class Manche {
 
     final heureDepartUtc = heureDepart!.toUtc();
     final heureArriveeUtc = heureArrivee.toUtc();
-    final heureArriveeEffective = heureArriveeUtc.isBefore(heureDepartUtc)
-        ? heureDepartUtc
-        : heureArriveeUtc;
+    if (heureArriveeUtc.isBefore(heureDepartUtc)) {
+      throw ArgumentError(
+        'L’heure d’arrivée ne peut pas précéder l’heure de départ. '
+        'Vérifie les horaires enregistrés et l’horloge de l’appareil.',
+      );
+    }
+    final heureArriveeEffective = heureArriveeUtc;
 
     return copierAvec(
       heurePremiereArrivee: heureArriveeEffective.toLocal(),

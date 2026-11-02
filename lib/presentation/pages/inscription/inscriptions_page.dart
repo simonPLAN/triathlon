@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../widgets/inscription/inscrire_invite_dialog.dart';
+
 import '../../../domain/entities/competition.dart';
 import '../../../domain/entities/inscription.dart';
 import '../../controllers/inscription_controller.dart';
@@ -175,15 +177,21 @@ class _InscriptionsPageState extends State<InscriptionsPage> {
     );
   }
 
-  void _ajouterAthlete() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text(
-          'La sélection d’un athlète sera ajoutée '
-          'à l’étape suivante.',
-        ),
+  Future<void> _ajouterAthlete() async {
+    if (!_modificationsAutorisees || _controller.operationEnCours) return;
+    final succes = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => InscrireInviteDialog(
+        competition: widget.competition,
+        controller: _controller,
       ),
     );
+    if (succes == true && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('L’athlète invité a été inscrit.')),
+      );
+    }
   }
 
   @override
@@ -205,7 +213,7 @@ class _InscriptionsPageState extends State<InscriptionsPage> {
           ? FloatingActionButton.extended(
               onPressed: _controller.operationEnCours ? null : _ajouterAthlete,
               icon: const Icon(Icons.person_add),
-              label: const Text('Inscrire'),
+              label: const Text('Ajouter un invité'),
             )
           : null,
       body: SafeArea(

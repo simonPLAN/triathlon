@@ -20,10 +20,13 @@ class EnregistrerArrivee {
     _verifierAthlete(athlete);
 
     final heureDepart = manche.heureDepart!;
-    final arriveeDemandee = heureArrivee ?? DateTime.now();
-    final arrivee = arriveeDemandee.toUtc().isBefore(heureDepart.toUtc())
-        ? heureDepart
-        : arriveeDemandee;
+    final arrivee = heureArrivee ?? DateTime.now();
+    if (arrivee.toUtc().isBefore(heureDepart.toUtc())) {
+      throw ArgumentError(
+        'L’heure d’arrivée ne peut pas précéder l’heure de départ. '
+        'Vérifie les horaires enregistrés et l’horloge de l’appareil.',
+      );
+    }
 
     final resultatExistant = await _resultatRepository
         .obtenirParAthleteEtManche(mancheId: manche.id, athleteId: athlete.id);

@@ -8,6 +8,10 @@ import 'package:triathlon/presentation/controllers/manche_controller.dart';
 import 'package:triathlon/presentation/controllers/resultat_controller.dart';
 
 import 'app.dart';
+import 'application/use_cases/competition/suivre_competitions_athlete.dart';
+import 'infrastructure/repositories/supabase/suivi_athlete_repository_supabase.dart';
+import 'application/use_cases/inscription/inscrire_invite.dart';
+import 'infrastructure/repositories/supabase/invite_repository_supabase.dart';
 import 'application/use_cases/ajouter_athlete.dart';
 import 'application/use_cases/competition/changer_statut_competition.dart';
 import 'application/use_cases/competition/creer_competition.dart';
@@ -91,6 +95,7 @@ Future<void> main() async {
     DesinscrireAthleteCompetition(inscriptionRepository),
     InscrireUtilisateurConnecte(inscriptionRepository),
     ObtenirInscriptionUtilisateurConnecte(inscriptionRepository),
+    InscrireInvite(InviteRepositorySupabase(clientSupabase)),
   );
   final athleteController = AthleteController(
     ajouterAthlete: AjouterAthlete(athleteRepository),
@@ -98,6 +103,7 @@ Future<void> main() async {
   );
   final competitionsOuvertesController = CompetitionsOuvertesController(
     ListerCompetitionsOuvertes(competitionRepository),
+    SuivreCompetitionsAthlete(SuiviAthleteRepositorySupabase(clientSupabase)),
   );
   final calculPoints = CalculPoints();
   final resultatRepository = ResultatRepositorySupabase(clientSupabase);

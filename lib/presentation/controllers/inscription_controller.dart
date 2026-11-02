@@ -1,5 +1,7 @@
 import 'package:flutter/foundation.dart';
 
+import '../../application/use_cases/inscription/inscrire_invite.dart';
+
 import '../../application/use_cases/inscription/desinscrire_athlete_competition.dart';
 import '../../application/use_cases/inscription/inscrire_athlete_competition.dart';
 import '../../application/use_cases/inscription/inscrire_utilisateur_connecte.dart';
@@ -17,7 +19,10 @@ class InscriptionController extends ChangeNotifier {
     this._desinscrireAthleteCompetition,
     this._inscrireUtilisateurConnecte,
     this._obtenirInscriptionUtilisateurConnecte,
+    this._inscrireInvite,
   );
+
+  final InscrireInvite _inscrireInvite;
 
   final ListerInscriptions _listerInscriptions;
 
@@ -159,6 +164,34 @@ class InscriptionController extends ChangeNotifier {
     } catch (exception) {
       _erreur = _extraireMessageErreur(exception);
       return null;
+    } finally {
+      _inscriptionEnCours = false;
+      notifyListeners();
+    }
+  }
+
+  Future<bool> inscrireInvite({
+    required Competition competition,
+    required String prenom,
+    required String nom,
+    int? numeroDossard,
+  }) async {
+    if (operationEnCours) return false;
+    _inscriptionEnCours = true;
+    _erreur = null;
+    notifyListeners();
+    try {
+      final inscription = await _inscrireInvite.executer(
+        competition: competition,
+        prenom: prenom,
+        nom: nom,
+        numeroDossard: numeroDossard,
+      );
+      _remplacerInscriptionDansListe(inscription);
+      return true;
+    } catch (exception) {
+      _erreur = _extraireMessageErreur(exception);
+      return false;
     } finally {
       _inscriptionEnCours = false;
       notifyListeners();

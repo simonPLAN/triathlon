@@ -7,57 +7,45 @@ class GrilleActionsCoach extends StatelessWidget {
     super.key,
     required this.onVoirCompetitions,
     required this.onVoirAthletes,
-    required this.onVoirManches,
-    required this.onVoirResultats,
   });
 
   final VoidCallback onVoirCompetitions;
   final VoidCallback onVoirAthletes;
-  final VoidCallback onVoirManches;
-  final VoidCallback onVoirResultats;
 
   @override
   Widget build(BuildContext context) {
+    final couleurs = Theme.of(context).colorScheme;
+    final cartes = [
+      CarteActionCoach(
+        titre: 'Mes compétitions',
+        description: 'Organisez vos épreuves, gérez les inscriptions et consultez les résultats.',
+        icone: Icons.emoji_events_outlined,
+        couleur: couleurs.primary,
+        onTap: onVoirCompetitions,
+      ),
+      CarteActionCoach(
+        titre: 'Athlètes',
+        description:
+            'Retrouvez les profils et gérez les athlètes de votre club.',
+        icone: Icons.groups_outlined,
+        couleur: couleurs.tertiary,
+        onTap: onVoirAthletes,
+      ),
+    ];
     return LayoutBuilder(
       builder: (context, contraintes) {
-        final nombreColonnes = contraintes.maxWidth >= 700 ? 4 : 2;
-
-        return GridView.count(
-          crossAxisCount: nombreColonnes,
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          crossAxisSpacing: 12,
-          mainAxisSpacing: 12,
-          childAspectRatio: 1.05,
+        if (contraintes.maxWidth < 640) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [cartes[0], const SizedBox(height: 16), cartes[1]],
+          );
+        }
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            CarteActionCoach(
-              titre: 'Compétitions',
-              description: 'Créer et organiser',
-              icone: Icons.emoji_events,
-              couleur: Colors.orange,
-              onTap: onVoirCompetitions,
-            ),
-            CarteActionCoach(
-              titre: 'Athlètes',
-              description: 'Consulter les inscrits',
-              icone: Icons.groups,
-              couleur: Colors.blue,
-              onTap: onVoirAthletes,
-            ),
-            CarteActionCoach(
-              titre: 'Manches',
-              description: 'Gérer les départs',
-              icone: Icons.timer,
-              couleur: Colors.green,
-              onTap: onVoirManches,
-            ),
-            CarteActionCoach(
-              titre: 'Résultats',
-              description: 'Saisir et publier',
-              icone: Icons.leaderboard,
-              couleur: Colors.purple,
-              onTap: onVoirResultats,
-            ),
+            Expanded(child: cartes[0]),
+            const SizedBox(width: 16),
+            Expanded(child: cartes[1]),
           ],
         );
       },

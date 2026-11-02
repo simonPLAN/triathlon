@@ -34,15 +34,18 @@ class _AuthGateState extends State<AuthGate> {
 
   @override
   Widget build(BuildContext context) {
-    if (widget.repo.client.auth.currentSession == null)
+    if (widget.repo.client.auth.currentSession == null) {
       return LoginPage(repo: widget.repo);
+    }
     return FutureBuilder<ProfilUtilisateur>(
       future: widget.repo.profilConnecte(),
       builder: (c, s) {
-        if (s.hasError)
+        if (s.hasError) {
           return Scaffold(body: Center(child: Text('${s.error}')));
-        if (!s.hasData)
+        }
+        if (!s.hasData) {
           return const Scaffold(body: Busy(label: 'Chargement du profil...'));
+        }
         return s.data!.estCoach
             ? CoachHome(repo: widget.repo, profil: s.data!)
             : AthleteHome(repo: widget.repo, profil: s.data!);

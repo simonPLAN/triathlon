@@ -190,9 +190,11 @@ class MancheRepositorySupabase implements MancheRepository {
       'epreuve_id': manche.epreuveId,
       'numero': manche.numero,
       'statut': _convertirStatutPourSupabase(manche.statut),
-      'heure_depart': manche.heureDepart?.toIso8601String(),
-      'heure_premiere_arrivee': manche.heurePremiereArrivee?.toIso8601String(),
-      'heure_fin_delai': manche.heureFinDelai?.toIso8601String(),
+      'heure_depart': manche.heureDepart?.toUtc().toIso8601String(),
+      'heure_premiere_arrivee': manche.heurePremiereArrivee
+          ?.toUtc()
+          .toIso8601String(),
+      'heure_fin_delai': manche.heureFinDelai?.toUtc().toIso8601String(),
       'resultats_publies': manche.resultatsPublies,
     };
   }
@@ -200,9 +202,11 @@ class MancheRepositorySupabase implements MancheRepository {
   Map<String, dynamic> _convertirPourModification(Manche manche) {
     return {
       'statut': _convertirStatutPourSupabase(manche.statut),
-      'heure_depart': manche.heureDepart?.toIso8601String(),
-      'heure_premiere_arrivee': manche.heurePremiereArrivee?.toIso8601String(),
-      'heure_fin_delai': manche.heureFinDelai?.toIso8601String(),
+      'heure_depart': manche.heureDepart?.toUtc().toIso8601String(),
+      'heure_premiere_arrivee': manche.heurePremiereArrivee
+          ?.toUtc()
+          .toIso8601String(),
+      'heure_fin_delai': manche.heureFinDelai?.toUtc().toIso8601String(),
       'resultats_publies': manche.resultatsPublies,
     };
   }

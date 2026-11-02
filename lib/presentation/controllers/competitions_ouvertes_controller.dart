@@ -1,10 +1,21 @@
 import 'package:flutter/foundation.dart';
 
+import '../../application/use_cases/competition/suivre_competitions_athlete.dart';
+import '../../domain/entities/resultat_publie.dart';
+
 import '../../application/use_cases/competition/lister_competitions_ouvertes.dart';
 import '../../domain/entities/competition.dart';
 
 class CompetitionsOuvertesController extends ChangeNotifier {
-  CompetitionsOuvertesController(this._listerCompetitionsOuvertes);
+  CompetitionsOuvertesController(this._listerCompetitionsOuvertes, this._suivi);
+
+  final SuivreCompetitionsAthlete _suivi;
+  List<Competition> _inscrites = const [];
+  List<Competition> get inscrites => List.unmodifiable(_inscrites);
+  String? erreurInscriptions;
+
+  Future<List<ResultatPublie>> resultatsPublies(String competitionId) =>
+      _suivi.resultatsPublies(competitionId);
 
   final ListerCompetitionsOuvertes _listerCompetitionsOuvertes;
 
@@ -38,6 +49,12 @@ class CompetitionsOuvertesController extends ChangeNotifier {
       _trierCompetitions();
     } catch (exception) {
       _erreur = _extraireMessageErreur(exception);
+    }
+    erreurInscriptions = null;
+    try {
+      _inscrites = await _suivi.listerInscriptions();
+    } catch (exception) {
+      erreurInscriptions = _extraireMessageErreur(exception);
     } finally {
       _chargement = false;
       notifyListeners();
@@ -67,6 +84,8 @@ class CompetitionsOuvertesController extends ChangeNotifier {
 
   void reinitialiser() {
     _competitions = const [];
+    _inscrites = const [];
+    erreurInscriptions = null;
     _chargement = false;
     _erreur = null;
 

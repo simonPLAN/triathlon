@@ -88,7 +88,6 @@ class _DetailCompetitionPageState extends State<DetailCompetitionPage> {
             epreuveController: widget.epreuveController,
             mancheController: widget.mancheController,
             resultatController: widget.resultatController,
-            inscriptionController: widget.inscriptionController,
           );
         },
       ),
@@ -295,7 +294,6 @@ class _DetailCompetitionPageState extends State<DetailCompetitionPage> {
             _ActionsCompetition(
               onVoirAthletes: _ouvrirInscriptions,
               onVoirEpreuves: _ouvrirEpreuves,
-              onVoirManches: _ouvrirEpreuves,
               onVoirResultats: _ouvrirDashboardResultats,
             ),
           ],
@@ -459,20 +457,18 @@ class _ActionsCompetition extends StatelessWidget {
   const _ActionsCompetition({
     required this.onVoirAthletes,
     required this.onVoirEpreuves,
-    required this.onVoirManches,
     required this.onVoirResultats,
   });
 
   final VoidCallback onVoirAthletes;
   final VoidCallback onVoirEpreuves;
-  final VoidCallback onVoirManches;
   final VoidCallback onVoirResultats;
 
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, contraintes) {
-        final nombreColonnes = contraintes.maxWidth >= 700 ? 4 : 2;
+        final nombreColonnes = contraintes.maxWidth >= 700 ? 3 : 2;
 
         return GridView.count(
           crossAxisCount: nombreColonnes,
@@ -495,13 +491,6 @@ class _ActionsCompetition extends StatelessWidget {
               icone: Icons.directions_run_outlined,
               couleur: Colors.orange,
               onTap: onVoirEpreuves,
-            ),
-            _CarteActionCompetition(
-              titre: 'Manches',
-              description: 'Organiser les départs',
-              icone: Icons.timer_outlined,
-              couleur: Colors.green,
-              onTap: onVoirManches,
             ),
             _CarteActionCompetition(
               titre: 'Résultats',

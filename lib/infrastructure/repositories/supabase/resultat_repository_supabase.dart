@@ -230,12 +230,12 @@ class ResultatRepositorySupabase implements ResultatRepository {
       'athlete_id': resultat.athlete.id,
       'position': resultat.position,
       'points': resultat.points,
-      'heure_arrivee': resultat.heureArrivee?.toIso8601String(),
+      'heure_arrivee': resultat.heureArrivee?.toUtc().toIso8601String(),
       'temps_total_millisecondes': resultat.tempsTotalMillisecondes,
       'ecart_premier_millisecondes': resultat.ecartPremierMillisecondes,
       'statut': _convertirStatutPourSupabase(resultat.statut),
       'commentaire': resultat.commentaire,
-      'date_publication': resultat.datePublication?.toIso8601String(),
+      'date_publication': resultat.datePublication?.toUtc().toIso8601String(),
     };
   }
 
@@ -243,12 +243,12 @@ class ResultatRepositorySupabase implements ResultatRepository {
     return {
       'position': resultat.position,
       'points': resultat.points,
-      'heure_arrivee': resultat.heureArrivee?.toIso8601String(),
+      'heure_arrivee': resultat.heureArrivee?.toUtc().toIso8601String(),
       'temps_total_millisecondes': resultat.tempsTotalMillisecondes,
       'ecart_premier_millisecondes': resultat.ecartPremierMillisecondes,
       'statut': _convertirStatutPourSupabase(resultat.statut),
       'commentaire': resultat.commentaire,
-      'date_publication': resultat.datePublication?.toIso8601String(),
+      'date_publication': resultat.datePublication?.toUtc().toIso8601String(),
     };
   }
 

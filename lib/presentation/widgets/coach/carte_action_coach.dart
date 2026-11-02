@@ -18,27 +18,50 @@ class CarteActionCoach extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
+    final theme = Theme.of(context);
+    return Card.outlined(
+      margin: EdgeInsets.zero,
       clipBehavior: Clip.antiAlias,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(24),
+        side: BorderSide(color: theme.colorScheme.outlineVariant),
+      ),
       child: InkWell(
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(24),
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(icone, size: 42, color: couleur),
-              const SizedBox(height: 12),
-              Text(
-                titre,
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.titleMedium,
+              DecoratedBox(
+                decoration: BoxDecoration(
+                  color: couleur.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(14),
+                  child: Icon(icone, size: 30, color: couleur),
+                ),
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: 24),
+              Text(titre, style: theme.textTheme.titleLarge),
+              const SizedBox(height: 8),
               Text(
                 description,
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.bodySmall,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+              const SizedBox(height: 24),
+              Row(
+                children: [
+                  Text(
+                    'Ouvrir',
+                    style: theme.textTheme.labelLarge?.copyWith(color: couleur),
+                  ),
+                  const Spacer(),
+                  Icon(Icons.arrow_forward_rounded, color: couleur),
+                ],
               ),
             ],
           ),

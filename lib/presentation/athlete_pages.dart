@@ -51,9 +51,12 @@ class _AthleteHomeState extends State<AthleteHome> {
     body: FutureBuilder(
       future: future,
       builder: (c, s) {
-        if (!s.hasData) return const Busy();
-        if (s.data!.isEmpty)
+        if (!s.hasData) {
+          return const Busy();
+        }
+        if (s.data!.isEmpty) {
           return const Center(child: Text('Aucune compétition ouverte.'));
+        }
         return ListView.builder(
           padding: const EdgeInsets.all(12),
           itemCount: s.data!.length,
@@ -75,8 +78,9 @@ class _AthleteHomeState extends State<AthleteHome> {
                             mine[x.id] = await widget.repo.inscrire(x.id);
                             setState(() {});
                           } catch (e) {
-                            if (c.mounted)
+                            if (c.mounted) {
                               message(c, e.toString(), erreur: true);
+                            }
                           }
                         },
                         icon: const Icon(Icons.how_to_reg),
