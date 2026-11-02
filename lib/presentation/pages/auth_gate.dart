@@ -11,7 +11,9 @@ import '../../domain/entities/profil_utilisateur.dart';
 import '../controllers/athlete_controller.dart';
 import '../controllers/competition_controller.dart';
 import '../controllers/competitions_ouvertes_controller.dart';
+import '../controllers/epreuve_controller.dart';
 import '../controllers/inscription_controller.dart';
+import '../controllers/manche_controller.dart';
 import 'athlete/athlete_dashboard_page.dart';
 import 'athletes_page.dart';
 import 'coach/coach_dashboard_page.dart';
@@ -30,6 +32,8 @@ class AuthGate extends StatefulWidget {
     required this.obtenirProfilConnecte,
     required this.inscriptionController,
     required this.competitionsOuvertesController,
+    required this.epreuveController,
+    required this.mancheController,
   });
 
   final SupabaseClient clientSupabase;
@@ -41,6 +45,8 @@ class AuthGate extends StatefulWidget {
   final CompetitionController competitionController;
   final InscriptionController inscriptionController;
   final CompetitionsOuvertesController competitionsOuvertesController;
+  final EpreuveController epreuveController;
+  final MancheController mancheController;
 
   @override
   State<AuthGate> createState() {
@@ -71,6 +77,8 @@ class _AuthGateState extends State<AuthGate> {
           widget.competitionController.reinitialiser();
           widget.competitionsOuvertesController.reinitialiser();
           widget.inscriptionController.reinitialiser();
+          widget.epreuveController.reinitialiser();
+          widget.mancheController.reinitialiser();
           _profilFuture = null;
         } else {
           _profilFuture = widget.obtenirProfilConnecte.executer();
@@ -120,6 +128,8 @@ class _AuthGateState extends State<AuthGate> {
             controller: widget.competitionController,
             inscriptionController: widget.inscriptionController,
             profilCoach: profilCoach,
+            epreuveController: widget.epreuveController,
+            mancheController: widget.mancheController,
           );
         },
       ),

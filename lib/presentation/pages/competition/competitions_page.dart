@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import '../../../domain/entities/competition.dart';
 import '../../../domain/entities/profil_utilisateur.dart';
 import '../../controllers/competition_controller.dart';
+import '../../controllers/epreuve_controller.dart';
 import '../../controllers/inscription_controller.dart';
+import '../../controllers/manche_controller.dart';
 import '../../widgets/competition/carte_competition.dart';
 import 'creer_competition_page.dart';
 import 'detail_competition_page.dart';
@@ -14,11 +16,15 @@ class CompetitionsPage extends StatefulWidget {
     required this.controller,
     required this.inscriptionController,
     required this.profilCoach,
+    required this.epreuveController,
+    required this.mancheController,
   });
 
   final CompetitionController controller;
   final InscriptionController inscriptionController;
   final ProfilUtilisateur profilCoach;
+  final EpreuveController epreuveController;
+  final MancheController mancheController;
 
   @override
   State<CompetitionsPage> createState() {
@@ -93,6 +99,8 @@ class _CompetitionsPageState extends State<CompetitionsPage> {
             competition: competition,
             controller: _controller,
             inscriptionController: widget.inscriptionController,
+            epreuveController: widget.epreuveController,
+            mancheController: widget.mancheController,
           );
         },
       ),

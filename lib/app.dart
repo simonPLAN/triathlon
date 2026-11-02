@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:triathlon/presentation/controllers/competition_controller.dart';
 import 'package:triathlon/presentation/controllers/competitions_ouvertes_controller.dart';
+import 'package:triathlon/presentation/controllers/epreuve_controller.dart';
 import 'package:triathlon/presentation/controllers/inscription_controller.dart';
+import 'package:triathlon/presentation/controllers/manche_controller.dart';
 
 import 'application/use_cases/connecter_utilisateur.dart';
 import 'application/use_cases/deconnecter_utilisateur.dart';
@@ -23,6 +25,8 @@ class TriathlonApp extends StatelessWidget {
     required this.inscrireAthlete,
     required this.obtenirProfilConnecte,
     required this.competitionsOuvertesController,
+    required this.epreuveController,
+    required this.mancheController,
   });
 
   final SupabaseClient clientSupabase;
@@ -34,6 +38,8 @@ class TriathlonApp extends StatelessWidget {
   final ObtenirProfilConnecte obtenirProfilConnecte;
   final InscriptionController inscriptionController;
   final CompetitionsOuvertesController competitionsOuvertesController;
+  final EpreuveController epreuveController;
+  final MancheController mancheController;
 
   @override
   Widget build(BuildContext context) {
@@ -54,6 +60,8 @@ class TriathlonApp extends StatelessWidget {
         obtenirProfilConnecte: obtenirProfilConnecte,
         inscriptionController: inscriptionController,
         competitionsOuvertesController: competitionsOuvertesController,
+        epreuveController: epreuveController,
+        mancheController: mancheController,
       ),
     );
   }

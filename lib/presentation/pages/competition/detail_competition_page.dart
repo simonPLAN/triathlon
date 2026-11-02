@@ -3,9 +3,12 @@ import 'package:flutter/material.dart';
 import '../../../domain/entities/competition.dart';
 import '../../../domain/entities/statut_competition.dart';
 import '../../controllers/competition_controller.dart';
+import '../../controllers/epreuve_controller.dart';
 import '../../controllers/inscription_controller.dart';
+import '../../controllers/manche_controller.dart';
 import '../../widgets/competition/actions_statut_competition.dart';
 import '../../widgets/competition/badge_statut_competition.dart';
+import '../epreuve/epreuves_page.dart';
 import '../inscription/inscriptions_page.dart';
 import 'modifier_competition_page.dart';
 
@@ -15,11 +18,15 @@ class DetailCompetitionPage extends StatefulWidget {
     required this.competition,
     required this.controller,
     required this.inscriptionController,
+    required this.epreuveController,
+    required this.mancheController,
   });
 
   final Competition competition;
   final CompetitionController controller;
   final InscriptionController inscriptionController;
+  final EpreuveController epreuveController;
+  final MancheController mancheController;
 
   @override
   State<DetailCompetitionPage> createState() {
@@ -45,6 +52,20 @@ class _DetailCompetitionPageState extends State<DetailCompetitionPage> {
           return InscriptionsPage(
             competition: _competition,
             controller: widget.inscriptionController,
+          );
+        },
+      ),
+    );
+  }
+
+  Future<void> _ouvrirEpreuves() async {
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(
+        builder: (context) {
+          return EpreuvesPage(
+            competition: _competition,
+            controller: widget.epreuveController,
+            mancheController: widget.mancheController,
           );
         },
       ),
@@ -259,12 +280,7 @@ class _DetailCompetitionPageState extends State<DetailCompetitionPage> {
             const SizedBox(height: 12),
             _ActionsCompetition(
               onVoirAthletes: _ouvrirInscriptions,
-              onVoirEpreuves: () {
-                _fonctionnaliteEnPreparation(
-                  context,
-                  'La gestion des épreuves',
-                );
-              },
+              onVoirEpreuves: _ouvrirEpreuves,
               onVoirManches: () {
                 _fonctionnaliteEnPreparation(context, 'La gestion des manches');
               },
