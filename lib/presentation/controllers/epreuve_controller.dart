@@ -1,12 +1,18 @@
 import 'package:flutter/foundation.dart';
 
+import '../../application/use_cases/epreuve/configurer_epreuves.dart';
+
 import '../../application/use_cases/epreuve/creer_epreuve.dart';
 import '../../application/use_cases/epreuve/lister_epreuves.dart';
 import '../../domain/entities/epreuve.dart';
 import '../../domain/entities/type_discipline.dart';
 
 class EpreuveController extends ChangeNotifier {
-  EpreuveController(this._creerEpreuve, this._listerEpreuves);
+  EpreuveController(this._creerEpreuve, this._listerEpreuves, this._configurer);
+  final ConfigurerEpreuves _configurer;
+  bool _actionEnCours = false;
+  bool get operationEnCours =>
+      _actionEnCours || _chargement || _creationEnCours;
 
   final CreerEpreuve _creerEpreuve;
   final ListerEpreuves _listerEpreuves;
@@ -33,7 +39,7 @@ class EpreuveController extends ChangeNotifier {
   bool get aUneErreur => _erreur != null;
 
   Future<void> charger(String competitionId) async {
-    if (_chargement) {
+    if (operationEnCours) {
       return;
     }
 
@@ -75,7 +81,7 @@ class EpreuveController extends ChangeNotifier {
     required int ordre,
     required int dureeLimiteSecondes,
   }) async {
-    if (_creationEnCours) {
+    if (operationEnCours) {
       return null;
     }
 
@@ -115,6 +121,59 @@ class EpreuveController extends ChangeNotifier {
       notifyListeners();
     }
   }
+
+  Future<bool> _executerModification(Future<void> Function() action) async {
+    if (operationEnCours) return false;
+    _actionEnCours = true;
+    _erreur = null;
+    notifyListeners();
+    try {
+      await action();
+      _trierEpreuves();
+      return true;
+    } catch (exception) {
+      _erreur = _extraireMessageErreur(exception);
+      return false;
+    } finally {
+      _actionEnCours = false;
+      notifyListeners();
+    }
+  }
+
+  Future<bool> modifier(Epreuve epreuve) => _executerModification(() async {
+    final actualisee = await _configurer.modifier(epreuve);
+    _epreuves = _epreuves
+        .map((e) => e.id == actualisee.id ? actualisee : e)
+        .toList();
+  });
+
+  Future<bool> supprimer(Epreuve epreuve) => _executerModification(() async {
+    await _configurer.supprimer(epreuve);
+    _epreuves = _epreuves.where((e) => e.id != epreuve.id).toList();
+  });
+
+  Future<bool> deplacer(Epreuve epreuve, int direction) =>
+      _executerModification(() async {
+        if (direction != -1 && direction != 1) {
+          throw ArgumentError('Direction invalide.');
+        }
+        final liste = [..._epreuves];
+        final index = liste.indexWhere((e) => e.id == epreuve.id);
+        final destination = index + direction;
+        if (index < 0 || destination < 0 || destination >= liste.length) {
+          throw StateError('Déplacement impossible.');
+        }
+        liste.removeAt(index);
+        liste.insert(destination, epreuve);
+        await _configurer.reordonner(
+          epreuve.competitionId,
+          liste.map((e) => e.id).toList(),
+        );
+        _epreuves = [
+          for (var i = 0; i < liste.length; i++)
+            liste[i].copierAvec(ordre: i + 1),
+        ];
+      });
 
   Future<void> recharger() async {
     final competitionId = _competitionChargeeId;

@@ -28,6 +28,13 @@ class EnregistrerArrivee {
       );
     }
 
+    final finDelai = manche.heureFinDelai;
+    if (finDelai != null && !arrivee.isBefore(finDelai)) {
+      throw StateError(
+        'Le délai est écoulé : aucune nouvelle arrivée ne peut être enregistrée.',
+      );
+    }
+
     final resultatExistant = await _resultatRepository
         .obtenirParAthleteEtManche(mancheId: manche.id, athleteId: athlete.id);
 

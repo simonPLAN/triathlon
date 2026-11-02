@@ -8,6 +8,8 @@ import 'package:triathlon/presentation/controllers/manche_controller.dart';
 import 'package:triathlon/presentation/controllers/resultat_controller.dart';
 
 import 'app.dart';
+import 'application/use_cases/epreuve/verifier_competition_brouillon.dart';
+import 'application/use_cases/epreuve/configurer_epreuves.dart';
 import 'application/use_cases/competition/suivre_competitions_athlete.dart';
 import 'infrastructure/repositories/supabase/suivi_athlete_repository_supabase.dart';
 import 'application/use_cases/inscription/inscrire_invite.dart';
@@ -74,11 +76,19 @@ Future<void> main() async {
   final athleteRepository = AthleteRepositorySupabase(clientSupabase);
   final authRepository = AuthRepositorySupabase(clientSupabase);
   final epreuveRepository = EpreuveRepositorySupabase(clientSupabase);
-  final epreuveController = EpreuveController(
-    CreerEpreuve(epreuveRepository),
-    ListerEpreuves(epreuveRepository),
-  );
   final mancheRepository = MancheRepositorySupabase(clientSupabase);
+  final verifierConfiguration = VerifierCompetitionBrouillon(
+    competitionRepository,
+  );
+  final epreuveController = EpreuveController(
+    CreerEpreuve(epreuveRepository, verifierConfiguration),
+    ListerEpreuves(epreuveRepository),
+    ConfigurerEpreuves(
+      epreuveRepository,
+      mancheRepository,
+      verifierConfiguration,
+    ),
+  );
   final mancheController = MancheController(
     GenererManchesPourEpreuve(mancheRepository),
     ListerManches(mancheRepository),

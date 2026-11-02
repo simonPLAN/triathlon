@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+import 'modifier_epreuve_page.dart';
+import '../../widgets/epreuve/actions_configuration_epreuve.dart';
+
 import '../../../domain/entities/competition.dart';
 import '../../../domain/entities/epreuve.dart';
 import '../../controllers/epreuve_controller.dart';
@@ -97,6 +100,69 @@ class _EpreuvesPageState extends State<EpreuvesPage> {
     );
   }
 
+  void _afficherErreurConfiguration() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(_controller.erreur ?? 'Configuration impossible.'),
+      ),
+    );
+  }
+
+  Future<void> _modifier(Epreuve epreuve) async {
+    if (!widget.competition.estBrouillon || _controller.operationEnCours) {
+      return;
+    }
+    await Navigator.of(context).push<bool>(
+      MaterialPageRoute(
+        builder: (_) =>
+            ModifierEpreuvePage(epreuve: epreuve, controller: _controller),
+      ),
+    );
+  }
+
+  Future<void> _supprimer(Epreuve epreuve) async {
+    if (!widget.competition.estBrouillon || _controller.operationEnCours) {
+      return;
+    }
+    final confirme = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Supprimer cette épreuve ?'),
+        content: Text(
+          '« ${epreuve.nom} » et ses manches à venir seront supprimées. '
+          'La suppression sera refusée si une manche a démarré ou possède des résultats.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Annuler'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('Supprimer'),
+          ),
+        ],
+      ),
+    );
+    if (confirme != true || !mounted) return;
+    final succes = await _controller.supprimer(epreuve);
+    if (!mounted) return;
+    if (!succes) {
+      _afficherErreurConfiguration();
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('L’épreuve a été supprimée.')),
+      );
+    }
+  }
+
+  Future<void> _deplacer(Epreuve epreuve, int direction) async {
+    if (!widget.competition.estBrouillon) return;
+    final succes = await _controller.deplacer(epreuve, direction);
+    if (!mounted) return;
+    if (!succes) _afficherErreurConfiguration();
+  }
+
   Future<void> _ouvrirEpreuve(Epreuve epreuve) async {
     await Navigator.of(context).push<void>(
       MaterialPageRoute<void>(
@@ -123,14 +189,16 @@ class _EpreuvesPageState extends State<EpreuvesPage> {
         actions: [
           IconButton(
             tooltip: 'Actualiser',
-            onPressed: _controller.chargement ? null : _controller.recharger,
+            onPressed: _controller.operationEnCours
+                ? null
+                : _controller.recharger,
             icon: const Icon(Icons.refresh),
           ),
         ],
       ),
       floatingActionButton: peutModifier
           ? FloatingActionButton.extended(
-              onPressed: _controller.creationEnCours ? null : _ouvrirCreation,
+              onPressed: _controller.operationEnCours ? null : _ouvrirCreation,
               icon: const Icon(Icons.add),
               label: const Text('Créer une épreuve'),
             )
@@ -183,11 +251,26 @@ class _EpreuvesPageState extends State<EpreuvesPage> {
         itemBuilder: (context, index) {
           final epreuve = _controller.epreuves[index];
 
-          return CarteEpreuve(
-            epreuve: epreuve,
-            onTap: () {
-              _ouvrirEpreuve(epreuve);
-            },
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              CarteEpreuve(
+                epreuve: epreuve,
+                onTap: () {
+                  if (!_controller.operationEnCours) _ouvrirEpreuve(epreuve);
+                },
+              ),
+              if (widget.competition.estBrouillon)
+                ActionsConfigurationEpreuve(
+                  actives: !_controller.operationEnCours,
+                  peutMonter: index > 0,
+                  peutDescendre: index < _controller.epreuves.length - 1,
+                  onMonter: () => _deplacer(epreuve, -1),
+                  onDescendre: () => _deplacer(epreuve, 1),
+                  onModifier: () => _modifier(epreuve),
+                  onSupprimer: () => _supprimer(epreuve),
+                ),
+            ],
           );
         },
       ),

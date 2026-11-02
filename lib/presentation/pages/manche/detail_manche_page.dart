@@ -171,15 +171,12 @@ class _DetailManchePageState extends State<DetailManchePage> {
       ),
     );
 
-    if (mancheActualisee == null || !mounted) {
-      return;
-    }
-
-    setState(() {
-      _manche = mancheActualisee;
-    });
-
-    widget.controller.remplacerLocalement(mancheActualisee);
+    if (!mounted) return;
+    final actualisee =
+        mancheActualisee ??
+        widget.controller.manches.where((m) => m.id == _manche.id).firstOrNull;
+    if (actualisee == null) return;
+    setState(() => _manche = actualisee);
   }
 
   void _traiterResultatAction(Manche? mancheActualisee, String messageSucces) {
@@ -293,7 +290,15 @@ class _DetailManchePageState extends State<DetailManchePage> {
                   const SizedBox(height: 16),
 
                   if (_manche.delaiDemarre && _manche.estEnCours)
-                    ChronometreManche(heureFinDelai: _manche.heureFinDelai!),
+                    ChronometreManche(
+                      key: ValueKey(_manche.id),
+                      heureFinDelai: _manche.heureFinDelai!,
+                      onDelaiEcoule: () {
+                        if (ModalRoute.of(context)?.isCurrent == true) {
+                          _ouvrirResultats();
+                        }
+                      },
+                    ),
 
                   if (_manche.delaiDemarre && _manche.estEnCours)
                     const SizedBox(height: 16),

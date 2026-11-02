@@ -1,9 +1,13 @@
 import '../../../domain/entities/epreuve.dart';
+import '../../../domain/services/validation_epreuve.dart';
+import 'verifier_competition_brouillon.dart';
 import '../../../domain/entities/type_discipline.dart';
 import '../../../domain/ports/epreuve_repository.dart';
 
 class CreerEpreuve {
-  CreerEpreuve(this._epreuveRepository);
+  CreerEpreuve(this._epreuveRepository, this._verifierCompetition);
+
+  final VerifierCompetitionBrouillon _verifierCompetition;
 
   final EpreuveRepository _epreuveRepository;
 
@@ -18,15 +22,6 @@ class CreerEpreuve {
   }) async {
     final competitionIdNettoye = competitionId.trim();
     final nomNettoye = nom.trim();
-
-    _valider(
-      competitionId: competitionIdNettoye,
-      nom: nomNettoye,
-      distanceMetres: distanceMetres,
-      nombreManches: nombreManches,
-      ordre: ordre,
-      dureeLimiteSecondes: dureeLimiteSecondes,
-    );
 
     final maintenant = DateTime.now();
 
@@ -43,55 +38,8 @@ class CreerEpreuve {
       dateModification: maintenant,
     );
 
+    ValidationEpreuve.verifier(epreuve);
+    await _verifierCompetition.executer(competitionIdNettoye);
     return _epreuveRepository.creer(epreuve);
-  }
-
-  void _valider({
-    required String competitionId,
-    required String nom,
-    required int distanceMetres,
-    required int nombreManches,
-    required int ordre,
-    required int dureeLimiteSecondes,
-  }) {
-    if (competitionId.isEmpty) {
-      throw ArgumentError('L’identifiant de la compétition est obligatoire.');
-    }
-
-    if (nom.isEmpty) {
-      throw ArgumentError('Le nom de l’épreuve est obligatoire.');
-    }
-
-    if (nom.length < 3) {
-      throw ArgumentError(
-        'Le nom de l’épreuve doit contenir '
-        'au moins 3 caractères.',
-      );
-    }
-
-    if (distanceMetres <= 0) {
-      throw ArgumentError('La distance doit être supérieure à zéro.');
-    }
-
-    if (nombreManches <= 0) {
-      throw ArgumentError(
-        'Le nombre de manches doit être '
-        'supérieur à zéro.',
-      );
-    }
-
-    if (ordre <= 0) {
-      throw ArgumentError(
-        'L’ordre de l’épreuve doit être '
-        'supérieur à zéro.',
-      );
-    }
-
-    if (dureeLimiteSecondes <= 0) {
-      throw ArgumentError(
-        'La durée limite doit être '
-        'supérieure à zéro.',
-      );
-    }
   }
 }

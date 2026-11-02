@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../widgets/commun/bouton_action_principale.dart';
+
 import '../../../domain/entities/competition.dart';
 import '../../../domain/entities/epreuve.dart';
 import '../../../domain/entities/manche.dart';
@@ -142,6 +144,49 @@ class _ManchesPageState extends State<ManchesPage> {
     );
   }
 
+  Future<void> _publierTousLesResultats() async {
+    if (_controller.actionEnCours || _controller.chargement) return;
+    final nombre = _controller.manches
+        .where((m) => m.peutPublierResultats)
+        .length;
+    if (nombre == 0) return;
+
+    final confirme = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Publier tous les résultats ?'),
+        content: Text(
+          'Les résultats de $nombre manche(s) terminée(s) seront visibles '
+          'par les athlètes inscrits. Les manches en cours ou à venir '
+          'ne seront pas publiées.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Annuler'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('Publier'),
+          ),
+        ],
+      ),
+    );
+    if (confirme != true || !mounted) return;
+
+    final nombrePublie = await _controller.publierTousLesResultats();
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          nombrePublie == null
+              ? _controller.erreur ?? 'La publication a échoué.'
+              : '$nombrePublie manche(s) publiée(s).',
+        ),
+      ),
+    );
+  }
+
   Future<void> _ouvrirDetail(Manche manche) async {
     final mancheActualisee = await Navigator.of(context).push<Manche>(
       MaterialPageRoute<Manche>(
@@ -191,6 +236,43 @@ class _ManchesPageState extends State<ManchesPage> {
               label: const Text('Générer les manches'),
             )
           : null,
+      bottomNavigationBar: _controller.manches.isEmpty
+          ? null
+          : SafeArea(
+              top: false,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      _controller.manches.any((m) => m.peutPublierResultats)
+                          ? 'Publier les résultats des manches terminées de cette épreuve.'
+                          : _controller.manches.any((m) => m.resultatsPublies)
+                          ? 'Tous les résultats disponibles sont publiés.'
+                          : 'Termine une manche pour publier ses résultats.',
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 8),
+                    BoutonActionPrincipale(
+                      enCours: _controller.actionEnCours,
+                      onPressed:
+                          _controller.actionEnCours ||
+                              _controller.chargement ||
+                              _controller.generationEnCours ||
+                              !_controller.manches.any(
+                                (m) => m.peutPublierResultats,
+                              )
+                          ? null
+                          : _publierTousLesResultats,
+                      icone: Icons.publish_outlined,
+                      libelle: 'Publier tous les résultats',
+                    ),
+                  ],
+                ),
+              ),
+            ),
       body: SafeArea(
         child: Column(
           children: [

@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../../widgets/commun/carte_section.dart';
+import '../../widgets/commun/message_erreur.dart';
+
 import '../../../domain/entities/competition.dart';
 import '../../../domain/entities/epreuve.dart';
 import '../../controllers/dashboard_resultats_controller.dart';
@@ -79,6 +82,28 @@ class _DashboardResultatsCompetitionPageState
               child: ListView(
                 padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
                 children: [
+                  CarteSection(
+                    titre: widget.competition.nom,
+                    sousTitre: 'Vue d’ensemble des résultats de la compétition',
+                    icone: Icons.leaderboard_outlined,
+                    child: Wrap(
+                      spacing: 12,
+                      runSpacing: 8,
+                      children: [
+                        Chip(
+                          label: Text(
+                            '${_controller.classement.length} athlète(s) classé(s)',
+                          ),
+                        ),
+                        Chip(
+                          label: Text(
+                            '${_controller.lignes.length} résultat(s)',
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 20),
                   _FiltreEpreuve(
                     epreuves: _controller.epreuves,
                     valeur: _controller.filtreEpreuveId,
@@ -198,28 +223,13 @@ class _CarteDetail extends StatelessWidget {
 
 class _ErreurDashboard extends StatelessWidget {
   const _ErreurDashboard({required this.message, required this.onReessayer});
-
   final String message;
   final Future<void> Function() onReessayer;
 
   @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(message, textAlign: TextAlign.center),
-            const SizedBox(height: 16),
-            FilledButton.icon(
-              onPressed: onReessayer,
-              icon: const Icon(Icons.refresh),
-              label: const Text('Réessayer'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  Widget build(BuildContext context) => MessageErreur(
+    titre: 'Impossible de charger le classement',
+    message: message,
+    onReessayer: onReessayer,
+  );
 }

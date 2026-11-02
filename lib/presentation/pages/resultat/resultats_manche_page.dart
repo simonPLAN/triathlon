@@ -40,6 +40,9 @@ class ResultatsManchePage extends StatefulWidget {
 
 class _ResultatsManchePageState extends State<ResultatsManchePage> {
   late Manche _manche;
+  bool _clotureEnCours = false;
+  bool _chargementDonnees = true;
+  bool _clotureDemandee = false;
 
   ResultatController get _resultatController {
     return widget.resultatController;
@@ -67,7 +70,7 @@ class _ResultatsManchePageState extends State<ResultatsManchePage> {
   }
 
   Future<void> _cloturerDelai() async {
-    if (_operationEnCours) {
+    if (_operationEnCours || !_manche.estEnCours) {
       return;
     }
 
@@ -83,113 +86,106 @@ class _ResultatsManchePageState extends State<ResultatsManchePage> {
       return;
     }
 
-    final confirmation = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) {
-        return AlertDialog(
-          title: const Text('Clôturer le délai ?'),
-          content: const Text(
-            'Les athlètes sans résultat seront marqués '
-            'hors délai avec zéro point.',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(dialogContext).pop(false);
-              },
-              child: const Text('Retour'),
-            ),
-            FilledButton.icon(
-              onPressed: () {
-                Navigator.of(dialogContext).pop(true);
-              },
-              icon: const Icon(Icons.timer_off_outlined),
-              label: const Text('Clôturer'),
-            ),
-          ],
-        );
-      },
-    );
-
-    if (confirmation != true || !mounted) {
-      return;
-    }
-
-    final athletes = _inscriptionController.inscriptions
-        .map((inscription) => inscription.athlete)
-        .toList(growable: false);
-
-    final nouveauxResultats = await _resultatController.marquerHorsDelai(
-      manche: _manche,
-      athletes: athletes,
-    );
-
-    if (!mounted) {
-      return;
-    }
-
-    if (nouveauxResultats == null) {
-      _afficherErreur(
-        _resultatController.erreur ??
-            'Les athlètes hors délai '
-                'n’ont pas pu être enregistrés.',
-      );
-      return;
-    }
-
-    final mancheTerminee = await _mancheController.terminer(_manche);
-
-    if (!mounted) {
-      return;
-    }
-
-    if (mancheTerminee == null) {
-      _afficherErreur(
-        _mancheController.erreur ?? 'La manche n’a pas pu être terminée.',
-      );
-      return;
-    }
-
     setState(() {
-      _manche = mancheTerminee;
+      _clotureEnCours = true;
+      _clotureDemandee = false;
     });
-
-    var message =
-        '${nouveauxResultats.length} athlète(s) marqué(s) hors délai. '
-        'La manche est maintenant terminée.';
-
-    if (widget.competition.demarrageAutomatiqueMancheSuivante) {
-      final manchesSuivantes =
-          _mancheController.manches
-              .where(
-                (manche) =>
-                    manche.numero > mancheTerminee.numero && manche.estAVenir,
-              )
-              .toList()
-            ..sort((a, b) => a.numero.compareTo(b.numero));
-
-      if (manchesSuivantes.isNotEmpty) {
-        final mancheDemarree = await _mancheController.demarrer(
-          manchesSuivantes.first,
+    try {
+      if (_inscriptionController.erreur != null ||
+          _resultatController.erreur != null) {
+        _afficherErreur(
+          'Recharge les participants avant de réessayer la clôture.',
         );
+        return;
+      }
 
-        if (!mounted) {
-          return;
-        }
+      final athletes = _inscriptionController.inscriptions
+          .map((inscription) => inscription.athlete)
+          .toList(growable: false);
 
-        if (mancheDemarree != null) {
-          message += ' La manche ${mancheDemarree.numero} a démarré.';
-        } else {
-          _afficherErreur(
-            _mancheController.erreur ??
-                'La manche suivante n’a pas pu démarrer automatiquement.',
+      final nouveauxResultats = await _resultatController.marquerHorsDelai(
+        manche: _manche,
+        athletes: athletes,
+      );
+
+      if (!mounted) {
+        return;
+      }
+
+      if (nouveauxResultats == null) {
+        _afficherErreur(
+          _resultatController.erreur ??
+              'Les athlètes hors délai '
+                  'n’ont pas pu être enregistrés.',
+        );
+        return;
+      }
+
+      final mancheTerminee = await _mancheController.terminer(_manche);
+
+      if (!mounted) {
+        return;
+      }
+
+      if (mancheTerminee == null) {
+        _afficherErreur(
+          _mancheController.erreur ?? 'La manche n’a pas pu être terminée.',
+        );
+        return;
+      }
+
+      setState(() {
+        _manche = mancheTerminee;
+      });
+
+      var message =
+          '${nouveauxResultats.length} athlète(s) marqué(s) hors délai. '
+          'La manche est maintenant terminée.';
+
+      if (widget.competition.demarrageAutomatiqueMancheSuivante) {
+        final manchesSuivantes =
+            _mancheController.manches
+                .where(
+                  (manche) =>
+                      manche.numero > mancheTerminee.numero && manche.estAVenir,
+                )
+                .toList()
+              ..sort((a, b) => a.numero.compareTo(b.numero));
+
+        if (manchesSuivantes.isNotEmpty) {
+          final mancheDemarree = await _mancheController.demarrer(
+            manchesSuivantes.first,
           );
-          return;
+
+          if (!mounted) {
+            return;
+          }
+
+          if (mancheDemarree != null) {
+            setState(() {
+              _manche = mancheDemarree;
+              _delaiSignaleCommeEcoule = false;
+            });
+            _resultatController.reinitialiser();
+            await _resultatController.charger(mancheDemarree.id);
+            if (!mounted) return;
+            message += ' La manche ${mancheDemarree.numero} a démarré.';
+          } else {
+            _afficherErreur(
+              _mancheController.erreur ??
+                  'La manche suivante n’a pas pu démarrer automatiquement.',
+            );
+            return;
+          }
         }
       }
-    }
 
-    _afficherMessage(message);
+      _afficherMessage(message);
+    } finally {
+      if (mounted) {
+        setState(() => _clotureEnCours = false);
+      }
+    }
   }
 
   @override
@@ -204,14 +200,26 @@ class _ResultatsManchePageState extends State<ResultatsManchePage> {
   void _actualiser() {
     if (mounted) {
       setState(() {});
+      if (_clotureDemandee && !_operationEnCours) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted && _clotureDemandee) _cloturerDelai();
+        });
+      }
     }
   }
 
   Future<void> _chargerDonnees() async {
+    setState(() => _chargementDonnees = true);
     await Future.wait([
       _resultatController.charger(_manche.id),
       _inscriptionController.charger(competitionId: widget.competition.id),
+      _mancheController.charger(widget.epreuve.id),
     ]);
+    if (!mounted) return;
+    setState(() => _chargementDonnees = false);
+    if (_manche.estEnCours && _delaiEcoule) {
+      _gererDelaiEcoule();
+    }
   }
 
   Future<void> _recharger() async {
@@ -228,6 +236,11 @@ class _ResultatsManchePageState extends State<ResultatsManchePage> {
         'Les arrivées ne peuvent être enregistrées '
         'que pendant une manche en cours.',
       );
+      return;
+    }
+
+    if (_delaiEcoule) {
+      _gererDelaiEcoule();
       return;
     }
 
@@ -330,7 +343,9 @@ class _ResultatsManchePageState extends State<ResultatsManchePage> {
   }
 
   bool get _operationEnCours {
-    return _resultatController.operationEnCours ||
+    return _clotureEnCours ||
+        _chargementDonnees ||
+        _resultatController.operationEnCours ||
         _inscriptionController.operationEnCours ||
         _mancheController.actionEnCours;
   }
@@ -393,6 +408,7 @@ class _ResultatsManchePageState extends State<ResultatsManchePage> {
             ),
             if (_manche.heureFinDelai != null && _manche.estEnCours)
               CompteAReboursResultat(
+                key: ValueKey(_manche.id),
                 heureFinDelai: _manche.heureFinDelai!,
                 onDelaiEcoule: _gererDelaiEcoule,
               ),
@@ -404,7 +420,11 @@ class _ResultatsManchePageState extends State<ResultatsManchePage> {
                   child: FilledButton.icon(
                     onPressed: _operationEnCours ? null : _cloturerDelai,
                     icon: const Icon(Icons.timer_off_outlined),
-                    label: const Text('Clôturer le délai'),
+                    label: Text(
+                      _clotureEnCours
+                          ? 'Clôture en cours…'
+                          : 'Réessayer la clôture',
+                    ),
                   ),
                 ),
               ),
@@ -418,7 +438,7 @@ class _ResultatsManchePageState extends State<ResultatsManchePage> {
   bool _delaiSignaleCommeEcoule = false;
 
   void _gererDelaiEcoule() {
-    if (!mounted || _delaiSignaleCommeEcoule) {
+    if (!mounted || !_manche.estEnCours || _clotureEnCours) {
       return;
     }
 
@@ -426,10 +446,10 @@ class _ResultatsManchePageState extends State<ResultatsManchePage> {
       _delaiSignaleCommeEcoule = true;
     });
 
-    _afficherMessage(
-      'Le délai est écoulé. '
-      'Tu peux maintenant clôturer la manche.',
-    );
+    _clotureDemandee = true;
+    if (!_operationEnCours) {
+      _cloturerDelai();
+    }
   }
 
   bool get _delaiEcoule {
@@ -522,7 +542,10 @@ class _ResultatsManchePageState extends State<ResultatsManchePage> {
                       width: largeurCarte,
                       child: CarteParticipantArrivee(
                         inscription: inscription,
-                        active: _manche.estEnCours && !_operationEnCours,
+                        active:
+                            _manche.estEnCours &&
+                            !_delaiEcoule &&
+                            !_operationEnCours,
                         onTap: () => _enregistrerArrivee(inscription.athlete),
                       ),
                     );

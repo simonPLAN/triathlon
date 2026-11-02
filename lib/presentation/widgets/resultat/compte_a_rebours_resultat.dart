@@ -126,9 +126,7 @@ class _CompteAReboursResultatState extends State<CompteAReboursResultat> {
                 const SizedBox(height: 2),
                 Text(
                   delaiEcoule
-                      ? 'Les athlètes restants '
-                            'peuvent être marqués '
-                            'hors délai.'
+                      ? 'Clôture automatique de la manche…'
                       : '$texteMinutes:$texteSecondes',
                   style: TextStyle(
                     color: delaiEcoule

@@ -13,6 +13,7 @@ import 'application/use_cases/inscrire_athlete.dart';
 import 'application/use_cases/obtenir_profil_connecte.dart';
 import 'presentation/controllers/athlete_controller.dart';
 import 'presentation/pages/auth_gate.dart';
+import 'presentation/theme/theme_application.dart';
 
 class TriathlonApp extends StatelessWidget {
   const TriathlonApp({
@@ -49,10 +50,9 @@ class TriathlonApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Compétition sportive',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
-        useMaterial3: true,
-      ),
+      theme: ThemeApplication.clair,
+      darkTheme: ThemeApplication.sombre,
+      themeMode: ThemeMode.system,
       home: AuthGate(
         clientSupabase: clientSupabase,
         athleteController: athleteController,

@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../../widgets/commun/etat_vide.dart';
+import '../../widgets/commun/message_erreur.dart';
+
 import '../../../domain/entities/competition.dart';
 import '../../../domain/entities/profil_utilisateur.dart';
 import '../../../domain/entities/statut_competition.dart';
@@ -265,39 +268,16 @@ class _FiltresStatutCompetition extends StatelessWidget {
 
 class _AucuneCompetitionPourFiltre extends StatelessWidget {
   const _AucuneCompetitionPourFiltre({required this.onEffacer});
-
   final VoidCallback onEffacer;
 
   @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.filter_alt_off_outlined,
-              size: 64,
-              color: Theme.of(context).colorScheme.primary,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'Aucune compétition pour ce filtre',
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-            const SizedBox(height: 16),
-            OutlinedButton.icon(
-              onPressed: onEffacer,
-              icon: const Icon(Icons.clear),
-              label: const Text('Afficher toutes'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  Widget build(BuildContext context) => EtatVide(
+    titre: 'Aucune compétition pour ce filtre',
+    description: 'Choisis un autre statut pour retrouver tes compétitions.',
+    icone: Icons.filter_alt_off_outlined,
+    libelleAction: 'Afficher toutes',
+    onAction: onEffacer,
+  );
 }
 
 class _ChargementCompetitions extends StatelessWidget {
@@ -320,84 +300,27 @@ class _ChargementCompetitions extends StatelessWidget {
 
 class _ErreurCompetitions extends StatelessWidget {
   const _ErreurCompetitions({required this.message, required this.onReessayer});
-
   final String message;
   final Future<void> Function() onReessayer;
 
   @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.error_outline,
-              size: 64,
-              color: Theme.of(context).colorScheme.error,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'Impossible de charger les compétitions',
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-            const SizedBox(height: 8),
-            Text(message, textAlign: TextAlign.center),
-            const SizedBox(height: 24),
-            FilledButton.icon(
-              onPressed: onReessayer,
-              icon: const Icon(Icons.refresh),
-              label: const Text('Réessayer'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  Widget build(BuildContext context) => MessageErreur(
+    titre: 'Impossible de charger les compétitions',
+    message: message,
+    onReessayer: onReessayer,
+  );
 }
 
 class _ListeCompetitionsVide extends StatelessWidget {
   const _ListeCompetitionsVide({required this.onCreer});
-
   final VoidCallback onCreer;
 
   @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.emoji_events_outlined,
-              size: 72,
-              color: Theme.of(context).colorScheme.primary,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'Aucune compétition',
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.headlineSmall,
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              'Crée ta première compétition pour '
-              'commencer à configurer les épreuves '
-              'et inscrire les athlètes.',
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 24),
-            FilledButton.icon(
-              onPressed: onCreer,
-              icon: const Icon(Icons.add),
-              label: const Text('Créer une compétition'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  Widget build(BuildContext context) => EtatVide(
+    titre: 'Aucune compétition',
+    description: 'Crée ta première compétition pour configurer les épreuves et inscrire les athlètes.',
+    icone: Icons.emoji_events_outlined,
+    libelleAction: 'Créer une compétition',
+    onAction: onCreer,
+  );
 }

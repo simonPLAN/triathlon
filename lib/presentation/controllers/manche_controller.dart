@@ -162,6 +162,35 @@ class MancheController extends ChangeNotifier {
     return _executerAction(() => _publierResultatsManche.executer(manche));
   }
 
+  Future<int?> publierTousLesResultats() async {
+    if (_actionEnCours || _chargement || _generationEnCours) return null;
+
+    final aPublier = _manches.where((m) => m.peutPublierResultats).toList();
+    if (aPublier.isEmpty) return 0;
+
+    _actionEnCours = true;
+    _erreur = null;
+    notifyListeners();
+    var nombrePublie = 0;
+    try {
+      for (final manche in aPublier) {
+        final publiee = await _publierResultatsManche.executer(manche);
+        remplacerLocalement(publiee);
+        nombrePublie++;
+      }
+      return nombrePublie;
+    } catch (exception) {
+      _erreur =
+          '$nombrePublie manche(s) publiée(s). '
+          'Publication interrompue : ${_extraireMessageErreur(exception)} '
+          'Réessaie pour publier les manches restantes.';
+      return null;
+    } finally {
+      _actionEnCours = false;
+      notifyListeners();
+    }
+  }
+
   Future<Manche?> _executerAction(Future<Manche> Function() action) async {
     if (_actionEnCours) {
       return null;

@@ -13,6 +13,9 @@ abstract interface class EpreuveRepository {
   /// Modifie une épreuve existante.
   Future<Epreuve> modifier(Epreuve epreuve);
 
+  /// Applique un ordre complet dans une seule transaction.
+  Future<void> reordonner(String competitionId, List<String> epreuveIds);
+
   /// Supprime une épreuve.
   Future<void> supprimer(String id);
 }

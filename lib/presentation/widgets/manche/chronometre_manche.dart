@@ -3,9 +3,14 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 class ChronometreManche extends StatefulWidget {
-  const ChronometreManche({super.key, required this.heureFinDelai});
+  const ChronometreManche({
+    super.key,
+    required this.heureFinDelai,
+    this.onDelaiEcoule,
+  });
 
   final DateTime heureFinDelai;
+  final VoidCallback? onDelaiEcoule;
 
   @override
   State<ChronometreManche> createState() {
@@ -16,6 +21,7 @@ class ChronometreManche extends StatefulWidget {
 class _ChronometreMancheState extends State<ChronometreManche> {
   Timer? _timer;
   Duration _tempsRestant = Duration.zero;
+  bool _notificationEnvoyee = false;
 
   @override
   void initState() {
@@ -32,6 +38,7 @@ class _ChronometreMancheState extends State<ChronometreManche> {
     super.didUpdateWidget(oldWidget);
 
     if (oldWidget.heureFinDelai != widget.heureFinDelai) {
+      _notificationEnvoyee = false;
       _calculerTempsRestant();
     }
   }
@@ -57,6 +64,12 @@ class _ChronometreMancheState extends State<ChronometreManche> {
 
     if (_tempsRestant == Duration.zero) {
       _timer?.cancel();
+      if (!_notificationEnvoyee) {
+        _notificationEnvoyee = true;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) widget.onDelaiEcoule?.call();
+        });
+      }
     }
   }
 
