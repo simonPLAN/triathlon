@@ -11,6 +11,7 @@ class Competition {
     required this.dateModification,
     this.description,
     this.lieu,
+    required this.demarrageAutomatiqueMancheSuivante,
   });
 
   final String id;
@@ -22,6 +23,7 @@ class Competition {
   final String coachId;
   final DateTime dateCreation;
   final DateTime dateModification;
+  final bool demarrageAutomatiqueMancheSuivante;
 
   bool get estBrouillon {
     return statut == StatutCompetition.brouillon;
@@ -30,8 +32,6 @@ class Competition {
   bool get estOuverte {
     return statut == StatutCompetition.ouverte;
   }
-
-  static const _nonRenseigne = Object();
 
   bool get estEnCours {
     return statut == StatutCompetition.enCours;
@@ -96,24 +96,26 @@ class Competition {
   Competition copierAvec({
     String? id,
     String? nom,
-    Object? description = _nonRenseigne,
-    Object? lieu = _nonRenseigne,
+    String? description,
+    String? lieu,
     DateTime? dateCompetition,
     StatutCompetition? statut,
     String? coachId,
+    bool? demarrageAutomatiqueMancheSuivante,
     DateTime? dateCreation,
     DateTime? dateModification,
   }) {
     return Competition(
       id: id ?? this.id,
       nom: nom ?? this.nom,
-      description: identical(description, _nonRenseigne)
-          ? this.description
-          : description as String?,
-      lieu: identical(lieu, _nonRenseigne) ? this.lieu : lieu as String?,
+      description: description ?? this.description,
+      lieu: lieu ?? this.lieu,
       dateCompetition: dateCompetition ?? this.dateCompetition,
       statut: statut ?? this.statut,
       coachId: coachId ?? this.coachId,
+      demarrageAutomatiqueMancheSuivante:
+          demarrageAutomatiqueMancheSuivante ??
+          this.demarrageAutomatiqueMancheSuivante,
       dateCreation: dateCreation ?? this.dateCreation,
       dateModification: dateModification ?? this.dateModification,
     );

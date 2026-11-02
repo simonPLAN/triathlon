@@ -5,6 +5,7 @@ import 'package:triathlon/presentation/controllers/competitions_ouvertes_control
 import 'package:triathlon/presentation/controllers/epreuve_controller.dart';
 import 'package:triathlon/presentation/controllers/inscription_controller.dart';
 import 'package:triathlon/presentation/controllers/manche_controller.dart';
+import 'package:triathlon/presentation/controllers/resultat_controller.dart';
 
 import 'app.dart';
 import 'application/use_cases/ajouter_athlete.dart';
@@ -34,6 +35,11 @@ import 'application/use_cases/manche/lister_manches.dart';
 import 'application/use_cases/manche/publier_resultats_manche.dart';
 import 'application/use_cases/manche/terminer_manche.dart';
 import 'application/use_cases/obtenir_profil_connecte.dart';
+import 'application/use_cases/resultat/enregistrer_arrivee.dart';
+import 'application/use_cases/resultat/corriger_resultat.dart';
+import 'application/use_cases/resultat/lister_resultats_manche.dart';
+import 'application/use_cases/resultat/marquer_athletes_hors_delai.dart';
+import 'domain/services/calcul_points.dart';
 import 'infrastructure/repositories/supabase/athlete_repository_supabase.dart';
 import 'infrastructure/repositories/supabase/auth_repository_supabase.dart';
 import 'infrastructure/repositories/supabase/competition_repository_supabase.dart';
@@ -41,6 +47,7 @@ import 'infrastructure/repositories/supabase/epreuve_repository_supabase.dart';
 import 'infrastructure/repositories/supabase/inscription_repository_supabase.dart';
 import 'infrastructure/repositories/supabase/manche_repository_supabase.dart';
 import 'infrastructure/repositories/supabase/profil_repository_supabase.dart';
+import 'infrastructure/repositories/supabase/resultat_repository_supabase.dart';
 import 'presentation/controllers/athlete_controller.dart';
 
 Future<void> main() async {
@@ -92,6 +99,14 @@ Future<void> main() async {
   final competitionsOuvertesController = CompetitionsOuvertesController(
     ListerCompetitionsOuvertes(competitionRepository),
   );
+  final calculPoints = CalculPoints();
+  final resultatRepository = ResultatRepositorySupabase(clientSupabase);
+  final resultatController = ResultatController(
+    ListerResultatsManche(resultatRepository),
+    EnregistrerArrivee(resultatRepository, calculPoints),
+    CorrigerResultat(resultatRepository, calculPoints),
+    MarquerAthletesHorsDelai(resultatRepository),
+  );
   final profilRepository = ProfilRepositorySupabase(clientSupabase);
   runApp(
     TriathlonApp(
@@ -106,6 +121,7 @@ Future<void> main() async {
       competitionsOuvertesController: competitionsOuvertesController,
       epreuveController: epreuveController,
       mancheController: mancheController,
+      resultatController: resultatController,
     ),
   );
 }

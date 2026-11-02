@@ -19,9 +19,11 @@ class EnregistrerArrivee {
     _verifierManche(manche);
     _verifierAthlete(athlete);
 
-    final arrivee = heureArrivee ?? DateTime.now();
-
-    _verifierHeureArrivee(manche: manche, heureArrivee: arrivee);
+    final heureDepart = manche.heureDepart!;
+    final arriveeDemandee = heureArrivee ?? DateTime.now();
+    final arrivee = arriveeDemandee.toUtc().isBefore(heureDepart.toUtc())
+        ? heureDepart
+        : arriveeDemandee;
 
     final resultatExistant = await _resultatRepository
         .obtenirParAthleteEtManche(mancheId: manche.id, athleteId: athlete.id);
@@ -96,18 +98,6 @@ class EnregistrerArrivee {
   void _verifierAthlete(Athlete athlete) {
     if (athlete.id.trim().isEmpty) {
       throw ArgumentError('L’identifiant de l’athlète est obligatoire.');
-    }
-  }
-
-  void _verifierHeureArrivee({
-    required Manche manche,
-    required DateTime heureArrivee,
-  }) {
-    if (heureArrivee.isBefore(manche.heureDepart!)) {
-      throw ArgumentError(
-        'L’heure d’arrivée ne peut pas précéder '
-        'l’heure de départ.',
-      );
     }
   }
 

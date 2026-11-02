@@ -119,6 +119,7 @@ class CompetitionController extends ChangeNotifier {
     required String coachId,
     String? description,
     String? lieu,
+    bool demarrageAutomatiqueMancheSuivante = false,
   }) async {
     if (_creationEnCours) {
       return false;
@@ -135,6 +136,7 @@ class CompetitionController extends ChangeNotifier {
         coachId: coachId,
         description: description,
         lieu: lieu,
+        demarrageAutomatiqueMancheSuivante: demarrageAutomatiqueMancheSuivante,
       );
 
       _competitions = [..._competitions, nouvelleCompetition];
@@ -234,6 +236,7 @@ class CompetitionController extends ChangeNotifier {
     required Competition competition,
     required String nom,
     required DateTime dateCompetition,
+    required bool demarrageAutomatiqueMancheSuivante,
     String? description,
     String? lieu,
   }) async {
@@ -252,6 +255,7 @@ class CompetitionController extends ChangeNotifier {
         description: description,
         lieu: lieu,
         dateCompetition: dateCompetition,
+        demarrageAutomatiqueMancheSuivante: demarrageAutomatiqueMancheSuivante,
       );
 
       final index = _competitions.indexWhere(

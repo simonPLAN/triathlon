@@ -26,6 +26,8 @@ class CreerCompetitionPage extends StatelessWidget {
       lieu: donnees.lieu,
       dateCompetition: donnees.dateCompetition,
       coachId: profilCoach.id,
+      demarrageAutomatiqueMancheSuivante:
+          donnees.demarrageAutomatiqueMancheSuivante,
     );
 
     if (!context.mounted) {

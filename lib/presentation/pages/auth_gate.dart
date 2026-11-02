@@ -14,6 +14,7 @@ import '../controllers/competitions_ouvertes_controller.dart';
 import '../controllers/epreuve_controller.dart';
 import '../controllers/inscription_controller.dart';
 import '../controllers/manche_controller.dart';
+import '../controllers/resultat_controller.dart';
 import 'athlete/athlete_dashboard_page.dart';
 import 'athletes_page.dart';
 import 'coach/coach_dashboard_page.dart';
@@ -34,6 +35,7 @@ class AuthGate extends StatefulWidget {
     required this.competitionsOuvertesController,
     required this.epreuveController,
     required this.mancheController,
+    required this.resultatController,
   });
 
   final SupabaseClient clientSupabase;
@@ -47,6 +49,7 @@ class AuthGate extends StatefulWidget {
   final CompetitionsOuvertesController competitionsOuvertesController;
   final EpreuveController epreuveController;
   final MancheController mancheController;
+  final ResultatController resultatController;
 
   @override
   State<AuthGate> createState() {
@@ -79,6 +82,7 @@ class _AuthGateState extends State<AuthGate> {
           widget.inscriptionController.reinitialiser();
           widget.epreuveController.reinitialiser();
           widget.mancheController.reinitialiser();
+          widget.resultatController.reinitialiser();
           _profilFuture = null;
         } else {
           _profilFuture = widget.obtenirProfilConnecte.executer();
@@ -130,6 +134,7 @@ class _AuthGateState extends State<AuthGate> {
             profilCoach: profilCoach,
             epreuveController: widget.epreuveController,
             mancheController: widget.mancheController,
+            resultatController: widget.resultatController,
           );
         },
       ),

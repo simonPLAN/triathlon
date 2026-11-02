@@ -11,6 +11,7 @@ class CreerCompetition {
     required String nom,
     required DateTime dateCompetition,
     required String coachId,
+    required bool demarrageAutomatiqueMancheSuivante,
     String? description,
     String? lieu,
   }) async {
@@ -34,8 +35,9 @@ class CreerCompetition {
       description: descriptionNettoyee,
       lieu: lieuNettoye,
       dateCompetition: dateCompetition,
-      coachId: coachId,
       statut: StatutCompetition.brouillon,
+      coachId: coachId,
+      demarrageAutomatiqueMancheSuivante: demarrageAutomatiqueMancheSuivante,
       dateCreation: maintenant,
       dateModification: maintenant,
     );

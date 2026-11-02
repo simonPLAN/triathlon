@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:triathlon/domain/services/calcul_points.dart';
+
 void main() {
   const calculPoints = CalculPoints();
 

@@ -10,6 +10,10 @@ class CompetitionRepositorySupabase implements CompetitionRepository {
   final SupabaseClient _client;
 
   static const String _nomTable = 'competitions';
+  static const String _colonnes =
+      'id, nom, description, lieu, date_competition, '
+      'statut, coach_id, date_creation, date_modification, '
+      'demarrage_automatique_manche_suivante';
 
   @override
   Future<List<Competition>> obtenirToutes() async {
@@ -18,10 +22,7 @@ class CompetitionRepositorySupabase implements CompetitionRepository {
     try {
       final donnees = await _client
           .from(_nomTable)
-          .select(
-            'id, nom, description, lieu, date_competition, '
-            'statut, coach_id, date_creation, date_modification',
-          )
+          .select(_colonnes)
           .eq('coach_id', utilisateur.id)
           .order('date_competition', ascending: true);
 
@@ -48,10 +49,7 @@ class CompetitionRepositorySupabase implements CompetitionRepository {
     try {
       final donnees = await _client
           .from(_nomTable)
-          .select(
-            'id, nom, description, lieu, date_competition, '
-            'statut, coach_id, date_creation, date_modification',
-          )
+          .select(_colonnes)
           .eq('id', idNettoye)
           .eq('coach_id', utilisateur.id)
           .maybeSingle();
@@ -81,10 +79,7 @@ class CompetitionRepositorySupabase implements CompetitionRepository {
       final donnees = await _client
           .from(_nomTable)
           .insert(_convertirPourCreation(competition))
-          .select(
-            'id, nom, description, lieu, date_competition, '
-            'statut, coach_id, date_creation, date_modification',
-          )
+          .select(_colonnes)
           .single();
 
       return _convertirDepuisSupabase(donnees);
@@ -117,10 +112,7 @@ class CompetitionRepositorySupabase implements CompetitionRepository {
           .update(_convertirPourModification(competition))
           .eq('id', competition.id)
           .eq('coach_id', utilisateur.id)
-          .select(
-            'id, nom, description, lieu, date_competition, '
-            'statut, coach_id, date_creation, date_modification',
-          )
+          .select(_colonnes)
           .single();
 
       return _convertirDepuisSupabase(donnees);
@@ -139,10 +131,7 @@ class CompetitionRepositorySupabase implements CompetitionRepository {
     try {
       final donnees = await _client
           .from(_nomTable)
-          .select(
-            'id, nom, description, lieu, date_competition, '
-            'statut, coach_id, date_creation, date_modification',
-          )
+          .select(_colonnes)
           .eq('statut', 'ouverte')
           .order('date_competition', ascending: true);
 
@@ -201,6 +190,8 @@ class CompetitionRepositorySupabase implements CompetitionRepository {
       coachId: donnees['coach_id'] as String,
       dateCreation: DateTime.parse(donnees['date_creation'] as String),
       dateModification: DateTime.parse(donnees['date_modification'] as String),
+      demarrageAutomatiqueMancheSuivante:
+          (donnees['demarrage_automatique_manche_suivante'] as bool?) ?? false,
     );
   }
 
@@ -212,6 +203,8 @@ class CompetitionRepositorySupabase implements CompetitionRepository {
       'date_competition': _formaterDate(competition.dateCompetition),
       'statut': _convertirStatutPourSupabase(competition.statut),
       'coach_id': competition.coachId,
+      'demarrage_automatique_manche_suivante':
+          competition.demarrageAutomatiqueMancheSuivante,
     };
   }
 
@@ -222,6 +215,8 @@ class CompetitionRepositorySupabase implements CompetitionRepository {
       'lieu': competition.lieu,
       'date_competition': _formaterDate(competition.dateCompetition),
       'statut': _convertirStatutPourSupabase(competition.statut),
+      'demarrage_automatique_manche_suivante':
+          competition.demarrageAutomatiqueMancheSuivante,
     };
   }
 

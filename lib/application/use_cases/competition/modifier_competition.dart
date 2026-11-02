@@ -10,6 +10,7 @@ class ModifierCompetition {
     required Competition competition,
     required String nom,
     required DateTime dateCompetition,
+    required bool demarrageAutomatiqueMancheSuivante,
     String? description,
     String? lieu,
   }) async {
@@ -30,6 +31,7 @@ class ModifierCompetition {
       description: descriptionNettoyee,
       lieu: lieuNettoye,
       dateCompetition: dateCompetition,
+      demarrageAutomatiqueMancheSuivante: demarrageAutomatiqueMancheSuivante,
       dateModification: DateTime.now(),
     );
 

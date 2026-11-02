@@ -6,10 +6,12 @@ import '../../controllers/competition_controller.dart';
 import '../../controllers/epreuve_controller.dart';
 import '../../controllers/inscription_controller.dart';
 import '../../controllers/manche_controller.dart';
+import '../../controllers/resultat_controller.dart';
 import '../../widgets/competition/actions_statut_competition.dart';
 import '../../widgets/competition/badge_statut_competition.dart';
 import '../epreuve/epreuves_page.dart';
 import '../inscription/inscriptions_page.dart';
+import '../resultat/dashboard_resultats_competition_page.dart';
 import 'modifier_competition_page.dart';
 
 class DetailCompetitionPage extends StatefulWidget {
@@ -20,6 +22,7 @@ class DetailCompetitionPage extends StatefulWidget {
     required this.inscriptionController,
     required this.epreuveController,
     required this.mancheController,
+    required this.resultatController,
   });
 
   final Competition competition;
@@ -27,6 +30,7 @@ class DetailCompetitionPage extends StatefulWidget {
   final InscriptionController inscriptionController;
   final EpreuveController epreuveController;
   final MancheController mancheController;
+  final ResultatController resultatController;
 
   @override
   State<DetailCompetitionPage> createState() {
@@ -66,6 +70,25 @@ class _DetailCompetitionPageState extends State<DetailCompetitionPage> {
             competition: _competition,
             controller: widget.epreuveController,
             mancheController: widget.mancheController,
+            resultatController: widget.resultatController,
+            inscriptionController: widget.inscriptionController,
+          );
+        },
+      ),
+    );
+  }
+
+  Future<void> _ouvrirDashboardResultats() async {
+    widget.resultatController.reinitialiser();
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(
+        builder: (context) {
+          return DashboardResultatsCompetitionPage(
+            competition: _competition,
+            epreuveController: widget.epreuveController,
+            mancheController: widget.mancheController,
+            resultatController: widget.resultatController,
+            inscriptionController: widget.inscriptionController,
           );
         },
       ),
@@ -212,15 +235,6 @@ class _DetailCompetitionPageState extends State<DetailCompetitionPage> {
     );
   }
 
-  void _fonctionnaliteEnPreparation(
-    BuildContext context,
-    String fonctionnalite,
-  ) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('$fonctionnalite sera ajoutée prochainement.')),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -281,15 +295,8 @@ class _DetailCompetitionPageState extends State<DetailCompetitionPage> {
             _ActionsCompetition(
               onVoirAthletes: _ouvrirInscriptions,
               onVoirEpreuves: _ouvrirEpreuves,
-              onVoirManches: () {
-                _fonctionnaliteEnPreparation(context, 'La gestion des manches');
-              },
-              onVoirResultats: () {
-                _fonctionnaliteEnPreparation(
-                  context,
-                  'La gestion des résultats',
-                );
-              },
+              onVoirManches: _ouvrirEpreuves,
+              onVoirResultats: _ouvrirDashboardResultats,
             ),
           ],
         ),

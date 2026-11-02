@@ -6,12 +6,14 @@ class DonneesFormulaireCompetition {
     required this.dateCompetition,
     this.description,
     this.lieu,
+    required this.demarrageAutomatiqueMancheSuivante,
   });
 
   final String nom;
   final String? description;
   final String? lieu;
   final DateTime dateCompetition;
+  final bool demarrageAutomatiqueMancheSuivante;
 }
 
 class FormulaireCompetition extends StatefulWidget {
@@ -22,6 +24,7 @@ class FormulaireCompetition extends StatefulWidget {
     this.descriptionInitiale = '',
     this.lieuInitial = '',
     this.dateInitiale,
+    this.demarrageAutomatiqueInitial = false,
     this.enregistrementEnCours = false,
     this.libelleBouton = 'Créer la compétition',
   });
@@ -30,6 +33,7 @@ class FormulaireCompetition extends StatefulWidget {
   final String descriptionInitiale;
   final String lieuInitial;
   final DateTime? dateInitiale;
+  final bool demarrageAutomatiqueInitial;
   final bool enregistrementEnCours;
   final String libelleBouton;
 
@@ -49,6 +53,7 @@ class _FormulaireCompetitionState extends State<FormulaireCompetition> {
   late final TextEditingController _lieuController;
 
   DateTime? _dateSelectionnee;
+  late bool _demarrageAutomatique;
 
   @override
   void initState() {
@@ -63,6 +68,7 @@ class _FormulaireCompetitionState extends State<FormulaireCompetition> {
     _lieuController = TextEditingController(text: widget.lieuInitial);
 
     _dateSelectionnee = widget.dateInitiale;
+    _demarrageAutomatique = widget.demarrageAutomatiqueInitial;
   }
 
   @override
@@ -130,6 +136,7 @@ class _FormulaireCompetitionState extends State<FormulaireCompetition> {
       description: _nettoyerTexteFacultatif(_descriptionController.text),
       lieu: _nettoyerTexteFacultatif(_lieuController.text),
       dateCompetition: _dateSelectionnee!,
+      demarrageAutomatiqueMancheSuivante: _demarrageAutomatique,
     );
 
     await widget.onValider(donnees);
@@ -216,6 +223,23 @@ class _FormulaireCompetitionState extends State<FormulaireCompetition> {
             dateSelectionnee: _dateSelectionnee,
             actif: !widget.enregistrementEnCours,
             onSelectionner: _selectionnerDate,
+          ),
+          const SizedBox(height: 16),
+          SwitchListTile.adaptive(
+            value: _demarrageAutomatique,
+            onChanged: widget.enregistrementEnCours
+                ? null
+                : (valeur) {
+                    setState(() {
+                      _demarrageAutomatique = valeur;
+                    });
+                  },
+            contentPadding: const EdgeInsets.symmetric(horizontal: 4),
+            title: const Text('Enchaîner automatiquement les manches'),
+            subtitle: const Text(
+              'À la fin d’une manche, la suivante démarre immédiatement.',
+            ),
+            secondary: const Icon(Icons.skip_next_outlined),
           ),
           const SizedBox(height: 24),
           FilledButton.icon(

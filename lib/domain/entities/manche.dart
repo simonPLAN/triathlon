@@ -91,16 +91,17 @@ class Manche {
       throw ArgumentError('La durée limite doit être supérieure à zéro.');
     }
 
-    if (heureArrivee.isBefore(heureDepart!)) {
-      throw ArgumentError(
-        'L’heure d’arrivée ne peut pas précéder '
-        'l’heure de départ.',
-      );
-    }
+    final heureDepartUtc = heureDepart!.toUtc();
+    final heureArriveeUtc = heureArrivee.toUtc();
+    final heureArriveeEffective = heureArriveeUtc.isBefore(heureDepartUtc)
+        ? heureDepartUtc
+        : heureArriveeUtc;
 
     return copierAvec(
-      heurePremiereArrivee: heureArrivee,
-      heureFinDelai: heureArrivee.add(Duration(seconds: dureeLimiteSecondes)),
+      heurePremiereArrivee: heureArriveeEffective.toLocal(),
+      heureFinDelai: heureArriveeEffective.toLocal().add(
+        Duration(seconds: dureeLimiteSecondes),
+      ),
       dateModification: DateTime.now(),
     );
   }
@@ -110,7 +111,16 @@ class Manche {
       throw StateError('Seule une manche en cours peut être terminée.');
     }
 
-    if (heureDepart != null && heure.isBefore(heureDepart!)) {
+    final heureDepartActuelle = heureDepart;
+
+    if (heureDepartActuelle == null) {
+      throw StateError('La manche ne possède pas d’heure de départ.');
+    }
+
+    final heureFinUtc = heure.toUtc();
+    final heureDepartUtc = heureDepartActuelle.toUtc();
+
+    if (heureFinUtc.isBefore(heureDepartUtc)) {
       throw ArgumentError(
         'L’heure de fin ne peut pas précéder '
         'l’heure de départ.',

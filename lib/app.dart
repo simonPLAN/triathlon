@@ -5,6 +5,7 @@ import 'package:triathlon/presentation/controllers/competitions_ouvertes_control
 import 'package:triathlon/presentation/controllers/epreuve_controller.dart';
 import 'package:triathlon/presentation/controllers/inscription_controller.dart';
 import 'package:triathlon/presentation/controllers/manche_controller.dart';
+import 'package:triathlon/presentation/controllers/resultat_controller.dart';
 
 import 'application/use_cases/connecter_utilisateur.dart';
 import 'application/use_cases/deconnecter_utilisateur.dart';
@@ -27,6 +28,7 @@ class TriathlonApp extends StatelessWidget {
     required this.competitionsOuvertesController,
     required this.epreuveController,
     required this.mancheController,
+    required this.resultatController,
   });
 
   final SupabaseClient clientSupabase;
@@ -40,6 +42,7 @@ class TriathlonApp extends StatelessWidget {
   final CompetitionsOuvertesController competitionsOuvertesController;
   final EpreuveController epreuveController;
   final MancheController mancheController;
+  final ResultatController resultatController;
 
   @override
   Widget build(BuildContext context) {
@@ -62,6 +65,7 @@ class TriathlonApp extends StatelessWidget {
         competitionsOuvertesController: competitionsOuvertesController,
         epreuveController: epreuveController,
         mancheController: mancheController,
+        resultatController: resultatController,
       ),
     );
   }

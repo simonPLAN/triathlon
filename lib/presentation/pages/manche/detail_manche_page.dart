@@ -3,11 +3,14 @@ import 'package:flutter/material.dart';
 import '../../../domain/entities/competition.dart';
 import '../../../domain/entities/epreuve.dart';
 import '../../../domain/entities/manche.dart';
+import '../../controllers/inscription_controller.dart';
 import '../../controllers/manche_controller.dart';
+import '../../controllers/resultat_controller.dart';
 import '../../widgets/manche/actions_manche.dart';
 import '../../widgets/manche/badge_statut_manche.dart';
 import '../../widgets/manche/chronometre_manche.dart';
 import '../../widgets/manche/informations_manche.dart';
+import '../resultat/resultats_manche_page.dart';
 
 class DetailManchePage extends StatefulWidget {
   const DetailManchePage({
@@ -16,12 +19,17 @@ class DetailManchePage extends StatefulWidget {
     required this.epreuve,
     required this.manche,
     required this.controller,
+    required this.resultatController,
+    required this.inscriptionController,
   });
 
   final Competition competition;
   final Epreuve epreuve;
   final Manche manche;
+
   final MancheController controller;
+  final ResultatController resultatController;
+  final InscriptionController inscriptionController;
 
   @override
   State<DetailManchePage> createState() {
@@ -35,6 +43,7 @@ class _DetailManchePageState extends State<DetailManchePage> {
   @override
   void initState() {
     super.initState();
+
     _manche = widget.manche;
   }
 
@@ -44,20 +53,15 @@ class _DetailManchePageState extends State<DetailManchePage> {
     _traiterResultatAction(mancheActualisee, 'La manche a démarré.');
   }
 
-  Future<void> _enregistrerPremiereArrivee() async {
-    final mancheActualisee = await widget.controller.enregistrerPremiereArrivee(
-      manche: _manche,
-      dureeLimiteSecondes: widget.epreuve.dureeLimiteSecondes,
-    );
-
-    _traiterResultatAction(
-      mancheActualisee,
-      'La première arrivée a été enregistrée. '
-      'Le compte à rebours est démarré.',
-    );
-  }
-
   Future<void> _terminer() async {
+    if (!_manche.premierArrive) {
+      _afficherErreur(
+        'La manche ne peut pas être terminée '
+        'avant l’enregistrement d’une arrivée.',
+      );
+      return;
+    }
+
     final confirmation = await _confirmerAction(
       titre: 'Terminer la manche ?',
       message:
@@ -72,7 +76,44 @@ class _DetailManchePageState extends State<DetailManchePage> {
 
     final mancheActualisee = await widget.controller.terminer(_manche);
 
-    _traiterResultatAction(mancheActualisee, 'La manche est terminée.');
+    if (mancheActualisee == null || !mounted) {
+      _traiterResultatAction(mancheActualisee, 'La manche est terminée.');
+      return;
+    }
+
+    var message = 'La manche est terminée.';
+
+    if (widget.competition.demarrageAutomatiqueMancheSuivante) {
+      final manchesSuivantes =
+          widget.controller.manches
+              .where(
+                (manche) =>
+                    manche.numero > mancheActualisee.numero && manche.estAVenir,
+              )
+              .toList()
+            ..sort((a, b) => a.numero.compareTo(b.numero));
+
+      if (manchesSuivantes.isNotEmpty) {
+        final mancheDemarree = await widget.controller.demarrer(
+          manchesSuivantes.first,
+        );
+
+        if (!mounted) {
+          return;
+        }
+
+        if (mancheDemarree == null) {
+          _afficherErreur(
+            widget.controller.erreur ??
+                'La manche suivante n’a pas pu démarrer automatiquement.',
+          );
+        } else {
+          message += ' La manche ${mancheDemarree.numero} a démarré.';
+        }
+      }
+    }
+
+    _traiterResultatAction(mancheActualisee, message);
   }
 
   Future<void> _annuler() async {
@@ -112,21 +153,25 @@ class _DetailManchePageState extends State<DetailManchePage> {
     _traiterResultatAction(mancheActualisee, 'Les résultats ont été publiés.');
   }
 
-  void _traiterResultatAction(Manche? mancheActualisee, String messageSucces) {
-    if (!mounted) {
-      return;
-    }
+  Future<void> _ouvrirResultats() async {
+    widget.resultatController.reinitialiser();
 
-    if (mancheActualisee == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            widget.controller.erreur ?? 'L’action n’a pas pu être effectuée.',
-          ),
-          backgroundColor: Theme.of(context).colorScheme.error,
-        ),
-      );
+    final mancheActualisee = await Navigator.of(context).push<Manche>(
+      MaterialPageRoute<Manche>(
+        builder: (context) {
+          return ResultatsManchePage(
+            competition: widget.competition,
+            epreuve: widget.epreuve,
+            manche: _manche,
+            mancheController: widget.controller,
+            resultatController: widget.resultatController,
+            inscriptionController: widget.inscriptionController,
+          );
+        },
+      ),
+    );
 
+    if (mancheActualisee == null || !mounted) {
       return;
     }
 
@@ -134,8 +179,38 @@ class _DetailManchePageState extends State<DetailManchePage> {
       _manche = mancheActualisee;
     });
 
+    widget.controller.remplacerLocalement(mancheActualisee);
+  }
+
+  void _traiterResultatAction(Manche? mancheActualisee, String messageSucces) {
+    if (!mounted) {
+      return;
+    }
+
+    if (mancheActualisee == null) {
+      _afficherErreur(
+        widget.controller.erreur ?? 'L’action n’a pas pu être effectuée.',
+      );
+      return;
+    }
+
+    setState(() {
+      _manche = mancheActualisee;
+    });
+
+    widget.controller.remplacerLocalement(mancheActualisee);
+
     ScaffoldMessenger.of(context)
         .showSnackBar(SnackBar(content: Text(messageSucces)));
+  }
+
+  void _afficherErreur(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Theme.of(context).colorScheme.error,
+      ),
+    );
   }
 
   Future<bool> _confirmerAction({
@@ -177,21 +252,27 @@ class _DetailManchePageState extends State<DetailManchePage> {
     return resultat ?? false;
   }
 
+  void _retournerVersListe() {
+    if (widget.controller.actionEnCours) {
+      return;
+    }
+
+    Navigator.of(context).pop(_manche);
+  }
+
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
       animation: widget.controller,
       builder: (context, child) {
         return PopScope(
-          canPop: !widget.controller.actionEnCours,
+          canPop: false,
           onPopInvokedWithResult: (didPop, result) {
             if (didPop) {
               return;
             }
 
-            if (!widget.controller.actionEnCours) {
-              Navigator.of(context).pop(_manche);
-            }
+            _retournerVersListe();
           },
           child: Scaffold(
             appBar: AppBar(
@@ -200,9 +281,7 @@ class _DetailManchePageState extends State<DetailManchePage> {
                 tooltip: 'Retour',
                 onPressed: widget.controller.actionEnCours
                     ? null
-                    : () {
-                        Navigator.of(context).pop(_manche);
-                      },
+                    : _retournerVersListe,
                 icon: const Icon(Icons.arrow_back),
               ),
             ),
@@ -212,21 +291,58 @@ class _DetailManchePageState extends State<DetailManchePage> {
                 children: [
                   _EnteteManche(epreuve: widget.epreuve, manche: _manche),
                   const SizedBox(height: 16),
+
                   if (_manche.delaiDemarre && _manche.estEnCours)
                     ChronometreManche(heureFinDelai: _manche.heureFinDelai!),
+
                   if (_manche.delaiDemarre && _manche.estEnCours)
                     const SizedBox(height: 16),
+
                   InformationsManche(manche: _manche),
                   const SizedBox(height: 16),
+
                   ActionsManche(
                     manche: _manche,
                     actionEnCours: widget.controller.actionEnCours,
                     onDemarrer: _demarrer,
-                    onPremiereArrivee: _enregistrerPremiereArrivee,
                     onTerminer: _terminer,
                     onAnnuler: _annuler,
                     onPublierResultats: _publierResultats,
                   ),
+                  const SizedBox(height: 16),
+
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton.icon(
+                      onPressed: widget.controller.actionEnCours
+                          ? null
+                          : _manche.estEnCours || _manche.estTerminee
+                          ? _ouvrirResultats
+                          : null,
+                      icon: Icon(
+                        _manche.estEnCours
+                            ? Icons.flag_outlined
+                            : Icons.leaderboard_outlined,
+                      ),
+                      label: Text(
+                        _manche.estEnCours
+                            ? 'Saisir les arrivées'
+                            : 'Consulter les résultats',
+                      ),
+                    ),
+                  ),
+
+                  if (_manche.estEnCours && !_manche.premierArrive) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      'Le premier athlète enregistré '
+                      'déclenchera automatiquement '
+                      'le compte à rebours.',
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ],
+
                   if (widget.controller.erreur != null) ...[
                     const SizedBox(height: 16),
                     _MessageErreurManche(

@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import '../../../domain/entities/competition.dart';
 import '../../../domain/entities/epreuve.dart';
 import '../../../domain/entities/manche.dart';
+import '../../controllers/inscription_controller.dart';
 import '../../controllers/manche_controller.dart';
+import '../../controllers/resultat_controller.dart';
 import '../../widgets/manche/carte_manche.dart';
 import '../../widgets/manche/erreur_manches.dart';
 import '../../widgets/manche/liste_manches_vide.dart';
@@ -15,11 +17,15 @@ class ManchesPage extends StatefulWidget {
     required this.competition,
     required this.epreuve,
     required this.controller,
+    required this.resultatController,
+    required this.inscriptionController,
   });
 
   final Competition competition;
   final Epreuve epreuve;
   final MancheController controller;
+  final ResultatController resultatController;
+  final InscriptionController inscriptionController;
 
   @override
   State<ManchesPage> createState() {
@@ -37,7 +43,7 @@ class _ManchesPageState extends State<ManchesPage> {
     super.initState();
 
     _controller.addListener(_actualiser);
-    _controller.charger(widget.epreuve.id);
+    _chargerEtGenererSiNecessaire();
   }
 
   @override
@@ -50,7 +56,7 @@ class _ManchesPageState extends State<ManchesPage> {
     }
 
     if (oldWidget.epreuve.id != widget.epreuve.id) {
-      widget.controller.charger(widget.epreuve.id);
+      _chargerEtGenererSiNecessaire();
     }
   }
 
@@ -64,6 +70,19 @@ class _ManchesPageState extends State<ManchesPage> {
     if (mounted) {
       setState(() {});
     }
+  }
+
+  Future<void> _chargerEtGenererSiNecessaire() async {
+    await _controller.charger(widget.epreuve.id);
+
+    if (!mounted ||
+        !widget.competition.estBrouillon ||
+        _controller.manches.isNotEmpty ||
+        _controller.generationEnCours) {
+      return;
+    }
+
+    await _controller.generer(widget.epreuve);
   }
 
   Future<void> _genererManches() async {
@@ -132,6 +151,8 @@ class _ManchesPageState extends State<ManchesPage> {
             epreuve: widget.epreuve,
             manche: manche,
             controller: _controller,
+            resultatController: widget.resultatController,
+            inscriptionController: widget.inscriptionController,
           );
         },
       ),
