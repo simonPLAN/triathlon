@@ -17,18 +17,32 @@ class AthleteController extends ChangeNotifier {
   bool chargement = false;
   String? erreur;
 
+  int _version = 0;
+
+  void reinitialiser() {
+    _version++;
+    athletes = const [];
+    chargement = false;
+    erreur = null;
+    notifyListeners();
+  }
+
   Future<void> charger() async {
+    final version = ++_version;
     chargement = true;
     erreur = null;
     notifyListeners();
 
     try {
-      athletes = await _listerAthletes.executer();
+      final resultat = await _listerAthletes.executer();
+      if (version == _version) athletes = resultat;
     } catch (_) {
-      erreur = 'Impossible de charger les athletes.';
+      if (version == _version) erreur = 'Impossible de charger les athletes.';
     } finally {
-      chargement = false;
-      notifyListeners();
+      if (version == _version) {
+        chargement = false;
+        notifyListeners();
+      }
     }
   }
 

@@ -8,6 +8,15 @@ import 'package:triathlon/presentation/controllers/manche_controller.dart';
 import 'package:triathlon/presentation/controllers/resultat_controller.dart';
 
 import 'app.dart';
+import 'infrastructure/repositories/supabase/edition_resultats_repository_supabase.dart';
+import 'application/use_cases/auth/supprimer_mon_compte.dart';
+import 'infrastructure/repositories/supabase/suppression_compte_repository_supabase.dart';
+import 'application/use_cases/auth/recuperer_compte.dart';
+import 'domain/services/lien_recuperation.dart';
+import 'infrastructure/auth/liens_recuperation_app_links.dart';
+import 'infrastructure/auth/configuration_authentification.dart';
+import 'infrastructure/repositories/supabase/recuperation_compte_repository_supabase.dart';
+import 'presentation/controllers/recuperation_compte_controller.dart';
 import 'application/use_cases/epreuve/verifier_competition_brouillon.dart';
 import 'application/use_cases/epreuve/configurer_epreuves.dart';
 import 'application/use_cases/competition/suivre_competitions_athlete.dart';
@@ -58,9 +67,20 @@ import 'presentation/controllers/athlete_controller.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  final configuration = ConfigurationAuthentification.environnement();
+  final sourceLiens = LiensRecuperationAppLinks();
+  final stockageAuth = SharedPreferencesLocalStorage(
+    persistSessionKey:
+        'sb-${Uri.parse(configuration.urlSupabase).host.split('.').first}-auth-token',
+  );
   await Supabase.initialize(
-    url: 'https://dgjtfhslcbrgsdczlvdg.supabase.co',
-    publishableKey: 'sb_publishable_YkkAvzFAOUZKJQwUxZKl-A_HJsJLBWT',
+    url: configuration.urlSupabase,
+    publishableKey: configuration.clePublique,
+    authOptions: FlutterAuthClientOptions(
+      localStorage: stockageAuth,
+      authFlowType: AuthFlowType.pkce,
+      detectSessionInUri: false,
+    ),
   );
 
   final clientSupabase = Supabase.instance.client;
@@ -120,13 +140,23 @@ Future<void> main() async {
   final resultatController = ResultatController(
     ListerResultatsManche(resultatRepository),
     EnregistrerArrivee(resultatRepository, calculPoints),
-    CorrigerResultat(resultatRepository, calculPoints),
+    CorrigerResultat(EditionResultatsRepositorySupabase(clientSupabase)),
     MarquerAthletesHorsDelai(resultatRepository),
   );
   final profilRepository = ProfilRepositorySupabase(clientSupabase);
   runApp(
     TriathlonApp(
       clientSupabase: clientSupabase,
+      supprimerMonCompte: SupprimerMonCompte(
+        SuppressionCompteRepositorySupabase(clientSupabase, stockageAuth),
+      ),
+      sourceLiensRecuperation: sourceLiens,
+      recuperationCompte: RecuperationCompteController(
+        RecupererCompte(
+          RecuperationCompteRepositorySupabase(clientSupabase),
+          LienRecuperation(configuration.redirection),
+        ),
+      ),
       athleteController: athleteController,
       competitionController: competitionController,
       inscriptionController: inscriptionController,

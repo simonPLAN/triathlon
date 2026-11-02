@@ -9,12 +9,14 @@ class CoachDashboardPage extends StatelessWidget {
   const CoachDashboardPage({
     super.key,
     required this.profil,
+    this.onMonCompte,
     required this.deconnecterUtilisateur,
     required this.onVoirCompetitions,
     required this.onVoirAthletes,
   });
 
   final ProfilUtilisateur profil;
+  final VoidCallback? onMonCompte;
   final DeconnecterUtilisateur deconnecterUtilisateur;
   final VoidCallback onVoirCompetitions;
   final VoidCallback onVoirAthletes;
@@ -40,6 +42,11 @@ class CoachDashboardPage extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Espace coach'),
         actions: [
+          IconButton(
+            tooltip: 'Supprimer mon compte',
+            onPressed: onMonCompte,
+            icon: const Icon(Icons.manage_accounts_outlined),
+          ),
           IconButton(
             tooltip: 'Se déconnecter',
             onPressed: () => _deconnecter(context),

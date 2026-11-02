@@ -65,6 +65,15 @@ class CompetitionsOuvertesController extends ChangeNotifier {
     return charger();
   }
 
+  void actualiserInscription(
+    Competition competition, {
+    required bool inscrite,
+  }) {
+    _inscrites = _inscrites.where((c) => c.id != competition.id).toList();
+    if (inscrite) _inscrites = [..._inscrites, competition];
+    notifyListeners();
+  }
+
   void retirerCompetition(String competitionId) {
     _competitions = _competitions
         .where((competition) => competition.id != competitionId)

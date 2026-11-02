@@ -1,0 +1,9 @@
+body{margin:0;background:#f2f5fa;color:#17243a;font:1rem/1.6 system-ui,sans-serif}
+main{max-width:42rem;margin:3rem auto;padding:2rem;background:white;border-radius:1rem}
+.marque{font-weight:700;color:#315b91}h1{line-height:1.2}h2{font-size:1.2rem;margin-top:1.6rem}
+form{border-top:1px solid #d6deea;margin-top:2rem}label{display:block;margin-top:1rem;font-weight:600}
+input[type=email],input[type=password]{box-sizing:border-box;width:100%;padding:.8rem;border:1px solid #66758c;border-radius:.5rem;font:inherit}
+.confirmation{display:flex;align-items:flex-start;gap:.7rem;font-weight:400}.confirmation input{margin-top:.5rem;flex-shrink:0}
+button{margin-top:1.5rem;padding:1rem;border:0;border-radius:.5rem;background:#a31f2d;color:white;font:inherit;font-weight:700;width:100%;cursor:pointer}
+button:disabled{opacity:.55;cursor:wait}input:focus-visible,button:focus-visible,a:focus-visible{outline:3px solid #315b91;outline-offset:3px}
+#message{font-weight:600}a{color:#254f89}@media(max-width:45rem){main{margin:0;padding:1.2rem;border-radius:0}}

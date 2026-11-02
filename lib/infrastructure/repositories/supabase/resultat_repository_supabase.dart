@@ -1,6 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../../../domain/entities/athlete.dart';
+import '../../mappers/resultat_supabase_mapper.dart';
 import '../../../domain/entities/resultat.dart';
 import '../../../domain/entities/statut_resultat.dart';
 import '../../../domain/ports/resultat_repository.dart';
@@ -49,7 +49,7 @@ class ResultatRepositorySupabase implements ResultatRepository {
           .order('position', ascending: true, nullsFirst: false);
 
       return donnees
-          .map<Resultat>(_convertirDepuisSupabase)
+          .map<Resultat>(ResultatSupabaseMapper.lire)
           .toList(growable: false);
     } on PostgrestException catch (exception) {
       throw Exception(
@@ -87,7 +87,7 @@ class ResultatRepositorySupabase implements ResultatRepository {
         return null;
       }
 
-      return _convertirDepuisSupabase(donnees);
+      return ResultatSupabaseMapper.lire(donnees);
     } on PostgrestException catch (exception) {
       throw Exception(
         'Impossible de vérifier le résultat : '
@@ -105,7 +105,7 @@ class ResultatRepositorySupabase implements ResultatRepository {
           .select(_selectionComplete)
           .single();
 
-      return _convertirDepuisSupabase(donnees);
+      return ResultatSupabaseMapper.lire(donnees);
     } on PostgrestException catch (exception) {
       throw Exception(_traduireErreurSupabase(exception));
     }
@@ -127,7 +127,7 @@ class ResultatRepositorySupabase implements ResultatRepository {
           .select(_selectionComplete)
           .single();
 
-      return _convertirDepuisSupabase(donnees);
+      return ResultatSupabaseMapper.lire(donnees);
     } on PostgrestException catch (exception) {
       throw Exception(_traduireErreurSupabase(exception));
     }
@@ -163,7 +163,7 @@ class ResultatRepositorySupabase implements ResultatRepository {
           .select(_selectionComplete);
 
       final resultatsCrees = donnees
-          .map<Resultat>(_convertirDepuisSupabase)
+          .map<Resultat>(ResultatSupabaseMapper.lire)
           .toList(growable: false);
 
       resultatsCrees.sort(_comparerResultats);
@@ -192,38 +192,6 @@ class ResultatRepositorySupabase implements ResultatRepository {
     }
   }
 
-  Resultat _convertirDepuisSupabase(Map<String, dynamic> donnees) {
-    final donneesProfil = donnees['profils'] as Map<String, dynamic>?;
-
-    if (donneesProfil == null) {
-      throw const FormatException('Le profil de l’athlète est introuvable.');
-    }
-
-    final athlete = Athlete(
-      id: donneesProfil['id'] as String,
-      prenom: donneesProfil['prenom'] as String,
-      nom: donneesProfil['nom'] as String,
-    );
-
-    return Resultat(
-      id: donnees['id'] as String,
-      mancheId: donnees['manche_id'] as String,
-      athlete: athlete,
-      position: donnees['position'] as int?,
-      points: donnees['points'] as int,
-      heureArrivee: _convertirDateFacultative(donnees['heure_arrivee']),
-      tempsTotalMillisecondes: donnees['temps_total_millisecondes'] as int?,
-      ecartPremierMillisecondes: donnees['ecart_premier_millisecondes'] as int?,
-      statut: _convertirStatutDepuisSupabase(donnees['statut'] as String),
-      commentaire: donnees['commentaire'] as String?,
-      datePublication: _convertirDateFacultative(donnees['date_publication']),
-      dateCreation: DateTime.parse(donnees['date_creation'] as String)
-          .toLocal(),
-      dateModification: DateTime.parse(donnees['date_modification'] as String)
-          .toLocal(),
-    );
-  }
-
   Map<String, dynamic> _convertirPourCreation(Resultat resultat) {
     return {
       'manche_id': resultat.mancheId,
@@ -250,33 +218,6 @@ class ResultatRepositorySupabase implements ResultatRepository {
       'commentaire': resultat.commentaire,
       'date_publication': resultat.datePublication?.toUtc().toIso8601String(),
     };
-  }
-
-  DateTime? _convertirDateFacultative(dynamic valeur) {
-    if (valeur == null) {
-      return null;
-    }
-
-    return DateTime.parse(valeur as String).toLocal();
-  }
-
-  StatutResultat _convertirStatutDepuisSupabase(String statut) {
-    switch (statut) {
-      case 'arrive':
-        return StatutResultat.arrive;
-
-      case 'hors_delai':
-        return StatutResultat.horsDelai;
-
-      case 'abandon':
-        return StatutResultat.abandon;
-
-      case 'disqualifie':
-        return StatutResultat.disqualifie;
-
-      default:
-        throw FormatException('Statut de résultat inconnu : $statut');
-    }
   }
 
   String _convertirStatutPourSupabase(StatutResultat statut) {

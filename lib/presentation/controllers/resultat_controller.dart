@@ -1,5 +1,7 @@
 import 'package:flutter/foundation.dart';
 
+import '../../domain/entities/edition_resultat.dart';
+
 import '../../application/use_cases/resultat/enregistrer_arrivee.dart';
 import '../../application/use_cases/resultat/corriger_resultat.dart';
 import '../../domain/entities/statut_resultat.dart';
@@ -168,40 +170,37 @@ class ResultatController extends ChangeNotifier {
     }
   }
 
-  Future<Resultat?> corrigerResultat({
-    required Resultat resultat,
+  Future<EditionResultats?> corrigerResultat({
+    required Manche manche,
+    required Athlete athlete,
+    Resultat? resultat,
     required StatutResultat statut,
+    required ModeReclassement mode,
     int? position,
+    int? tempsMillisecondes,
     String? commentaire,
+    bool accepterDepublication = false,
   }) async {
-    if (_enregistrementEnCours) {
-      return null;
-    }
-
-    if (statut == StatutResultat.arrive &&
-        position != null &&
-        _resultats.any(
-          (element) =>
-              element.id != resultat.id && element.position == position,
-        )) {
-      _erreur = 'Cette position est déjà utilisée par un autre athlète.';
-      notifyListeners();
-      return null;
-    }
-
+    if (operationEnCours) return null;
     _enregistrementEnCours = true;
     _erreur = null;
     notifyListeners();
-
     try {
-      final corrige = await _corrigerResultat.executer(
+      final edition = await _corrigerResultat.executer(
+        manche: manche,
+        athlete: athlete,
         resultat: resultat,
         statut: statut,
+        mode: mode,
         position: position,
+        tempsMillisecondes: tempsMillisecondes,
         commentaire: commentaire,
+        accepterDepublication: accepterDepublication,
       );
-      remplacerLocalement(corrige);
-      return corrige;
+      _resultats = edition.resultats;
+      _mancheChargeeId = manche.id;
+      _trierResultats();
+      return edition;
     } catch (exception) {
       _erreur = _extraireMessageErreur(exception);
       return null;

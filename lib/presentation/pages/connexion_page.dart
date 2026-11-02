@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../controllers/recuperation_compte_controller.dart';
+import 'auth/mot_de_passe_oublie_page.dart';
+
 import '../../application/use_cases/connecter_utilisateur.dart';
 import '../../application/use_cases/inscrire_athlete.dart';
 import '../widgets/inscription_athlete_dialog.dart';
@@ -9,10 +12,12 @@ class ConnexionPage extends StatefulWidget {
     super.key,
     required this.connecterUtilisateur,
     required this.inscrireAthlete,
+    required this.recuperationCompte,
   });
 
   final ConnecterUtilisateur connecterUtilisateur;
   final InscrireAthlete inscrireAthlete;
+  final RecuperationCompteController recuperationCompte;
 
   @override
   State<ConnexionPage> createState() {
@@ -37,7 +42,7 @@ class _ConnexionPageState extends State<ConnexionPage> {
   }
 
   Future<void> _connecter() async {
-    if (!_formKey.currentState!.validate()) {
+    if (_chargement || !_formKey.currentState!.validate()) {
       return;
     }
 
@@ -187,6 +192,25 @@ class _ConnexionPageState extends State<ConnexionPage> {
 
                             return null;
                           },
+                        ),
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: TextButton(
+                            onPressed: _chargement
+                                ? null
+                                : () {
+                                    Navigator.of(context).push<void>(
+                                      MaterialPageRoute(
+                                        builder: (_) => MotDePasseOubliePage(
+                                          controller: widget.recuperationCompte,
+                                          emailInitial: _emailController.text
+                                              .trim(),
+                                        ),
+                                      ),
+                                    );
+                                  },
+                            child: const Text('Mot de passe oublié ?'),
+                          ),
                         ),
                         if (_erreur != null) ...[
                           const SizedBox(height: 16),

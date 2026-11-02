@@ -1,5 +1,8 @@
 import 'package:flutter/foundation.dart';
 
+import 'suivi_inscription_utilisateur.dart';
+import '../models/etat_inscription_utilisateur.dart';
+
 import '../../application/use_cases/inscription/inscrire_invite.dart';
 
 import '../../application/use_cases/inscription/desinscrire_athlete_competition.dart';
@@ -18,9 +21,15 @@ class InscriptionController extends ChangeNotifier {
     this._modifierDossardInscription,
     this._desinscrireAthleteCompetition,
     this._inscrireUtilisateurConnecte,
-    this._obtenirInscriptionUtilisateurConnecte,
+    ObtenirInscriptionUtilisateurConnecte obtenirInscriptionUtilisateurConnecte,
     this._inscrireInvite,
-  );
+  ) : suiviUtilisateur = SuiviInscriptionUtilisateur(
+        obtenirInscriptionUtilisateurConnecte,
+      ) {
+    suiviUtilisateur.addListener(notifyListeners);
+  }
+
+  final SuiviInscriptionUtilisateur suiviUtilisateur;
 
   final InscrireInvite _inscrireInvite;
 
@@ -32,12 +41,9 @@ class InscriptionController extends ChangeNotifier {
 
   final DesinscrireAthleteCompetition _desinscrireAthleteCompetition;
   final InscrireUtilisateurConnecte _inscrireUtilisateurConnecte;
-  final ObtenirInscriptionUtilisateurConnecte
-  _obtenirInscriptionUtilisateurConnecte;
-  List<Inscription> _inscriptions = const [];
-  final Map<String, Inscription?> _inscriptionsUtilisateur = {};
 
-  final Set<String> _verificationsEnCours = {};
+  List<Inscription> _inscriptions = const [];
+
   String? _competitionId;
   String? _erreur;
 
@@ -59,19 +65,21 @@ class InscriptionController extends ChangeNotifier {
   }
 
   Inscription? inscriptionUtilisateurPour(String competitionId) {
-    return _inscriptionsUtilisateur[competitionId];
+    return suiviUtilisateur.pour(competitionId).inscription;
   }
 
   bool inscriptionUtilisateurVerifiee(String competitionId) {
-    return _inscriptionsUtilisateur.containsKey(competitionId);
+    return suiviUtilisateur.pour(competitionId).statut ==
+        StatutVerificationInscription.verifiee;
   }
 
   bool verificationEnCoursPour(String competitionId) {
-    return _verificationsEnCours.contains(competitionId);
+    return suiviUtilisateur.pour(competitionId).statut ==
+        StatutVerificationInscription.enCours;
   }
 
   bool estInscritA(String competitionId) {
-    return _inscriptionsUtilisateur[competitionId] != null;
+    return inscriptionUtilisateurPour(competitionId) != null;
   }
 
   bool get modificationEnCours {
@@ -84,33 +92,7 @@ class InscriptionController extends ChangeNotifier {
 
   Future<void> verifierInscriptionUtilisateur({
     required Competition competition,
-  }) async {
-    final competitionId = competition.id.trim();
-
-    if (competitionId.isEmpty) {
-      return;
-    }
-
-    if (_verificationsEnCours.contains(competitionId)) {
-      return;
-    }
-
-    _verificationsEnCours.add(competitionId);
-    notifyListeners();
-
-    try {
-      final inscription = await _obtenirInscriptionUtilisateurConnecte.executer(
-        competition: competition,
-      );
-
-      _inscriptionsUtilisateur[competitionId] = inscription;
-    } catch (exception) {
-      _erreur = _extraireMessageErreur(exception);
-    } finally {
-      _verificationsEnCours.remove(competitionId);
-      notifyListeners();
-    }
-  }
+  }) => suiviUtilisateur.verifier(competition);
 
   bool get estVide => _inscriptions.isEmpty;
 
@@ -134,7 +116,7 @@ class InscriptionController extends ChangeNotifier {
   Future<Inscription?> inscrireUtilisateurConnecte({
     required Competition competition,
   }) async {
-    if (_inscriptionEnCours) {
+    if (_inscriptionEnCours || _desinscriptionEnCours || _modificationEnCours) {
       return null;
     }
 
@@ -147,7 +129,7 @@ class InscriptionController extends ChangeNotifier {
         competition: competition,
       );
 
-      _inscriptionsUtilisateur[competition.id] = nouvelleInscription;
+      suiviUtilisateur.enregistrer(competition.id, nouvelleInscription);
 
       final inscriptionExistante = _inscriptions.any((inscription) {
         return inscription.id == nouvelleInscription.id ||
@@ -298,8 +280,16 @@ class InscriptionController extends ChangeNotifier {
     }
   }
 
-  Future<bool> desinscrire(Inscription inscription) async {
-    if (_desinscriptionEnCours) {
+  Future<bool> desinscrire(
+    Inscription inscription, {
+    Competition? competition,
+  }) async {
+    if (competition != null && !competition.estOuverte) {
+      _erreur = 'Les inscriptions sont fermées : la désinscription n’est plus autorisée.';
+      notifyListeners();
+      return false;
+    }
+    if (_desinscriptionEnCours || _inscriptionEnCours || _modificationEnCours) {
       return false;
     }
 
@@ -314,7 +304,7 @@ class InscriptionController extends ChangeNotifier {
           .where((element) => element.id != inscription.id)
           .toList(growable: false);
 
-      _inscriptionsUtilisateur.remove(inscription.competitionId);
+      suiviUtilisateur.retirerSiConnue(inscription);
 
       return true;
     } catch (exception) {
@@ -327,9 +317,7 @@ class InscriptionController extends ChangeNotifier {
   }
 
   void reinitialiserInscriptionsUtilisateur() {
-    _inscriptionsUtilisateur.clear();
-    _verificationsEnCours.clear();
-    notifyListeners();
+    suiviUtilisateur.reinitialiser();
   }
 
   Future<void> recharger() async {
@@ -354,8 +342,7 @@ class InscriptionController extends ChangeNotifier {
   void reinitialiser() {
     _inscriptions = const [];
 
-    _inscriptionsUtilisateur.clear();
-    _verificationsEnCours.clear();
+    suiviUtilisateur.reinitialiser();
 
     _competitionId = null;
     _erreur = null;
@@ -368,7 +355,15 @@ class InscriptionController extends ChangeNotifier {
     notifyListeners();
   }
 
+  @override
+  void dispose() {
+    suiviUtilisateur.removeListener(notifyListeners);
+    suiviUtilisateur.dispose();
+    super.dispose();
+  }
+
   void _remplacerInscriptionDansListe(Inscription inscription) {
+    suiviUtilisateur.actualiserSiConnue(inscription);
     final index = _inscriptions.indexWhere(
       (element) => element.id == inscription.id,
     );

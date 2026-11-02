@@ -20,6 +20,7 @@ class MancheRepositorySupabase implements MancheRepository {
     heure_premiere_arrivee,
     heure_fin_delai,
     resultats_publies,
+    revision_resultats,
     date_creation,
     date_modification
   ''';
@@ -134,6 +135,18 @@ class MancheRepositorySupabase implements MancheRepository {
     }
 
     try {
+      if (manche.resultatsPublies) {
+        final donnees = await _client.rpc(
+          'publier_resultats_manche_verifies',
+          params: {
+            'p_manche_id': manche.id,
+            'p_revision': manche.revisionResultats,
+          },
+        );
+        return _convertirDepuisSupabase(
+          Map<String, dynamic>.from(donnees as Map),
+        );
+      }
       final donnees = await _client
           .from(_nomTable)
           .update(_convertirPourModification(manche))
@@ -180,6 +193,7 @@ class MancheRepositorySupabase implements MancheRepository {
       ),
       heureFinDelai: _convertirDateFacultative(donnees['heure_fin_delai']),
       resultatsPublies: donnees['resultats_publies'] as bool,
+      revisionResultats: (donnees['revision_resultats'] as num?)?.toInt() ?? 0,
       dateCreation: DateTime.parse(donnees['date_creation'] as String),
       dateModification: DateTime.parse(donnees['date_modification'] as String),
     );

@@ -1,7 +1,7 @@
 # Reste à faire — Fonctionnalités et publication Android
 
 Ce document regroupe les fonctionnalités manquantes ou partielles relevées lors de la revue du code.
-Les cases ci-dessous restent ouvertes ; les migrations fournies ne sont pas considérées comme déployées sans vérification sur Supabase.
+Les cases cochées correspondent au code et aux tests locaux ; les migrations et réglages serveur ne sont pas considérés comme déployés sans vérification sur Supabase.
 
 
 ## État de la revue du dépôt
@@ -10,11 +10,11 @@ Revue du 2 novembre 2026. Les constats portent sur le code et les fichiers locau
 
 | Sujet | Présent dans le code | Reste à faire ou à vérifier |
 |---|---|---|
-| Comptes | Inscription, connexion, déconnexion, messages de confirmation d'e-mail | Récupération du mot de passe, parcours de confirmation complet, suppression de compte |
+| Comptes | Inscription, connexion, déconnexion, récupération du mot de passe Android avec PKCE ; suppression de compte fournie côté application/serveur/web | Déployer et vérifier la suppression ; héberger la page, renseigner la Play Console ; redirections et vrais e-mails, confirmation complète |
 | Rôles | Deux rôles `athlete` et `coach`, accueil séparé via `AuthGate` | Audit serveur des droits, attribution du rôle coach, décision sur arbitre/administrateur |
 | Interface | Thème clair/sombre, composants communs, recherche d'athlètes, confirmations et chargements sur plusieurs écrans | Harmonisation des écrans restants, identité définitive, recette sur appareils réels |
 | Fonctionnel sportif | Premier arrivé, compte à rebours, résultats, hors délai, enchaînement et publication implémentés | Compléments détaillés ci-dessous ; ne pas refaire ces fonctions déjà présentes |
-| Supabase | Trois migrations avec RPC et certaines policies | Schéma initial complet non fourni par ces migrations ; vérifier RLS, policies existantes et déploiement réel |
+| Supabase | Cinq migrations, dont suppression de compte et corrections transactionnelles | Schéma initial complet non fourni par ces migrations ; vérifier RLS, policies existantes et déploiement réel |
 | Tests | Tests métier, contrôleurs, widgets et échange HTTP local des horaires | Tests avec une vraie base Supabase, tests de bout en bout et recette Release |
 | Identifiant Android | `com.example.triathlon` | Choisir l'identifiant définitif avant publication |
 | Signature Release | `signingConfig = signingConfigs.getByName("debug")` | Configurer une clé d'upload de production |
@@ -52,11 +52,15 @@ Les fonctions « déjà présentes » restent à valider en conditions réelles.
 
 ### Saisie et correction des résultats — priorité haute
 
-- [ ] Permettre la saisie manuelle d'un temps et sa correction.
-- [ ] Permettre un changement de position avec décalage ou échange automatique des autres places.
-- [ ] Recalculer les positions, points et écarts des résultats affectés.
-- [ ] Garantir la cohérence des corrections dans une transaction, sans positions dupliquées.
-- [ ] Définir le traitement des résultats déjà publiés lorsqu'ils sont corrigés.
+- [x] Permettre la saisie manuelle d'un temps et sa correction sur une manche terminée (minutes:secondes.millisecondes).
+- [x] Proposer décalage des places, échange de deux places ou classement par temps.
+- [x] Recalculer les positions, points et écarts du classement complet ; conserver les temps des autres athlètes lors d'un changement de place.
+- [x] Fournir une RPC transactionnelle avec verrouillage, contrôle de révision et unicité des places ; tests locaux de rollback et de conflits.
+- [x] Retirer toute la manche de la publication après confirmation lorsqu'un résultat publié est corrigé ; imposer une republication explicite.
+- [ ] Déployer la migration 202611020005 et vérifier les contraintes, policies et RPC sur le schéma réel.
+- [ ] Tester la correction depuis deux appareils et la visibilité athlète après dépublication/republication.
+
+Règles, formats, concurrence et déploiement : [correction_resultats.md](../../docs/correction_resultats.md).
 
 ### Validation et publication
 
@@ -99,11 +103,13 @@ Les fonctions « déjà présentes » restent à valider en conditions réelles.
 
 ### État de l'inscription
 
-- [ ] Afficher explicitement « Non inscrit », « Inscrit » et « Inscriptions fermées » selon la situation.
-- [ ] Distinguer une vérification en cours d'une vérification en erreur.
-- [ ] Proposer une nouvelle tentative en cas d'erreur, sans laisser l'interface bloquée sur « Vérification de l'inscription… ».
-- [ ] Expliquer pourquoi l'inscription ou la désinscription n'est plus autorisée.
-- [ ] Actualiser clairement l'état après inscription, désinscription et attribution du dossard.
+- [x] Afficher explicitement « Non inscrit », « Inscrit » et « Inscriptions fermées » selon la situation.
+- [x] Distinguer une vérification en cours d'une vérification en erreur, séparément pour chaque compétition.
+- [x] Proposer une nouvelle tentative après erreur ou délai de lecture dépassé (20 secondes), sans chargement permanent.
+- [x] Expliquer la fermeture selon le statut (préparation, commencée, terminée, annulée) et empêcher les actions devenues interdites.
+- [x] Actualiser l'état après inscription/désinscription et changement du dossard ; relire les données avec Actualiser, le glissement de la liste ou à la reprise de l'application. Protéger les données confirmées des réponses anciennes.
+- [x] Conserver l'état confirmé et signaler une erreur si l'actualisation des listes échoue après une action réussie.
+- [ ] Vérifier ce parcours avec une vraie base et deux appareils (attribution du dossard par le coach puis actualisation côté athlète).
 
 ## Vérifications de livraison communes
 
@@ -141,11 +147,15 @@ Références : `lib/domain/ports/auth_repository.dart`, `lib/infrastructure/repo
 
 ### Récupération du mot de passe — bloquant avant publication
 
-- [ ] Ajouter « Mot de passe oublié » sur la connexion.
-- [ ] Implémenter l'envoi du lien, la réception du lien dans l'application et l'écran de nouveau mot de passe.
-- [ ] Configurer les URL de redirection et les liens Android pour les environnements de test et de production.
-- [ ] Gérer les liens expirés, déjà utilisés ou invalides avec des messages compréhensibles.
-- [ ] Tester le parcours depuis un appareil avec et sans session existante.
+- [x] Ajouter « Mot de passe oublié » sur la connexion.
+- [x] Implémenter l'envoi du lien, la réception Android à froid/à chaud et l'écran de nouveau mot de passe avec PKCE.
+- [x] Déclarer les liens Android et sélectionner les URL de retour selon APP_ENV (production/staging).
+- [ ] Renseigner et vérifier les URL autorisées dans chaque projet Supabase et tester le SMTP.
+- [x] Gérer les liens expirés, déjà utilisés ou invalides avec des messages compréhensibles.
+- [x] Ajouter des tests automatisés des parcours avec et sans session simulée, du formulaire et des doubles envois.
+- [ ] Tester le parcours depuis un appareil réel avec et sans session existante et un véritable e-mail.
+
+Configuration et recette : [recuperation_mot_de_passe.md](../../docs/recuperation_mot_de_passe.md).
 
 ### Confirmation de l'adresse e-mail
 
@@ -167,15 +177,20 @@ Références : `lib/domain/ports/auth_repository.dart`, `lib/infrastructure/repo
 
 ### Suppression du compte — bloquant pour un parcours avec création de compte
 
-- [ ] Ajouter un accès clair à « Supprimer mon compte » dans l'application, avec confirmation et vérification de l'identité si nécessaire.
-- [ ] Implémenter la suppression via un traitement serveur authentifié ; aucune clé privilégiée dans Flutter.
-- [ ] Supprimer le compte Auth et traiter les données associées, pas uniquement la ligne de profil.
-- [ ] Définir le devenir des inscriptions, résultats, compétitions d'un coach et profils invités qu'il a créés.
-- [ ] Documenter les données supprimées, anonymisées ou conservées pour une obligation applicable et la durée associée.
-- [ ] Éviter les suppressions en cascade accidentelles qui détruiraient l'historique sportif d'autres participants.
-- [ ] Fournir une page web publique permettant de demander la suppression du compte et des données.
-- [ ] Renseigner cette URL dans la Play Console et tester la demande jusqu'à son aboutissement.
-- [ ] Invalider la session et effacer les données locales associées après suppression.
+- [x] Ajouter un accès « Supprimer mon compte » aux espaces coach et athlète, avec confirmation et mot de passe vérifié côté serveur.
+- [x] Implémenter le traitement serveur authentifié sans clé privilégiée dans Flutter ; refuser les identifiants de cible injectés et le contournement MFA.
+- [x] Fournir la suppression Auth et le nettoyage transactionnel du profil, inscriptions et résultats personnels.
+- [x] Définir le devenir des compétitions : archivage sous responsable technique sans Auth, annulation des compétitions actives ; conserver les autres sportifs et invités.
+- [x] Documenter les données effacées et conservées, sans supposer une obligation légale de conservation.
+- [ ] Valider et publier les durées réelles des sauvegardes/journaux et la politique sportive des autres participants ; compléter le contact de support.
+- [x] Ajouter les protections contre les cascades inconnues et les tests PostgreSQL d'atomicité et de conservation des autres participants.
+- [x] Créer la page web de suppression utilisable sans application, avec authentification et appel du même serveur.
+- [ ] Déployer la migration 202611020004 et la fonction supprimer-compte sur staging puis production ; tester les FK, triggers et policies réels.
+- [ ] Héberger la page en HTTPS sur une URL publique et renseigner cette URL dans la Play Console.
+- [ ] Tester la demande jusqu'à son aboutissement avec de vrais comptes et vérifier anciens JWT/refresh tokens.
+- [x] Fermer la session, retirer la session persistée et vider le répertoire local après suppression confirmée ; proposer une reprise du nettoyage sans seconde suppression.
+
+Implémentation, traitement des données, déploiement et recette : [suppression_compte.md](../../docs/suppression_compte.md).
 
 Le parcours dans l'application et la ressource web sont à préparer conformément aux [exigences Google Play de suppression de compte](https://support.google.com/googleplay/android-developer/answer/13327111?hl=en).
 
@@ -217,7 +232,7 @@ La séparation domaine / cas d'utilisation / infrastructure / présentation exis
 
 ### Schéma et RLS
 
-Les trois migrations présentes apportent des fonctions et certaines règles. Elles ne prouvent ni l'activation de RLS sur toutes les tables, ni la sécurité des policies existantes dans le projet déployé.
+Les cinq migrations présentes apportent des fonctions et certaines règles. Elles ne prouvent ni l'activation de RLS sur toutes les tables, ni la sécurité des policies existantes dans le projet déployé.
 
 - [ ] Exporter/versionner le schéma initial et les policies existantes afin de pouvoir reconstruire la base à partir du dépôt.
 - [ ] Vérifier et activer RLS sur `profils`, `competitions`, `inscriptions`, `epreuves`, `manches` et `resultats`.
@@ -267,7 +282,7 @@ Ces tests utilisent notamment des faux dépôts ou un serveur HTTP local. Ils ne
 - [ ] Préparer un coach propriétaire, un second coach et au moins deux comptes athlètes.
 - [ ] Créer une compétition avec plusieurs épreuves et plusieurs manches.
 - [ ] Tester la création de compte, confirmation d'e-mail, connexion, restauration de session et déconnexion.
-- [ ] Tester la récupération du mot de passe et la suppression du compte une fois implémentées.
+- [ ] Tester la récupération du mot de passe et la suppression du compte après déploiement des fonctions et réglages serveur.
 - [ ] Tester inscription, double inscription, désinscription et fermeture des inscriptions.
 - [ ] Décider si une capacité maximale est nécessaire ; si oui, définir et tester le cas « compétition complète ».
 - [ ] Tester l'ajout d'invités, les doublons de dossard et leur présence dans les résultats.

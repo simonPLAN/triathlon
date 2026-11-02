@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../formatters/temps_resultat.dart';
+
 import '../../../domain/entities/inscription.dart';
 import '../../../domain/entities/manche.dart';
 import '../../../domain/entities/resultat.dart';
@@ -110,132 +112,6 @@ class EnteteResultats extends StatelessWidget {
   }
 }
 
-class CorrectionResultat {
-  const CorrectionResultat({
-    required this.statut,
-    required this.position,
-    required this.commentaire,
-  });
-
-  final StatutResultat statut;
-  final int? position;
-  final String? commentaire;
-}
-
-class DialogueCorrectionResultat extends StatefulWidget {
-  const DialogueCorrectionResultat({super.key, required this.resultat});
-
-  final Resultat resultat;
-
-  @override
-  State<DialogueCorrectionResultat> createState() =>
-      DialogueCorrectionResultatState();
-}
-
-class DialogueCorrectionResultatState
-    extends State<DialogueCorrectionResultat> {
-  late StatutResultat _statut;
-  late final TextEditingController _positionController;
-  late final TextEditingController _commentaireController;
-
-  @override
-  void initState() {
-    super.initState();
-    _statut = widget.resultat.statut;
-    _positionController = TextEditingController(
-      text: widget.resultat.position?.toString() ?? '',
-    );
-    _commentaireController = TextEditingController(
-      text: widget.resultat.commentaire ?? '',
-    );
-  }
-
-  @override
-  void dispose() {
-    _positionController.dispose();
-    _commentaireController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final positionActive = _statut == StatutResultat.arrive;
-    return AlertDialog(
-      title: const Text('Corriger le résultat'),
-      content: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            DropdownButtonFormField<StatutResultat>(
-              initialValue: _statut,
-              decoration: const InputDecoration(labelText: 'Statut'),
-              items: StatutResultat.values
-                  .map(
-                    (statut) => DropdownMenuItem(
-                      value: statut,
-                      child: Text(_libelleStatutCorrection(statut)),
-                    ),
-                  )
-                  .toList(),
-              onChanged: (statut) {
-                if (statut != null) setState(() => _statut = statut);
-              },
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _positionController,
-              enabled: positionActive,
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(labelText: 'Position'),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _commentaireController,
-              maxLines: 3,
-              decoration: const InputDecoration(labelText: 'Commentaire'),
-            ),
-          ],
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Annuler'),
-        ),
-        FilledButton(
-          onPressed: () {
-            final position = int.tryParse(_positionController.text.trim());
-            if (positionActive && (position == null || position <= 0)) {
-              return;
-            }
-            Navigator.of(context).pop(
-              CorrectionResultat(
-                statut: _statut,
-                position: positionActive ? position : null,
-                commentaire: _commentaireController.text,
-              ),
-            );
-          },
-          child: const Text('Enregistrer'),
-        ),
-      ],
-    );
-  }
-
-  String _libelleStatutCorrection(StatutResultat statut) {
-    switch (statut) {
-      case StatutResultat.arrive:
-        return 'Arrivé';
-      case StatutResultat.horsDelai:
-        return 'Hors délai';
-      case StatutResultat.abandon:
-        return 'Abandon';
-      case StatutResultat.disqualifie:
-        return 'Disqualifié';
-    }
-  }
-}
-
 class CarteResultat extends StatelessWidget {
   const CarteResultat({
     super.key,
@@ -244,7 +120,7 @@ class CarteResultat extends StatelessWidget {
   });
 
   final Resultat resultat;
-  final VoidCallback onCorriger;
+  final VoidCallback? onCorriger;
 
   @override
   Widget build(BuildContext context) {
@@ -276,6 +152,15 @@ class CarteResultat extends StatelessWidget {
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
                   ],
+                  if (resultat.ecartPremierMillisecondes != null) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      'Écart au premier classé : ${TempsResultat.formater(resultat.ecartPremierMillisecondes!)}',
+                    ),
+                  ],
+                  if (resultat.estArrive &&
+                      resultat.tempsTotalMillisecondes == null)
+                    const Text('Temps à compléter avant publication.'),
                   if (resultat.tempsTotalMillisecondes != null) ...[
                     const SizedBox(height: 2),
                     Text(

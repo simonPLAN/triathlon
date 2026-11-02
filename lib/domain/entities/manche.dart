@@ -12,6 +12,7 @@ class Manche {
     this.heureDepart,
     this.heurePremiereArrivee,
     this.heureFinDelai,
+    this.revisionResultats = 0,
   });
 
   final String id;
@@ -24,6 +25,7 @@ class Manche {
   final DateTime? heureFinDelai;
 
   final bool resultatsPublies;
+  final int revisionResultats;
 
   final DateTime dateCreation;
   final DateTime dateModification;
@@ -176,6 +178,7 @@ class Manche {
     DateTime? heurePremiereArrivee,
     DateTime? heureFinDelai,
     bool? resultatsPublies,
+    int? revisionResultats,
     DateTime? dateCreation,
     DateTime? dateModification,
   }) {
@@ -188,6 +191,7 @@ class Manche {
       heurePremiereArrivee: heurePremiereArrivee ?? this.heurePremiereArrivee,
       heureFinDelai: heureFinDelai ?? this.heureFinDelai,
       resultatsPublies: resultatsPublies ?? this.resultatsPublies,
+      revisionResultats: revisionResultats ?? this.revisionResultats,
       dateCreation: dateCreation ?? this.dateCreation,
       dateModification: dateModification ?? this.dateModification,
     );

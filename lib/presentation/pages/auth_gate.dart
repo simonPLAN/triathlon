@@ -1,5 +1,10 @@
 import 'dart:async';
 
+import '../../application/use_cases/auth/supprimer_mon_compte.dart';
+import 'compte/supprimer_compte_page.dart';
+
+import '../controllers/recuperation_compte_controller.dart';
+
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -36,6 +41,8 @@ class AuthGate extends StatefulWidget {
     required this.epreuveController,
     required this.mancheController,
     required this.resultatController,
+    required this.recuperationCompte,
+    required this.supprimerMonCompte,
   });
 
   final SupabaseClient clientSupabase;
@@ -50,6 +57,8 @@ class AuthGate extends StatefulWidget {
   final EpreuveController epreuveController;
   final MancheController mancheController;
   final ResultatController resultatController;
+  final RecuperationCompteController recuperationCompte;
+  final SupprimerMonCompte supprimerMonCompte;
 
   @override
   State<AuthGate> createState() {
@@ -68,27 +77,31 @@ class _AuthGateState extends State<AuthGate> {
 
     _preparerChargementProfil();
 
-    _abonnementAuth = widget.clientSupabase.auth.onAuthStateChange.listen((
-      authState,
-    ) {
-      if (!mounted) {
-        return;
-      }
-
-      setState(() {
-        if (authState.session == null) {
-          widget.competitionController.reinitialiser();
-          widget.competitionsOuvertesController.reinitialiser();
-          widget.inscriptionController.reinitialiser();
-          widget.epreuveController.reinitialiser();
-          widget.mancheController.reinitialiser();
-          widget.resultatController.reinitialiser();
-          _profilFuture = null;
-        } else {
-          _profilFuture = widget.obtenirProfilConnecte.executer();
+    _abonnementAuth = widget.clientSupabase.auth.onAuthStateChange.listen(
+      (authState) {
+        if (!mounted) {
+          return;
         }
-      });
-    });
+
+        setState(() {
+          if (authState.session == null) {
+            widget.athleteController.reinitialiser();
+            widget.competitionController.reinitialiser();
+            widget.competitionsOuvertesController.reinitialiser();
+            widget.inscriptionController.reinitialiser();
+            widget.epreuveController.reinitialiser();
+            widget.mancheController.reinitialiser();
+            widget.resultatController.reinitialiser();
+            _profilFuture = null;
+          } else {
+            _profilFuture = widget.obtenirProfilConnecte.executer();
+          }
+        });
+      },
+      onError: (Object _) {
+        // Les erreurs de récupération sont présentées par son contrôleur dédié.
+      },
+    );
   }
 
   void _preparerChargementProfil() {
@@ -105,6 +118,15 @@ class _AuthGateState extends State<AuthGate> {
     });
 
     await _profilFuture;
+  }
+
+  void _ouvrirMonCompte() {
+    Navigator.of(context).push<void>(
+      MaterialPageRoute(
+        builder: (_) =>
+            SupprimerComptePage(supprimerMonCompte: widget.supprimerMonCompte),
+      ),
+    );
   }
 
   void _ouvrirAthletes(BuildContext context) {
@@ -153,6 +175,7 @@ class _AuthGateState extends State<AuthGate> {
 
     if (session == null) {
       return ConnexionPage(
+        recuperationCompte: widget.recuperationCompte,
         connecterUtilisateur: widget.connecterUtilisateur,
         inscrireAthlete: widget.inscrireAthlete,
       );
@@ -191,6 +214,7 @@ class _AuthGateState extends State<AuthGate> {
 
         if (profil.estCoach) {
           return CoachDashboardPage(
+            onMonCompte: _ouvrirMonCompte,
             profil: profil,
             deconnecterUtilisateur: widget.deconnecterUtilisateur,
             onVoirCompetitions: () {
@@ -203,6 +227,7 @@ class _AuthGateState extends State<AuthGate> {
         }
 
         return AthleteDashboardPage(
+          onMonCompte: _ouvrirMonCompte,
           key: ValueKey(session.user.id),
           profil: profil,
           competitionsController: widget.competitionsOuvertesController,

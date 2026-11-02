@@ -11,6 +11,7 @@ import '../../controllers/manche_controller.dart';
 import '../../controllers/resultat_controller.dart';
 import '../../widgets/resultat/compte_a_rebours_resultat.dart';
 import '../../widgets/resultat/cartes_resultat.dart';
+import '../../widgets/resultat/dialogue_correction_resultat.dart';
 import '../../widgets/resultat/etats_resultats.dart';
 
 class ResultatsManchePage extends StatefulWidget {
@@ -216,7 +217,12 @@ class _ResultatsManchePageState extends State<ResultatsManchePage> {
       _mancheController.charger(widget.epreuve.id),
     ]);
     if (!mounted) return;
-    setState(() => _chargementDonnees = false);
+    setState(() {
+      _chargementDonnees = false;
+      for (final manche in _mancheController.manches) {
+        if (manche.id == _manche.id) _manche = manche;
+      }
+    });
     if (_manche.estEnCours && _delaiEcoule) {
       _gererDelaiEcoule();
     }
@@ -298,33 +304,90 @@ class _ResultatsManchePageState extends State<ResultatsManchePage> {
     );
   }
 
-  Future<void> _corrigerResultat(Resultat resultat) async {
+  Future<void> _saisirManuellement() async {
+    if (_operationEnCours || !_manche.estTerminee) return;
+    final athlete = await showDialog<Athlete>(
+      context: context,
+      builder: (context) => SimpleDialog(
+        title: const Text('Choisir un participant'),
+        children: _inscriptionController.inscriptions
+            .map(
+              (i) => SimpleDialogOption(
+                onPressed: () => Navigator.of(context).pop(i.athlete),
+                child: Text(
+                  '${i.numeroDossard == null ? '' : 'N°${i.numeroDossard} · '}${i.athlete.nomComplet}',
+                ),
+              ),
+            )
+            .toList(),
+      ),
+    );
+    if (athlete == null || !mounted) return;
+    await _editerResultat(
+      athlete,
+      resultat: _resultatController.resultatPour(athlete.id),
+    );
+  }
+
+  Future<void> _editerResultat(Athlete athlete, {Resultat? resultat}) async {
+    if (_operationEnCours || !_manche.estTerminee) return;
+    final mancheId = _manche.id;
     final correction = await showDialog<CorrectionResultat>(
       context: context,
-      builder: (_) => DialogueCorrectionResultat(resultat: resultat),
+      builder: (_) => DialogueCorrectionResultat(
+        manche: _manche,
+        athlete: athlete,
+        resultat: resultat,
+        nombreArrives: _resultatController.resultats
+            .where((r) => r.estArrive)
+            .length,
+      ),
     );
-
-    if (correction == null || !mounted) {
-      return;
-    }
-
-    final corrige = await _resultatController.corrigerResultat(
+    if (correction == null || !mounted || _manche.id != mancheId) return;
+    final edition = await _resultatController.corrigerResultat(
+      manche: _manche,
+      athlete: athlete,
       resultat: resultat,
       statut: correction.statut,
+      mode: correction.mode,
       position: correction.position,
+      tempsMillisecondes: correction.tempsMillisecondes,
       commentaire: correction.commentaire,
+      accepterDepublication: correction.accepterDepublication,
     );
-
-    if (!mounted) {
+    if (!mounted) return;
+    if (edition == null) {
+      _afficherErreur(
+        _resultatController.erreur ?? 'La correction n’a pas été confirmée.',
+      );
       return;
     }
+    setState(
+      () => _manche = _manche.copierAvec(
+        revisionResultats: edition.revision,
+        resultatsPublies: false,
+      ),
+    );
+    _mancheController.remplacerLocalement(_manche);
+    _afficherMessage(
+      edition.depublies
+          ? 'Classement corrigé et retiré de la publication. Vérifie-le puis publie-le à nouveau.'
+          : 'Résultat enregistré. Places, points et écarts recalculés.',
+    );
+  }
 
-    if (corrige == null) {
+  Future<void> _publier() async {
+    if (_operationEnCours) return;
+    final publiee = await _mancheController.publierResultats(_manche);
+    if (!mounted) return;
+    if (publiee == null) {
       _afficherErreur(
-        _resultatController.erreur ?? 'Le résultat n’a pas pu être corrigé.',
+        _mancheController.erreur ??
+            'Publication impossible. Actualise la manche.',
       );
     } else {
-      _afficherMessage('Résultat de ${resultat.athlete.nomComplet} corrigé.');
+      setState(() => _manche = publiee);
+      _afficherMessage('Classement publié.');
     }
   }
 
@@ -554,6 +617,25 @@ class _ResultatsManchePageState extends State<ResultatsManchePage> {
               },
             ),
           const SizedBox(height: 24),
+          if (_manche.estTerminee) ...[
+            OutlinedButton.icon(
+              onPressed: _operationEnCours ? null : _saisirManuellement,
+              icon: const Icon(Icons.edit_note),
+              label: const Text('Saisir un résultat manuel'),
+            ),
+            Text(
+              _manche.resultatsPublies ? 'Classement publié.' : 'Classement non publié : vérifie les résultats avant publication.',
+            ),
+            if (!_manche.resultatsPublies)
+              FilledButton.icon(
+                onPressed: _operationEnCours ? null : _publier,
+                icon: const Icon(Icons.publish),
+                label: const Text('Publier le classement'),
+              ),
+          ] else
+            const Text(
+              'La saisie manuelle et les corrections sont disponibles une fois la manche terminée.',
+            ),
           Text('Classement', style: Theme.of(context).textTheme.titleLarge),
           const SizedBox(height: 12),
           if (resultats.isEmpty)
@@ -564,7 +646,12 @@ class _ResultatsManchePageState extends State<ResultatsManchePage> {
                 padding: const EdgeInsets.only(bottom: 8),
                 child: CarteResultat(
                   resultat: resultat,
-                  onCorriger: () => _corrigerResultat(resultat),
+                  onCorriger: _manche.estTerminee && !_operationEnCours
+                      ? () => _editerResultat(
+                          resultat.athlete,
+                          resultat: resultat,
+                        )
+                      : null,
                 ),
               ),
             ),

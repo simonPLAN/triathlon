@@ -8,18 +8,20 @@ import '../../../domain/entities/inscription.dart';
 import '../../../domain/entities/profil_utilisateur.dart';
 import '../../controllers/competitions_ouvertes_controller.dart';
 import '../../controllers/inscription_controller.dart';
-import '../../widgets/competition/badge_statut_competition.dart';
+import '../../widgets/athlete/carte_competition_athlete.dart';
 
 class AthleteDashboardPage extends StatefulWidget {
   const AthleteDashboardPage({
     super.key,
     required this.profil,
+    this.onMonCompte,
     required this.competitionsController,
     required this.inscriptionController,
     required this.deconnecterUtilisateur,
   });
 
   final ProfilUtilisateur profil;
+  final VoidCallback? onMonCompte;
 
   final CompetitionsOuvertesController competitionsController;
 
@@ -33,7 +35,9 @@ class AthleteDashboardPage extends StatefulWidget {
   }
 }
 
-class _AthleteDashboardPageState extends State<AthleteDashboardPage> {
+class _AthleteDashboardPageState extends State<AthleteDashboardPage>
+    with WidgetsBindingObserver {
+  bool _actualisationEnCours = false;
   bool _mesCompetitions = true;
   List<Competition> get _competitionsAffichees => _mesCompetitions
       ? _competitionsController.inscrites
@@ -108,7 +112,10 @@ class _AthleteDashboardPageState extends State<AthleteDashboardPage> {
       return;
     }
 
-    final succes = await _inscriptionController.desinscrire(inscription);
+    final succes = await _inscriptionController.desinscrire(
+      inscription,
+      competition: competition,
+    );
 
     if (!mounted) {
       return;
@@ -123,15 +130,17 @@ class _AthleteDashboardPageState extends State<AthleteDashboardPage> {
       return;
     }
 
+    _competitionsController.actualiserInscription(competition, inscrite: false);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('Tu es désinscrit de « ${competition.nom} ».')),
     );
-    await _recharger();
+    await _competitionsController.recharger();
   }
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
 
     _competitionsController.addListener(_actualiser);
 
@@ -142,6 +151,7 @@ class _AthleteDashboardPageState extends State<AthleteDashboardPage> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _competitionsController.removeListener(_actualiser);
 
     _inscriptionController.removeListener(_actualiser);
@@ -155,31 +165,27 @@ class _AthleteDashboardPageState extends State<AthleteDashboardPage> {
     }
   }
 
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) _recharger();
+  }
+
   Future<void> _chargerCompetitionsEtInscriptions() async {
-    await _competitionsController.charger();
-
-    if (!mounted) {
-      return;
+    if (_actualisationEnCours) return;
+    _actualisationEnCours = true;
+    try {
+      await _competitionsController.charger();
+      if (!mounted) return;
+      await _inscriptionController.verifierInscriptionsUtilisateur(
+        _toutesCompetitions,
+      );
+    } finally {
+      _actualisationEnCours = false;
+      if (mounted) setState(() {});
     }
-
-    await _inscriptionController.verifierInscriptionsUtilisateur(
-      _toutesCompetitions,
-    );
   }
 
-  Future<void> _recharger() async {
-    _inscriptionController.reinitialiserInscriptionsUtilisateur();
-
-    await _competitionsController.recharger();
-
-    if (!mounted) {
-      return;
-    }
-
-    await _inscriptionController.verifierInscriptionsUtilisateur(
-      _toutesCompetitions,
-    );
-  }
+  Future<void> _recharger() => _chargerCompetitionsEtInscriptions();
 
   Future<void> _deconnecter() async {
     try {
@@ -250,6 +256,7 @@ class _AthleteDashboardPageState extends State<AthleteDashboardPage> {
       return;
     }
 
+    _competitionsController.actualiserInscription(competition, inscrite: true);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
@@ -258,7 +265,7 @@ class _AthleteDashboardPageState extends State<AthleteDashboardPage> {
         ),
       ),
     );
-    await _recharger();
+    await _competitionsController.recharger();
   }
 
   void _afficherErreur(String message) {
@@ -284,6 +291,11 @@ class _AthleteDashboardPageState extends State<AthleteDashboardPage> {
       appBar: AppBar(
         title: const Text('Espace athlète'),
         actions: [
+          IconButton(
+            tooltip: 'Supprimer mon compte',
+            onPressed: widget.onMonCompte,
+            icon: const Icon(Icons.manage_accounts_outlined),
+          ),
           IconButton(
             tooltip: 'Actualiser',
             onPressed: _competitionsController.chargement ? null : _recharger,
@@ -318,6 +330,24 @@ class _AthleteDashboardPageState extends State<AthleteDashboardPage> {
                 ],
               ),
             ),
+            if (_competitionsController.chargement)
+              const LinearProgressIndicator(),
+            if (_competitionsAffichees.isNotEmpty &&
+                (_mesCompetitions
+                        ? _competitionsController.erreurInscriptions
+                        : _competitionsController.erreur) !=
+                    null)
+              MaterialBanner(
+                content: const Text(
+                  'Actualisation impossible. Les dernières informations connues restent affichées.',
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: _recharger,
+                    child: const Text('Réessayer'),
+                  ),
+                ],
+              ),
             Expanded(child: _construireContenu()),
           ],
         ),
@@ -340,7 +370,8 @@ class _AthleteDashboardPageState extends State<AthleteDashboardPage> {
     }
 
     if (_mesCompetitions &&
-        _competitionsController.erreurInscriptions != null) {
+        _competitionsController.erreurInscriptions != null &&
+        _competitionsAffichees.isEmpty) {
       return _ErreurCompetitions(
         message: _competitionsController.erreurInscriptions!,
         onReessayer: _recharger,
@@ -378,26 +409,26 @@ class _AthleteDashboardPageState extends State<AthleteDashboardPage> {
             competition.id,
           );
 
-          final verificationEnCours = _inscriptionController
-              .verificationEnCoursPour(competition.id);
-
-          final verificationEffectuee = _inscriptionController
-              .inscriptionUtilisateurVerifiee(competition.id);
-
-          return _CarteCompetitionAthlete(
+          return CarteCompetitionAthlete(
             competition: competition,
-            inscription: inscription,
-            verificationEnCours: verificationEnCours,
-            verificationEffectuee: verificationEffectuee,
+            etatInscription: _inscriptionController.suiviUtilisateur.pour(
+              competition.id,
+            ),
+            onReessayer: () => _inscriptionController
+                .verifierInscriptionUtilisateur(competition: competition),
             inscriptionEnCours: _inscriptionController.inscriptionEnCours,
             desinscriptionEnCours: _inscriptionController.desinscriptionEnCours,
-            onInscrire: competition.estOuverte
+            onInscrire:
+                competition.estOuverte && !_competitionsController.chargement
                 ? () => _inscrire(competition)
                 : null,
             onVoirResultats: inscription != null || _mesCompetitions
                 ? () => _ouvrirResultats(competition)
                 : null,
-            onDesinscrire: inscription == null || !competition.estOuverte
+            onDesinscrire:
+                inscription == null ||
+                    !competition.estOuverte ||
+                    _competitionsController.chargement
                 ? null
                 : () {
                     _desinscrire(competition, inscription);
@@ -448,257 +479,6 @@ class _EnteteAthlete extends StatelessWidget {
     final initialeNom = profil.nom.isEmpty ? '' : profil.nom[0];
 
     return '$initialePrenom$initialeNom'.toUpperCase();
-  }
-}
-
-class _CarteCompetitionAthlete extends StatelessWidget {
-  const _CarteCompetitionAthlete({
-    required this.competition,
-    required this.inscription,
-    required this.verificationEnCours,
-    required this.verificationEffectuee,
-    required this.inscriptionEnCours,
-    required this.desinscriptionEnCours,
-    required this.onInscrire,
-    required this.onDesinscrire,
-    this.onVoirResultats,
-  });
-
-  final Competition competition;
-  final Inscription? inscription;
-  final bool verificationEnCours;
-  final bool verificationEffectuee;
-  final bool inscriptionEnCours;
-  final bool desinscriptionEnCours;
-  final VoidCallback? onInscrire;
-  final VoidCallback? onDesinscrire;
-  final VoidCallback? onVoirResultats;
-
-  @override
-  Widget build(BuildContext context) {
-    final possedeLieu =
-        competition.lieu != null && competition.lieu!.trim().isNotEmpty;
-
-    final possedeDescription =
-        competition.description != null &&
-        competition.description!.trim().isNotEmpty;
-
-    return Card(
-      clipBehavior: Clip.antiAlias,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Icon(
-                  Icons.emoji_events_outlined,
-                  size: 38,
-                  color: Theme.of(context).colorScheme.primary,
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    competition.nom,
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                BadgeStatutCompetition(statut: competition.statut),
-              ],
-            ),
-            const SizedBox(height: 16),
-            _InformationCompetition(
-              icone: Icons.calendar_today_outlined,
-              texte: _formaterDate(competition.dateCompetition),
-            ),
-            if (possedeLieu) ...[
-              const SizedBox(height: 10),
-              _InformationCompetition(
-                icone: Icons.location_on_outlined,
-                texte: competition.lieu!.trim(),
-              ),
-            ],
-            if (possedeDescription) ...[
-              const SizedBox(height: 12),
-              Text(
-                competition.description!.trim(),
-                maxLines: 4,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ],
-            const SizedBox(height: 16),
-            _SectionInscriptionAthlete(
-              inscription: inscription,
-              verificationEnCours: verificationEnCours,
-              verificationEffectuee: verificationEffectuee,
-              inscriptionEnCours: inscriptionEnCours,
-              desinscriptionEnCours: desinscriptionEnCours,
-              onInscrire: onInscrire,
-              onDesinscrire: onDesinscrire,
-            ),
-            if (onVoirResultats != null) ...[
-              const SizedBox(height: 8),
-              FilledButton.icon(
-                onPressed: onVoirResultats,
-                icon: const Icon(Icons.leaderboard_outlined),
-                label: const Text('Voir les résultats'),
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-
-  String _formaterDate(DateTime date) {
-    final jour = date.day.toString().padLeft(2, '0');
-
-    final mois = date.month.toString().padLeft(2, '0');
-
-    return '$jour/$mois/${date.year}';
-  }
-}
-
-class _SectionInscriptionAthlete extends StatelessWidget {
-  const _SectionInscriptionAthlete({
-    required this.inscription,
-    required this.verificationEnCours,
-    required this.verificationEffectuee,
-    required this.inscriptionEnCours,
-    required this.desinscriptionEnCours,
-    required this.onInscrire,
-    required this.onDesinscrire,
-  });
-
-  final Inscription? inscription;
-  final bool verificationEnCours;
-  final bool verificationEffectuee;
-  final bool inscriptionEnCours;
-  final bool desinscriptionEnCours;
-  final VoidCallback? onInscrire;
-  final VoidCallback? onDesinscrire;
-
-  @override
-  Widget build(BuildContext context) {
-    if (verificationEnCours || !verificationEffectuee) {
-      return SizedBox(
-        width: double.infinity,
-        child: OutlinedButton.icon(
-          onPressed: null,
-          icon: const SizedBox(
-            width: 18,
-            height: 18,
-            child: CircularProgressIndicator(strokeWidth: 2),
-          ),
-          label: const Text('Vérification de l’inscription...'),
-        ),
-      );
-    }
-
-    final inscriptionActuelle = inscription;
-
-    if (inscriptionActuelle != null) {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.primaryContainer,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Row(
-              children: [
-                Icon(
-                  Icons.check_circle,
-                  color: Theme.of(context).colorScheme.onPrimaryContainer,
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Déjà inscrit',
-                        style: Theme.of(context).textTheme.titleMedium
-                            ?.copyWith(
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .onPrimaryContainer,
-                            ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        inscriptionActuelle.numeroDossard == null
-                            ? 'Dossard non attribué'
-                            : 'Dossard n°'
-                                  '${inscriptionActuelle.numeroDossard}',
-                        style: TextStyle(
-                          color: Theme.of(context)
-                              .colorScheme
-                              .onPrimaryContainer,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 8),
-          if (onDesinscrire != null)
-            OutlinedButton.icon(
-              onPressed: desinscriptionEnCours ? null : onDesinscrire,
-              icon: desinscriptionEnCours
-                  ? const SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Icon(Icons.person_remove_outlined),
-              label: Text(
-                desinscriptionEnCours ? 'Désinscription...' : 'Se désinscrire',
-              ),
-            ),
-        ],
-      );
-    }
-
-    return SizedBox(
-      width: double.infinity,
-      child: FilledButton.icon(
-        onPressed: inscriptionEnCours ? null : onInscrire,
-        icon: inscriptionEnCours
-            ? const SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              )
-            : const Icon(Icons.how_to_reg),
-        label: Text(inscriptionEnCours ? 'Inscription...' : 'S’inscrire'),
-      ),
-    );
-  }
-}
-
-class _InformationCompetition extends StatelessWidget {
-  const _InformationCompetition({required this.icone, required this.texte});
-
-  final IconData icone;
-  final String texte;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Icon(icone, size: 20, color: Theme.of(context).colorScheme.primary),
-        const SizedBox(width: 8),
-        Expanded(child: Text(texte)),
-      ],
-    );
   }
 }
 

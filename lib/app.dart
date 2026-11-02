@@ -8,14 +8,18 @@ import 'package:triathlon/presentation/controllers/manche_controller.dart';
 import 'package:triathlon/presentation/controllers/resultat_controller.dart';
 
 import 'application/use_cases/connecter_utilisateur.dart';
+import 'application/use_cases/auth/supprimer_mon_compte.dart';
 import 'application/use_cases/deconnecter_utilisateur.dart';
 import 'application/use_cases/inscrire_athlete.dart';
 import 'application/use_cases/obtenir_profil_connecte.dart';
 import 'presentation/controllers/athlete_controller.dart';
 import 'presentation/pages/auth_gate.dart';
+import 'domain/ports/source_liens_recuperation.dart';
+import 'presentation/controllers/recuperation_compte_controller.dart';
+import 'presentation/navigation/recuperation_compte_host.dart';
 import 'presentation/theme/theme_application.dart';
 
-class TriathlonApp extends StatelessWidget {
+class TriathlonApp extends StatefulWidget {
   const TriathlonApp({
     super.key,
     required this.clientSupabase,
@@ -30,6 +34,9 @@ class TriathlonApp extends StatelessWidget {
     required this.epreuveController,
     required this.mancheController,
     required this.resultatController,
+    required this.recuperationCompte,
+    required this.sourceLiensRecuperation,
+    required this.supprimerMonCompte,
   });
 
   final SupabaseClient clientSupabase;
@@ -45,27 +52,46 @@ class TriathlonApp extends StatelessWidget {
   final MancheController mancheController;
   final ResultatController resultatController;
 
+  final RecuperationCompteController recuperationCompte;
+  final SourceLiensRecuperation sourceLiensRecuperation;
+  final SupprimerMonCompte supprimerMonCompte;
+
+  @override
+  State<TriathlonApp> createState() => _TriathlonAppState();
+}
+
+class _TriathlonAppState extends State<TriathlonApp> {
+  final _navigatorKey = GlobalKey<NavigatorState>();
+
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'Compétition sportive',
-      theme: ThemeApplication.clair,
-      darkTheme: ThemeApplication.sombre,
-      themeMode: ThemeMode.system,
-      home: AuthGate(
-        clientSupabase: clientSupabase,
-        athleteController: athleteController,
-        competitionController: competitionController,
-        connecterUtilisateur: connecterUtilisateur,
-        deconnecterUtilisateur: deconnecterUtilisateur,
-        inscrireAthlete: inscrireAthlete,
-        obtenirProfilConnecte: obtenirProfilConnecte,
-        inscriptionController: inscriptionController,
-        competitionsOuvertesController: competitionsOuvertesController,
-        epreuveController: epreuveController,
-        mancheController: mancheController,
-        resultatController: resultatController,
+    return RecuperationCompteHost(
+      controller: widget.recuperationCompte,
+      sourceLiens: widget.sourceLiensRecuperation,
+      navigatorKey: _navigatorKey,
+      child: MaterialApp(
+        navigatorKey: _navigatorKey,
+        debugShowCheckedModeBanner: false,
+        title: 'Compétition sportive',
+        theme: ThemeApplication.clair,
+        darkTheme: ThemeApplication.sombre,
+        themeMode: ThemeMode.system,
+        home: AuthGate(
+          supprimerMonCompte: widget.supprimerMonCompte,
+          recuperationCompte: widget.recuperationCompte,
+          clientSupabase: widget.clientSupabase,
+          athleteController: widget.athleteController,
+          competitionController: widget.competitionController,
+          connecterUtilisateur: widget.connecterUtilisateur,
+          deconnecterUtilisateur: widget.deconnecterUtilisateur,
+          inscrireAthlete: widget.inscrireAthlete,
+          obtenirProfilConnecte: widget.obtenirProfilConnecte,
+          inscriptionController: widget.inscriptionController,
+          competitionsOuvertesController: widget.competitionsOuvertesController,
+          epreuveController: widget.epreuveController,
+          mancheController: widget.mancheController,
+          resultatController: widget.resultatController,
+        ),
       ),
     );
   }

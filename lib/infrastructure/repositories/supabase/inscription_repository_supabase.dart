@@ -135,11 +135,25 @@ class InscriptionRepositorySupabase implements InscriptionRepository {
     _verifierUtilisateurConnecte();
 
     try {
-      await _client.from(_nomTable).delete().eq('id', idNettoye);
+      final supprimees = await _client
+          .from(_nomTable)
+          .delete()
+          .eq('id', idNettoye)
+          .select('id');
+      if (supprimees.length != 1 || supprimees.single['id'] != idNettoye) {
+        throw StateError(
+          'La désinscription n’a pas été confirmée. Actualise ton inscription : '
+          'les inscriptions peuvent être fermées ou cette inscription déjà retirée.',
+        );
+      }
     } on PostgrestException catch (exception) {
+      if (exception.code == '42501') {
+        throw StateError(
+          'La désinscription n’est plus autorisée. Vérifie que les inscriptions sont encore ouvertes.',
+        );
+      }
       throw Exception(
-        'Impossible de désinscrire l’athlète : '
-        '${exception.message}',
+        'Impossible de confirmer la désinscription. Vérifie ta connexion puis réessaie.',
       );
     }
   }
