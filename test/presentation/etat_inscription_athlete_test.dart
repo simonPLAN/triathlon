@@ -1,5 +1,9 @@
 import 'dart:async';
 
+import 'package:triathlon/application/use_cases/competition/consulter_programme_competition.dart';
+import 'package:triathlon/domain/ports/programme_competition_repository.dart';
+import 'package:triathlon/domain/entities/programme_competition.dart';
+
 import 'package:triathlon/application/use_cases/competition/lister_competitions_ouvertes.dart';
 import 'package:triathlon/application/use_cases/competition/suivre_competitions_athlete.dart';
 import 'package:triathlon/application/use_cases/deconnecter_utilisateur.dart';
@@ -117,6 +121,15 @@ class DepotSuivi extends Fake implements SuiviAthleteRepository {
 }
 
 class AuthFake extends Fake implements AuthRepository {}
+
+class ProgrammeFake implements ProgrammeCompetitionRepository {
+  int appels = 0;
+  @override
+  Future<ProgrammeCompetition> obtenir(String competitionId) async {
+    appels++;
+    return ProgrammeCompetition(epreuves: []);
+  }
+}
 
 Future<void> afficherDashboard(
   WidgetTester tester,
@@ -387,6 +400,37 @@ void main() {
       expect(find.text('Inscrit'), findsOneWidget);
       expect(find.textContaining('Actualisation impossible'), findsOneWidget);
       expect(c.inscriptionUtilisateurVerifiee('competition'), isTrue);
+      await tester.pumpWidget(const SizedBox());
+      c.dispose();
+      competitions.dispose();
+    },
+  );
+
+  testWidgets(
+    'programme accessible depuis une compétition ouverte sans inscription ni résultats',
+    (tester) async {
+      final depot = DepotInscriptions();
+      final c = controller(depot);
+      final programme = ProgrammeFake();
+      final competitions = CompetitionsOuvertesController(
+        ListerCompetitionsOuvertes(DepotCompetitions()),
+        SuivreCompetitionsAthlete(DepotSuivi(depot)),
+        programme: ConsulterProgrammeCompetition(programme),
+      );
+      await afficherDashboard(tester, c, competitions);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Inscriptions ouvertes'));
+      await tester.pumpAndSettle();
+      expect(find.text('Non inscrit'), findsOneWidget);
+      await tester.ensureVisible(find.text('Voir le programme'));
+      await tester.tap(find.text('Voir le programme'));
+      await tester.pumpAndSettle();
+      expect(programme.appels, 1);
+      expect(find.text('Programme'), findsOneWidget);
+      expect(
+        find.text('Le coach n’a pas encore défini les épreuves.'),
+        findsOneWidget,
+      );
       await tester.pumpWidget(const SizedBox());
       c.dispose();
       competitions.dispose();

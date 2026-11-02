@@ -1,3 +1,14 @@
+# Signature Android : exclure partout, y compris hors du dossier android.
+**/key.properties
+*.jks
+*.keystore
+*.p12
+*.pfx
+*.clixml
+/release.local/
+/config/production.json
+/config/staging.json
+
 # Miscellaneous
 *.class
 *.log

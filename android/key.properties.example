@@ -1,0 +1,7 @@
+# Copier en android/key.properties (ignore par Git), OU utiliser les variables
+# TRIATHLON_STORE_FILE, TRIATHLON_STORE_PASSWORD, TRIATHLON_KEY_ALIAS, TRIATHLON_KEY_PASSWORD.
+# Ne pas ajouter de secret dans ce modele. Preferer les variables depuis un coffre.
+storeFile=C:/chemin-hors-du-depot/upload-keystore.p12
+storePassword=
+keyAlias=upload
+keyPassword=

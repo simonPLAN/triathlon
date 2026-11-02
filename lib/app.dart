@@ -8,6 +8,7 @@ import 'package:triathlon/presentation/controllers/manche_controller.dart';
 import 'package:triathlon/presentation/controllers/resultat_controller.dart';
 
 import 'application/use_cases/connecter_utilisateur.dart';
+import 'configuration/identite_application.dart';
 import 'application/use_cases/auth/supprimer_mon_compte.dart';
 import 'application/use_cases/deconnecter_utilisateur.dart';
 import 'application/use_cases/inscrire_athlete.dart';
@@ -72,7 +73,7 @@ class _TriathlonAppState extends State<TriathlonApp> {
       child: MaterialApp(
         navigatorKey: _navigatorKey,
         debugShowCheckedModeBanner: false,
-        title: 'Compétition sportive',
+        title: IdentiteApplication.nom,
         theme: ThemeApplication.clair,
         darkTheme: ThemeApplication.sombre,
         themeMode: ThemeMode.system,

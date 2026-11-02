@@ -20,14 +20,14 @@ Références officielles : [réinitialisation Dart](https://supabase.com/docs/re
 
 ## Environnements
 
-La production conserve par défaut le projet public existant. Pour sélectionner explicitement un projet :
+Le debug production conserve par défaut le projet public existant. La Release exige une configuration explicite ; staging exige un projet distinct. Préparer les fichiers locaux à partir des exemples comme expliqué dans [Livraison Android](android_release.md), puis :
 
 ```powershell
-flutter run --dart-define=APP_ENV=staging --dart-define=SUPABASE_URL=https://PROJET_TEST.supabase.co --dart-define=SUPABASE_PUBLISHABLE_KEY=CLE_PUBLIQUE_TEST
-flutter run --dart-define=APP_ENV=production --dart-define=SUPABASE_URL=https://PROJET_PROD.supabase.co --dart-define=SUPABASE_PUBLISHABLE_KEY=CLE_PUBLIQUE_PROD
+flutter run --flavor staging --dart-define-from-file=config/staging.json
+flutter run --flavor production --dart-define-from-file=config/production.json
 ```
 
-Staging exige les deux paramètres Supabase ; aucune clé privilégiée/service_role dans les paramètres Flutter. Les deux filtres Android sont déclarés, mais seule l'URL de l'environnement courant est traitée. Ces variantes partagent actuellement l'applicationId : elles ne s'installent pas côte à côte.
+APP_ENV doit correspondre au flavor. Aucune clé privilégiée/service_role dans les paramètres Flutter. Chaque variante Android ne déclare que son schéma de récupération : triathlon pour production et triathlon-staging pour staging. Staging possède le suffixe d'applicationId `.staging` et s'installe côte à côte avec la production.
 
 Les URI personnalisées ne sont pas des liens HTTPS vérifiés. Si un domaine officiel est retenu, migrer vers Android App Links avec assetlinks.json et l'empreinte du certificat de signature. La réception des liens est configurée ici pour Android ; les autres plateformes nécessitent leur configuration native avant utilisation.
 

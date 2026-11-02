@@ -1,5 +1,8 @@
 import 'package:flutter/foundation.dart';
 
+import '../../application/use_cases/competition/consulter_programme_competition.dart';
+import '../../domain/entities/programme_competition.dart';
+
 import '../../application/use_cases/competition/suivre_competitions_athlete.dart';
 import '../../domain/entities/resultat_publie.dart';
 
@@ -7,7 +10,21 @@ import '../../application/use_cases/competition/lister_competitions_ouvertes.dar
 import '../../domain/entities/competition.dart';
 
 class CompetitionsOuvertesController extends ChangeNotifier {
-  CompetitionsOuvertesController(this._listerCompetitionsOuvertes, this._suivi);
+  CompetitionsOuvertesController(
+    this._listerCompetitionsOuvertes,
+    this._suivi, {
+    this._programme,
+  });
+
+  final ConsulterProgrammeCompetition? _programme;
+
+  Future<ProgrammeCompetition> programmeCompetition(String competitionId) {
+    final programme = _programme;
+    if (programme == null) {
+      throw StateError('Le programme n’est pas disponible.');
+    }
+    return programme.executer(competitionId);
+  }
 
   final SuivreCompetitionsAthlete _suivi;
   List<Competition> _inscrites = const [];

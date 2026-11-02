@@ -14,19 +14,29 @@ Revue du 2 novembre 2026. Les constats portent sur le code et les fichiers locau
 | Rôles | Deux rôles `athlete` et `coach`, accueil séparé via `AuthGate` | Audit serveur des droits, attribution du rôle coach, décision sur arbitre/administrateur |
 | Interface | Thème clair/sombre, composants communs, recherche d'athlètes, confirmations et chargements sur plusieurs écrans | Harmonisation des écrans restants, identité définitive, recette sur appareils réels |
 | Fonctionnel sportif | Premier arrivé, compte à rebours, résultats, hors délai, enchaînement et publication implémentés | Compléments détaillés ci-dessous ; ne pas refaire ces fonctions déjà présentes |
-| Supabase | Cinq migrations, dont suppression de compte et corrections transactionnelles | Schéma initial complet non fourni par ces migrations ; vérifier RLS, policies existantes et déploiement réel |
+| Supabase | Six migrations, dont suppression de compte et corrections transactionnelles | Schéma initial complet non fourni par ces migrations ; vérifier RLS, policies existantes et déploiement réel |
 | Tests | Tests métier, contrôleurs, widgets et échange HTTP local des horaires | Tests avec une vraie base Supabase, tests de bout en bout et recette Release |
 | Identifiant Android | `com.example.triathlon` | Choisir l'identifiant définitif avant publication |
-| Signature Release | `signingConfig = signingConfigs.getByName("debug")` | Configurer une clé d'upload de production |
+| Signature Release | Signature upload uniquement, sans repli debug ; configuration locale/coffre et script fournis | Confirmer/créer la clé, sauvegarder les secrets, activer Play App Signing et produire le bundle |
 | Version | `1.0.0+1`, transmise à Gradle depuis Flutter | Définir la version de lancement et la stratégie d'incrémentation |
-| API cible | `targetSdk = flutter.targetSdkVersion` | Vérifier la valeur résolue dans l'artefact Release, pas seulement dans le fichier Gradle |
+| API cible | targetSdk explicite 36 ; modèle Gradle vérifié : compileSdk 36, minSdk 24, NDK 28.2.13676358 | Vérifier l'artefact Release final, les bibliothèques natives et les pages 16 Ko |
 | Icône | Ressources `ic_launcher` et icône adaptative présentes | Valider l'identité graphique, le rendu et les visuels Store |
 | Démarrage | Ressource `launch_background.xml` avec fond blanc de base | Personnaliser et vérifier le splash selon les versions Android |
 | Réseau | Permission `INTERNET` présente dans le manifeste principal | Tester les requêtes sur la version Release et les pertes de connexion |
 | Secrets | `main.dart` utilise une clé publique publishable ; aucune référence à une clé service_role trouvée dans le code Dart inspecté | Auditer aussi les artefacts, fichiers suivis et l'historique ; séparer staging et production |
 | Clés de signature dans Git | `android/.gitignore` exclut déjà `key.properties`, `*.jks` et `*.keystore` | Vérifier qu'aucune clé n'a déjà été suivie/committée et sécuriser les sauvegardes |
 
-Les fonctions « déjà présentes » restent à valider en conditions réelles. Les tests locaux de la dernière implémentation ont annoncé 34 tests réussis ; cette revue documentaire ne les a pas relancés.
+Les fonctions « déjà présentes » restent à valider en conditions réelles. Derniers contrôles effectués pendant les implémentations : **94 tests Flutter réussis**, **29 tests serveur/SQL réussis** et `flutter analyze` sans problème. Les tests serveur/SQL s'exécutent localement avec des services simulés et PostgreSQL embarqué PGlite ; ils ne prouvent pas le déploiement ni les réglages du projet Supabase. Analyse et 94 tests Flutter relancés pendant la préparation Android Release ; les 29 tests serveur/SQL correspondent au contrôle antérieur.
+
+Dernières avancées :
+
+- Récupération du mot de passe fournie ; réception d'un e-mail constatée par l'utilisateur, retour Android à vérifier pendant la recette de release.
+- Suppression de compte fournie dans Flutter, côté serveur et dans une page web à héberger.
+- États d'inscription explicites, reprise après erreur et actualisation du dossard.
+- Saisie manuelle, reclassement transactionnel et retrait de publication après correction.
+- Actualisation des résultats athlète sans changement d'onglet, avec conservation des filtres.
+- Programme des épreuves/manches accessible avant publication, avec lecture seule et contrôles Supabase fournis ; affectations et départs personnels en attente de leur module de gestion.
+- Préparation Android Release : flavors isolés, signature upload et contrôles de configuration, titre harmonisé par configuration, scripts de clé/build et guide ; identité définitive et opérations Play encore attendues.
 
 ## Côté coach
 
@@ -48,7 +58,7 @@ Les fonctions « déjà présentes » restent à valider en conditions réelles.
 - [ ] Définir leur effet : modification du temps, des points ou des deux.
 - [ ] Recalculer les classements concernés après chaque ajustement.
 - [ ] Permettre de déclarer un abandon ou une disqualification avant l'arrivée, directement depuis un participant sans résultat.
-- [ ] Conserver l'action existante de changement de statut sur un résultat déjà enregistré.
+- [x] Conserver le changement de statut sur un résultat existant dans le formulaire de correction d'une manche terminée.
 
 ### Saisie et correction des résultats — priorité haute
 
@@ -94,12 +104,18 @@ Règles, formats, concurrence et déploiement : [correction_resultats.md](../../
 
 ### Programme : épreuves et manches — priorité haute
 
-- [ ] Afficher les épreuves prévues avant la publication des résultats.
-- [ ] Afficher leurs disciplines, distances et ordre.
-- [ ] Afficher les manches et leurs statuts : à venir, en cours, terminée ou annulée.
-- [ ] Lorsque l'affectation des participants sera disponible, distinguer les manches auxquelles l'athlète participe.
-- [ ] Afficher son ordre de départ lorsqu'il est défini.
-- [ ] Conserver ces écrans en lecture seule avec des autorisations Supabase adaptées.
+- [x] Afficher les épreuves avant publication de résultats, depuis « Voir le programme » sur les compétitions ouvertes et inscrites.
+- [x] Afficher la discipline, la distance en mètres et l'ordre des épreuves ; trier les manches par numéro.
+- [x] Afficher les statuts À venir, En cours, Terminée et Annulée.
+- [x] Préparer l'affichage de la participation personnelle lorsque la source fournit une affectation ; distinguer explicitement la participation inconnue.
+- [x] Afficher l'ordre de départ lorsqu'il est fourni et « Ordre de départ non défini » sinon.
+- [ ] Implémenter la gestion/persistance des affectations et ordres côté coach, puis brancher la RPC sur ces données : aucune table correspondante n'existe encore.
+- [x] Fournir une page de programme en lecture seule, une RPC contrôlée et des restrictions RLS sur les lectures/écritures des épreuves et manches.
+- [x] Gérer chargement, erreur/réessai, programme vide et actualisation par bouton, glissement ou reprise.
+- [ ] Déployer la migration 202611020006 et vérifier les policies du schéma réel, notamment les accès conservés du coach.
+- [ ] Tester sur deux appareils le changement d'un statut côté coach puis l'actualisation du programme côté athlète.
+
+La source actuelle renvoie participation et ordre de départ à null : l'inscription à une compétition ne constitue pas une affectation à une manche. Les affichages futurs sont testés avec des données simulées. Règles et déploiement : [programme_athlete.md](../../docs/programme_athlete.md).
 
 ### État de l'inscription
 
@@ -110,6 +126,20 @@ Règles, formats, concurrence et déploiement : [correction_resultats.md](../../
 - [x] Actualiser l'état après inscription/désinscription et changement du dossard ; relire les données avec Actualiser, le glissement de la liste ou à la reprise de l'application. Protéger les données confirmées des réponses anciennes.
 - [x] Conserver l'état confirmé et signaler une erreur si l'actualisation des listes échoue après une action réussie.
 - [ ] Vérifier ce parcours avec une vraie base et deux appareils (attribution du dossard par le coach puis actualisation côté athlète).
+
+### Actualisation des résultats et classements
+
+- [x] Recharger les résultats avec le bouton Actualiser sans changer d'onglet.
+- [x] Actualiser par glissement de la liste, y compris lorsqu'elle est vide.
+- [x] Recharger au retour dans l'application.
+- [x] Conserver la vue Général / Par manche et le filtre personnel après actualisation.
+- [x] Afficher le chargement et empêcher les requêtes simultanées de rafraîchissement.
+- [x] Afficher une erreur avec nouvelle tentative en cas d'échec ou de délai dépassé.
+- [x] Retirer les anciens résultats de l'écran lorsque la nouvelle lecture ne renvoie plus de résultats publiés.
+- [x] Couvrir ces parcours par des tests d'interface, sans changement d'onglet pour forcer le réaffichage.
+- [ ] Vérifier avec deux appareils qu'une publication, correction ou dépublication du coach est reflétée côté athlète après actualisation.
+
+Références : `lib/presentation/controllers/resultats_athlete_controller.dart`, `lib/presentation/pages/athlete/resultats_athlete_page.dart`, `test/presentation/resultats_athlete_page_test.dart`. Le rechargement est déclenché par une action ou la reprise de l'application ; la synchronisation continue en temps réel n'est pas implémentée.
 
 ## Vérifications de livraison communes
 
@@ -125,13 +155,16 @@ Règles, formats, concurrence et déploiement : [correction_resultats.md](../../
 - Génération des manches et gestion de leur cycle.
 - Saisie tactile des arrivées, premier arrivé et compte à rebours.
 - Clôture automatique à zéro et bascule vers la manche suivante depuis les écrans coach concernés, selon la configuration.
-- Correction du statut, de la position et du commentaire d'un résultat existant.
+- Saisie et correction du temps, du statut, de la place et du commentaire sur une manche terminée ; décalage, échange ou tri par temps dans une transaction, sous réserve de la migration 202611020005.
+- Retrait de publication de la manche après correction de résultats publiés, puis republication explicite.
 - Publication individuelle et publication groupée des manches terminées d'une épreuve.
 - Inscription d'athlètes invités sans compte, sous réserve de la migration correspondante.
 - Vue athlète des compétitions ouvertes et de ses compétitions inscrites.
 - Inscription et désinscription tant que les inscriptions sont ouvertes.
 - Affichage du dossard et de l'inscription confirmée.
 - Consultation des résultats publiés et classement général cumulé côté athlète, avec filtre personnel.
+- Programme côté athlète : épreuves, disciplines, distances, ordre et statuts de manches avant publication des résultats, sous réserve de la migration 202611020006.
+- Actualisation des résultats athlète par bouton, glissement et reprise de l'application, sans changement d'onglet ; gestion des erreurs et conservation des filtres.
 
 
 ## Comptes, authentification et rôles
@@ -210,7 +243,7 @@ Le thème et les composants communs sont déjà présents dans `lib/presentation
 - [ ] Valider définitivement la palette, la typographie, le contraste et le thème sombre.
 - [ ] Tester petits téléphones, grands téléphones, paysage, clavier ouvert et grande taille de texte.
 - [ ] Vérifier les libellés d'accessibilité, tailles tactiles et annonces utiles avec TalkBack.
-- [ ] Confirmer le nom public : `triathlon` dans Android et `Compétition sportive` dans Flutter ne constituent pas encore une identité harmonisée.
+- [ ] Confirmer le nom public définitif ; Android et Flutter utilisent désormais la configuration commune de livraison (nom provisoire Triathlon), avec vérification de correspondance en Release.
 - [ ] Valider ou remplacer les icônes déjà présentes ; vérifier les masques adaptatifs et les modes clair/sombre.
 - [ ] Personnaliser le splash natif et vérifier l'écran de transition vers Flutter, notamment sur Android 12 et suivants.
 
@@ -225,14 +258,15 @@ La séparation domaine / cas d'utilisation / infrastructure / présentation exis
 - [ ] Centraliser la composition des dépendances plutôt que continuer à allonger `main.dart`.
 - [ ] Éviter qu'un chargement du dashboard écrase les données partagées des contrôleurs utilisés par un autre écran.
 - [ ] Uniformiser les horodatages UTC à l'enregistrement et les heures locales à l'affichage ; des corrections et tests existent déjà.
-- [ ] Rendre atomiques les opérations liées : première arrivée + résultat, clôture + hors délai + démarrage suivant, réorganisation des places.
+- [x] Fournir la réorganisation atomique des places, points et écarts via la RPC de correction avec contrôle de révision.
+- [ ] Rendre atomiques les autres opérations liées : première arrivée + résultat, clôture + hors délai + démarrage suivant.
 - [ ] Renforcer les protections contre les opérations simultanées de plusieurs coachs et les données périmées dans un écran.
 
 ## Supabase : audit de production — bloquant
 
 ### Schéma et RLS
 
-Les cinq migrations présentes apportent des fonctions et certaines règles. Elles ne prouvent ni l'activation de RLS sur toutes les tables, ni la sécurité des policies existantes dans le projet déployé.
+Les six migrations présentes apportent des fonctions et certaines règles. Elles ne prouvent ni l'activation de RLS sur toutes les tables, ni la sécurité des policies existantes dans le projet déployé.
 
 - [ ] Exporter/versionner le schéma initial et les policies existantes afin de pouvoir reconstruire la base à partir du dépôt.
 - [ ] Vérifier et activer RLS sur `profils`, `competitions`, `inscriptions`, `epreuves`, `manches` et `resultats`.
@@ -255,7 +289,9 @@ Les cinq migrations présentes apportent des fonctions et certaines règles. Ell
 
 - [ ] Auditer l'ensemble des fichiers suivis, l'historique Git et la build pour les clés privilégiées ou secrets ; aucune clé service_role repérée dans le code Dart inspecté.
 - [ ] Garder uniquement la clé publique client dans Flutter ; une clé publique ne remplace pas les règles RLS.
-- [ ] Externaliser la configuration Supabase de `main.dart` pour sélectionner explicitement staging ou production.
+- [x] Isoler la sélection staging/production dans `ConfigurationAuthentification`, avec `APP_ENV`, `SUPABASE_URL` et `SUPABASE_PUBLISHABLE_KEY`.
+- [x] Fournir les flavors Android production/staging, installations côte à côte, contrôles de cohérence APP_ENV/flavor, nom et projet Supabase ; interdire les clés privilégiées et toute configuration Release implicite.
+- [ ] Configurer le vrai projet staging et vérifier les redirections et l'isolation sur appareils. Le repli public production subsiste seulement pour le debug.
 - [ ] Protéger les comptes d'administration Supabase par MFA et contrôler les accès de l'organisation.
 - [ ] Vérifier la confirmation d'e-mail, les expirations des liens et les limites d'envoi.
 - [ ] Configurer un SMTP de production et vérifier la délivrabilité des confirmations et récupérations.
@@ -274,8 +310,15 @@ Les cinq migrations présentes apportent des fonctions et certaines règles. Ell
 - [x] Tests métier d'inscription d'invités et de configuration des épreuves.
 - [x] Tests locaux d'horodatage et d'échange HTTP des manches.
 - [x] Tests d'interface de publication, enchaînement, répertoire coach, résultats athlète et composants communs.
+- [x] Tests de récupération du mot de passe et de suppression du compte, dont refus d'accès et reprise du nettoyage local.
+- [x] Tests des états d'inscription, des dossards et de la confirmation HTTP de désinscription.
+- [x] Tests de correction manuelle et d'échange HTTP des RPC de correction/publication.
+- [x] Tests PostgreSQL embarqué de correction, publication, retrait de publication, unicité, révisions périmées, droits, rollback et compatibilité avec la suppression de compte.
+- [x] Tests du rafraîchissement des résultats athlète : bouton, glissement, reprise, filtres conservés, erreur/réessai et retrait des résultats devenus non publiés.
+- [x] Tests du programme : tri, disciplines/distances, statuts, lecture seule, champs d'affectation inconnus ou fournis, RPC et ouverture sans inscription/résultat.
+- [x] Tests SQL du programme : périmètre de lecture, refus des brouillons/anonymes, absence d'écriture athlète et maintien des accès du coach propriétaire.
 
-Ces tests utilisent notamment des faux dépôts ou un serveur HTTP local. Ils ne valident pas les policies ni l'exécution des migrations dans Supabase. Aucun dossier de tests de bout en bout `integration_test` n'a été trouvé lors de cette revue.
+Bilan des derniers contrôles locaux : 94 tests Flutter réussis et analyse Flutter sans problème ; 29 tests serveur/SQL réussis lors du contrôle antérieur (non relancés pour cette configuration Android). Ces tests utilisent des faux dépôts, un serveur HTTP local et PGlite. Certaines protections SQL sont exercées sur un schéma de test ; les policies et migrations du projet Supabase déployé restent à vérifier. Aucun parcours de bout en bout sur appareils réels n'est validé par ce bilan.
 
 ### Parcours sur staging et appareils réels
 
@@ -292,6 +335,7 @@ Ces tests utilisent notamment des faux dépôts ou un serveur HTTP local. Ils ne
 - [ ] Tester la dernière manche, les manches annulées et l'absence de manche suivante.
 - [ ] Tester abandons, disqualifications, correction d'un temps et reclassement selon les fonctions réellement disponibles.
 - [ ] Tester publication individuelle/groupée puis lecture par les athlètes inscrits.
+- [ ] Tester l'actualisation des résultats athlète sur Général et Par manche, avec/sans filtre personnel, après correction, retrait de publication, republication et coupure réseau.
 - [ ] Comparer les classements coach et athlète sur les mêmes données, y compris les ex aequo.
 - [ ] Tester coupure réseau, latence, reprise après échec partiel et absence de doublons après nouvelle tentative.
 - [ ] Fermer puis rouvrir l'application pendant la connexion, une inscription et une manche.
@@ -313,28 +357,33 @@ flutter clean
 flutter pub get
 flutter analyze
 flutter test
-flutter build appbundle --release
+.\tool\build_android_release.ps1 -Environnement production -NumeroBuild 1
 ```
 
-Le fichier attendu est normalement `build/app/outputs/bundle/release/app-release.aab`. Les commandes sont une checklist : elles n'ont pas été exécutées dans le cadre de cette mise à jour documentaire.
+Le numéro de build est un exemple : utiliser le prochain numéro disponible dans la Console. Le bundle attendu est désormais `build/app/outputs/bundle/productionRelease/app-production-release.aab`. La Release exige identité confirmée, signature upload et `config/production.json` explicite ; analyse/tests ont été exécutés, le bundle signé reste à produire. Voir [android_release.md](../../docs/android_release.md).
 
 ## Android Release — bloquant avant Google Play
 
-Constats : `android/app/build.gradle.kts` utilise `com.example.triathlon` et signe encore la variante Release avec la configuration debug. `versionName` et `versionCode` proviennent déjà de Flutter. La permission Internet et des icônes adaptatives sont présentes.
+Préparation fournie : identité publique dans `android/application.properties`, signature upload sans repli debug, scripts de création de clé et de build, flavors production/staging et contrôles d'environnement. `com.example.triathlon` reste provisoire et bloque volontairement toute Release. La version reste `1.0.0+1` en attente de validation. Guide et limites : [android_release.md](../../docs/android_release.md).
 
 - [ ] Choisir l'`applicationId` et le namespace définitifs, puis adapter les références Android nécessaires.
 - [ ] Harmoniser le nom Android, le titre Flutter et le nom public de la fiche Store.
 - [ ] Définir la version de lancement ; incrémenter le numéro de build à chaque nouvel envoi.
 - [ ] Créer et configurer la clé d'upload et Play App Signing.
-- [ ] Remplacer la signature debug dans le bloc Release.
+- [x] Remplacer la signature debug dans le bloc Release par une configuration upload ; faire échouer la livraison si elle manque.
 - [ ] Conserver la clé et ses mots de passe dans un stockage sécurisé, avec sauvegarde et procédure d'accès.
-- [ ] Vérifier que `key.properties` et les keystores restent hors Git ; les règles d'exclusion Android existent déjà.
+- [x] Exclure les fichiers de signature et configurations locales, y compris PKCS12/DPAPI ; aucune clé de signature suivie ou trouvée dans l'historique Git accessible lors du contrôle.
+- [ ] Maintenir ce contrôle avant chaque livraison et vérifier les autres secrets possibles.
 - [ ] Vérifier le manifeste fusionné Release et ne conserver que les permissions justifiées.
-- [ ] Vérifier les logs et retirer les traces de débogage ou données sensibles avant livraison.
-- [ ] Vérifier la valeur effective de `targetSdk` ; elle est actuellement héritée de Flutter.
+- [x] Vérifier les appels print/debugPrint/log dans lib (aucun trouvé) et désactiver explicitement les logs Supabase en Release.
+- [ ] Observer les logs du binaire Release final pendant les parcours et auditer les SDK ajoutés ultérieurement.
+- [x] Fixer targetSdk=36 et vérifier le modèle Gradle local (compileSdk 36, targetSdk 36, minSdk 24).
+- [ ] Confirmer ces valeurs dans le manifeste du bundle Release signé.
 - [ ] Vérifier la compatibilité des dépendances et bibliothèques natives avec les exigences Android/Play applicables à la livraison.
 - [ ] Tester la version Release sur appareils et via Google Play, pas uniquement en debug.
-- [ ] Prévoir des environnements staging/production et éviter de livrer une build connectée au mauvais projet.
+- [x] Prévoir des flavors et configurations staging/production ; contrôler le nom, APP_ENV, l'URL attendue et le type de clé au build et dans Flutter.
+- [ ] Fournir le vrai projet staging, les configurations locales et réaliser la recette réseau/Auth de chaque environnement.
+- [ ] Installer les Android SDK command-line tools manquants et vérifier les licences du SDK local.
 
 Au 2 novembre 2026, la page officielle consultée indique Android 16 / API 36 ou supérieur pour les nouvelles applications mobiles et mises à jour depuis le 31 août 2026. Revérifier les règles et éventuelles conditions propres à l'application dans la Play Console au moment du dépôt. Sources : [API cible Google Play](https://support.google.com/googleplay/android-developer/answer/11926878?hl=en), [publication Android Flutter](https://docs.flutter.dev/deployment/android).
 
@@ -385,10 +434,10 @@ Ces éléments ne sont pas vérifiables depuis le seul dépôt et restent à ren
 
 ## Priorités pour terminer
 
-1. Finaliser récupération du mot de passe, confirmation d'e-mail et suppression de compte.
+1. Déployer et recetter les parcours existants de récupération du mot de passe et de suppression du compte ; terminer le parcours de confirmation d'e-mail.
 2. Auditer réellement le schéma, les policies RLS et les droits des RPC sur staging.
 3. Compléter les fonctions sportives et le détail athlète recensés plus haut.
-4. Stabiliser les parcours réseau, les corrections et la concurrence avec des tests de bout en bout.
+4. Recetter les inscriptions, l'actualisation des résultats, les corrections transactionnelles et la concurrence avec une vraie base et plusieurs appareils.
 5. Finaliser identité, signature Android et bundle Release.
 6. Préparer confidentialité, déclarations Store et comptes de démonstration.
 7. Passer par les pistes de test avant la production progressive.

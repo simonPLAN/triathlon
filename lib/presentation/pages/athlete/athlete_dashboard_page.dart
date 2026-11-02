@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'resultats_athlete_page.dart';
+import 'programme_athlete_page.dart';
 
 import '../../../application/use_cases/deconnecter_utilisateur.dart';
 import '../../../domain/entities/competition.dart';
@@ -47,6 +48,18 @@ class _AthleteDashboardPageState extends State<AthleteDashboardPage>
     for (final c in _competitionsController.competitions) c.id: c,
     for (final c in _competitionsController.inscrites) c.id: c,
   }.values.toList();
+
+  void _ouvrirProgramme(Competition competition) {
+    Navigator.of(context).push<void>(
+      MaterialPageRoute(
+        builder: (_) => ProgrammeAthletePage(
+          competition: competition,
+          charger: () =>
+              _competitionsController.programmeCompetition(competition.id),
+        ),
+      ),
+    );
+  }
 
   void _ouvrirResultats(Competition competition) {
     Navigator.of(context).push<void>(
@@ -411,6 +424,7 @@ class _AthleteDashboardPageState extends State<AthleteDashboardPage>
 
           return CarteCompetitionAthlete(
             competition: competition,
+            onVoirProgramme: () => _ouvrirProgramme(competition),
             etatInscription: _inscriptionController.suiviUtilisateur.pour(
               competition.id,
             ),

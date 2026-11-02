@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:triathlon/presentation/controllers/competition_controller.dart';
 import 'package:triathlon/presentation/controllers/competitions_ouvertes_controller.dart';
@@ -8,6 +9,8 @@ import 'package:triathlon/presentation/controllers/manche_controller.dart';
 import 'package:triathlon/presentation/controllers/resultat_controller.dart';
 
 import 'app.dart';
+import 'application/use_cases/competition/consulter_programme_competition.dart';
+import 'infrastructure/repositories/supabase/programme_competition_repository_supabase.dart';
 import 'infrastructure/repositories/supabase/edition_resultats_repository_supabase.dart';
 import 'application/use_cases/auth/supprimer_mon_compte.dart';
 import 'infrastructure/repositories/supabase/suppression_compte_repository_supabase.dart';
@@ -74,6 +77,7 @@ Future<void> main() async {
         'sb-${Uri.parse(configuration.urlSupabase).host.split('.').first}-auth-token',
   );
   await Supabase.initialize(
+    debug: kDebugMode,
     url: configuration.urlSupabase,
     publishableKey: configuration.clePublique,
     authOptions: FlutterAuthClientOptions(
@@ -134,6 +138,9 @@ Future<void> main() async {
   final competitionsOuvertesController = CompetitionsOuvertesController(
     ListerCompetitionsOuvertes(competitionRepository),
     SuivreCompetitionsAthlete(SuiviAthleteRepositorySupabase(clientSupabase)),
+    programme: ConsulterProgrammeCompetition(
+      ProgrammeCompetitionRepositorySupabase(clientSupabase),
+    ),
   );
   final calculPoints = CalculPoints();
   final resultatRepository = ResultatRepositorySupabase(clientSupabase);

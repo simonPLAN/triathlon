@@ -16,6 +16,7 @@ class CarteCompetitionAthlete extends StatelessWidget {
     required this.onInscrire,
     required this.onDesinscrire,
     this.onVoirResultats,
+    this.onVoirProgramme,
   });
 
   final Competition competition;
@@ -26,6 +27,7 @@ class CarteCompetitionAthlete extends StatelessWidget {
   final VoidCallback? onInscrire;
   final VoidCallback? onDesinscrire;
   final VoidCallback? onVoirResultats;
+  final VoidCallback? onVoirProgramme;
 
   @override
   Widget build(BuildContext context) {
@@ -92,6 +94,14 @@ class CarteCompetitionAthlete extends StatelessWidget {
               onInscrire: onInscrire,
               onDesinscrire: onDesinscrire,
             ),
+            if (onVoirProgramme != null) ...[
+              const SizedBox(height: 8),
+              OutlinedButton.icon(
+                onPressed: onVoirProgramme,
+                icon: const Icon(Icons.event_note),
+                label: const Text('Voir le programme'),
+              ),
+            ],
             if (onVoirResultats != null) ...[
               const SizedBox(height: 8),
               FilledButton.icon(
