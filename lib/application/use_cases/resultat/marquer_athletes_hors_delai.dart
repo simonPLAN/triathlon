@@ -38,7 +38,8 @@ class MarquerAthletesHorsDelai {
 
     final athletesSansResultat = athletes
         .where((athlete) {
-          return !athleteIdsAvecResultat.contains(athlete.id);
+          return manche.contientParticipant(athlete.id) &&
+              !athleteIdsAvecResultat.contains(athlete.id);
         })
         .toList(growable: false);
 

@@ -127,6 +127,21 @@ listOf("production", "staging").forEach { environnement ->
                 val json = String(Base64.getUrlDecoder().decode(payload), Charsets.UTF_8)
                 (groovy.json.JsonSlurper().parseText(json) as Map<*, *>)["role"] == "anon"
             }.getOrDefault(false)) { "Une cle publique publishable/anon est requise ; aucune cle privilegiee." }
+            if (environnement == "production") {
+                listOf("PRIVACY_POLICY_URL", "ACCOUNT_DELETION_URL").forEach { nom ->
+                    val publique = runCatching { URI(parametresDart[nom].orEmpty()) }.getOrNull()
+                    require(publique?.scheme == "https" && publique.host?.contains(".") == true &&
+                        publique.userInfo == null && publique.fragment == null) {
+                        "$nom doit designer une page publique HTTPS valide avant publication."
+                    }
+                }
+                val email = parametresDart["SUPPORT_EMAIL"].orEmpty()
+                require(email.count { it == '@' } == 1 &&
+                    email.substringAfter('@').contains('.') && email.none { it.isWhitespace() } &&
+                    email.substringBefore('@').isNotBlank()) {
+                    "SUPPORT_EMAIL doit contenir le contact de support public."
+                }
+            }
             require(flutter.versionCode > 0) { "Numero de build positif requis." }
         }
     }

@@ -48,7 +48,9 @@ class CarteActionCoach extends StatelessWidget {
             children: [
               Text(
                 'Ouvrir',
-                style: theme.textTheme.labelLarge?.copyWith(color: couleur),
+                style: theme.textTheme.labelLarge?.copyWith(
+                  color: theme.colorScheme.primary,
+                ),
               ),
               const Spacer(),
               Icon(Icons.arrow_forward_rounded, color: couleur),

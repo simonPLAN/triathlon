@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../../../domain/entities/donnee_statistique.dart';
+import '../../widgets/resultat/statistiques_resultats.dart';
+
 import '../../widgets/resultat/classement_general_athlete.dart';
 
 import '../../../domain/entities/competition.dart';
@@ -27,6 +30,7 @@ class _ResultatsAthletePageState extends State<ResultatsAthletePage>
   late ResultatsAthleteController _resultatsController;
   bool _mesResultats = false;
   bool _vueGlobale = true;
+  bool _statistiques = false;
 
   @override
   void initState() {
@@ -141,13 +145,24 @@ class _ResultatsAthletePageState extends State<ResultatsAthletePage>
             children: [
               ChoiceChip(
                 label: const Text('Général'),
-                selected: _vueGlobale,
-                onSelected: (_) => setState(() => _vueGlobale = true),
+                selected: _vueGlobale && !_statistiques,
+                onSelected: (_) => setState(() {
+                  _vueGlobale = true;
+                  _statistiques = false;
+                }),
               ),
               ChoiceChip(
                 label: const Text('Par manche'),
-                selected: !_vueGlobale,
-                onSelected: (_) => setState(() => _vueGlobale = false),
+                selected: !_vueGlobale && !_statistiques,
+                onSelected: (_) => setState(() {
+                  _vueGlobale = false;
+                  _statistiques = false;
+                }),
+              ),
+              ChoiceChip(
+                label: const Text('Statistiques'),
+                selected: _statistiques,
+                onSelected: (_) => setState(() => _statistiques = true),
               ),
             ],
           ),
@@ -170,13 +185,33 @@ class _ResultatsAthletePageState extends State<ResultatsAthletePage>
             const Text(
               'Tu n’as pas encore de résultat dans les manches publiées.',
             ),
-          if (_vueGlobale && lignes.isNotEmpty)
+          if (_statistiques)
+            StatistiquesResultats(
+              provenance: _mesResultats
+                  ? 'Mes résultats publiés uniquement.'
+                  : 'Résultats publiés de la compétition uniquement.',
+              donnees: [
+                for (final ligne in lignes)
+                  DonneeStatistique(
+                    athleteId: ligne.athleteId,
+                    nomAthlete: ligne.nomAthlete,
+                    epreuveId: ligne.epreuveId,
+                    nomEpreuve: ligne.nomEpreuve,
+                    mancheId: ligne.mancheId,
+                    numeroManche: ligne.numeroManche,
+                    points: ligne.points,
+                    statut: ligne.statut,
+                    tempsMillisecondes: ligne.tempsMillisecondes,
+                  ),
+              ],
+            ),
+          if (!_statistiques && _vueGlobale && lignes.isNotEmpty)
             ClassementGeneralAthlete(
               resultats: toutes,
               athleteId: widget.athleteId,
               uniquementMoi: _mesResultats,
             ),
-          if (!_vueGlobale)
+          if (!_statistiques && !_vueGlobale)
             for (final groupe in groupes.values) ...[
               const SizedBox(height: 16),
               Text(

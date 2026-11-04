@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../../../domain/entities/donnee_statistique.dart';
+import '../../widgets/resultat/statistiques_resultats.dart';
+
 import '../../widgets/commun/carte_section.dart';
 import '../../widgets/commun/message_erreur.dart';
 
@@ -40,6 +43,7 @@ class _DashboardResultatsCompetitionPageState
       widget.epreuveController,
       widget.mancheController,
       widget.resultatController,
+      consulter: widget.epreuveController.consulterResultatsCompetition,
     )..addListener(_actualiser);
     _controller.charger(widget.competition.id);
   }
@@ -59,7 +63,7 @@ class _DashboardResultatsCompetitionPageState
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Dashboard des résultats'),
+        title: const Text('Résultats et statistiques'),
         actions: [
           IconButton(
             tooltip: 'Actualiser',
@@ -80,6 +84,7 @@ class _DashboardResultatsCompetitionPageState
           : RefreshIndicator(
               onRefresh: () => _controller.charger(widget.competition.id),
               child: ListView(
+                physics: const AlwaysScrollableScrollPhysics(),
                 padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
                 children: [
                   CarteSection(
@@ -110,6 +115,29 @@ class _DashboardResultatsCompetitionPageState
                     onChanged: _controller.filtrerParEpreuve,
                   ),
                   const SizedBox(height: 20),
+                  StatistiquesResultats(
+                    provenance:
+                        'Résultats enregistrés, provisoires et publiés. '
+                        'Le filtre d’épreuve s’applique aux graphiques.',
+                    donnees: [
+                      for (final ligne in _controller.lignes)
+                        DonneeStatistique(
+                          athleteId: ligne.resultat.athlete.id,
+                          nomAthlete: ligne.resultat.athlete.nomComplet,
+                          epreuveId: ligne.epreuve.id,
+                          nomEpreuve: ligne.epreuve.nom,
+                          mancheId: ligne.manche.id,
+                          numeroManche: ligne.manche.numero,
+                          points: ligne.resultat.points,
+                          statut: ligne.resultat.statut.name == 'horsDelai'
+                              ? 'hors_delai'
+                              : ligne.resultat.statut.name,
+                          tempsMillisecondes:
+                              ligne.resultat.tempsTotalMillisecondes,
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
                   Text(
                     'Classement cumulé',
                     style: Theme.of(context).textTheme.titleLarge,
@@ -120,7 +148,7 @@ class _DashboardResultatsCompetitionPageState
                   else
                     ..._controller.classement.asMap().entries.map(
                       (entry) => _CarteClassement(
-                        rang: entry.key + 1,
+                        rang: entry.value.rang,
                         classement: entry.value,
                       ),
                     ),

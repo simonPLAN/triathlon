@@ -1,107 +1,147 @@
 import 'package:flutter/foundation.dart';
 
+import '../../application/use_cases/resultat/consulter_resultats_competition.dart';
 import '../../domain/entities/epreuve.dart';
-import '../../domain/entities/manche.dart';
-import '../../domain/entities/resultat.dart';
+import '../../domain/entities/resultats_competition.dart';
+import '../../domain/entities/resultat_publie.dart';
+import '../../domain/services/calcul_classement_global.dart';
 import 'epreuve_controller.dart';
 import 'manche_controller.dart';
 import 'resultat_controller.dart';
+
+typedef DashboardResultatLine = LigneResultatsCompetition;
 
 class DashboardResultatsController extends ChangeNotifier {
   DashboardResultatsController(
     this._epreuveController,
     this._mancheController,
-    this._resultatController,
-  );
-
+    this._resultatController, {
+    this.consulter,
+  });
   final EpreuveController _epreuveController;
   final MancheController _mancheController;
   final ResultatController _resultatController;
-
-  bool _chargement = false;
-  String? _erreur;
-  String? _filtreEpreuveId;
+  final ConsulterResultatsCompetition? consulter;
+  bool _chargement = false, _dispose = false;
+  String? _erreur, _filtreEpreuveId;
   List<DashboardResultatLine> _lignes = const [];
-
+  List<Epreuve> _epreuves = const [];
   bool get chargement => _chargement;
   String? get erreur => _erreur;
   String? get filtreEpreuveId => _filtreEpreuveId;
-  List<Epreuve> get epreuves => _epreuveController.epreuves;
+  List<Epreuve> get epreuves => List.unmodifiable(_epreuves);
+  List<DashboardResultatLine> get lignes => List.unmodifiable(
+    _lignes.where(
+      (l) => _filtreEpreuveId == null || l.epreuve.id == _filtreEpreuveId,
+    ),
+  );
 
-  List<DashboardResultatLine> get lignes {
-    if (_filtreEpreuveId == null) return List.unmodifiable(_lignes);
-    return List.unmodifiable(
-      _lignes.where((line) => line.epreuve.id == _filtreEpreuveId),
-    );
-  }
-
-  List<DashboardAthleteStanding> get classement {
-    final groupes = <String, DashboardAthleteStanding>{};
-    for (final ligne in lignes) {
-      final id = ligne.resultat.athlete.id;
-      final actuel = groupes[id];
-      groupes[id] = DashboardAthleteStanding(
-        athleteId: id,
-        nom: ligne.resultat.athlete.nomComplet,
-        points: (actuel?.points ?? 0) + ligne.resultat.points,
-        manches: (actuel?.manches ?? 0) + 1,
-      );
-    }
-    final result = groupes.values.toList()
-      ..sort((a, b) {
-        final points = b.points.compareTo(a.points);
-        return points != 0 ? points : a.nom.compareTo(b.nom);
-      });
-    return result;
-  }
+  List<DashboardAthleteStanding> get classement =>
+      const CalculClassementGlobal()
+          .calculer(
+            lignes.map(
+              (l) => ResultatPublie(
+                athleteId: l.resultat.athlete.id,
+                nomAthlete: l.resultat.athlete.nomComplet,
+                epreuveId: l.epreuve.id,
+                nomEpreuve: l.epreuve.nom,
+                mancheId: l.manche.id,
+                numeroManche: l.manche.numero,
+                position: l.resultat.position,
+                points: l.resultat.points,
+                statut: l.resultat.statut.name,
+                tempsMillisecondes: l.resultat.tempsTotalMillisecondes,
+              ),
+            ),
+          )
+          .map(
+            (s) => DashboardAthleteStanding(
+              athleteId: s.athleteId,
+              nom: s.nom,
+              points: s.points,
+              manches: s.nombreManches,
+              rang: s.rang,
+            ),
+          )
+          .toList(growable: false);
 
   Future<void> charger(String competitionId) async {
-    if (_chargement) return;
+    if (_chargement || _dispose) return;
     _chargement = true;
     _erreur = null;
     notifyListeners();
     try {
-      await _epreuveController.charger(competitionId);
-      final lignes = <DashboardResultatLine>[];
-      for (final epreuve in _epreuveController.epreuves) {
-        await _mancheController.charger(epreuve.id);
-        for (final manche in _mancheController.manches) {
-          await _resultatController.charger(manche.id);
-          lignes.addAll(
-            _resultatController.resultats.map(
-              (resultat) => DashboardResultatLine(
-                epreuve: epreuve,
-                manche: manche,
-                resultat: resultat,
-              ),
-            ),
-          );
-        }
+      final lecture =
+          consulter ?? _epreuveController.consulterResultatsCompetition;
+      final ResultatsCompetition donnees;
+      if (lecture != null) {
+        donnees = await lecture
+            .executer(competitionId)
+            .timeout(const Duration(seconds: 30));
+      } else {
+        // Compatibilité avec les anciennes compositions/tests. L'application
+        // principale injecte toujours la lecture indépendante via les ports.
+        donnees = await _chargerAncienneComposition(competitionId);
       }
-      _lignes = lignes;
-    } catch (exception) {
-      _erreur = exception.toString().replaceFirst('Exception: ', '');
+      if (_dispose) return;
+      _epreuves = donnees.epreuves;
+      _lignes = donnees.lignes;
+      if (!_epreuves.any((e) => e.id == _filtreEpreuveId)) {
+        _filtreEpreuveId = null;
+      }
+    } catch (_) {
+      if (!_dispose) {
+        _erreur = 'Impossible de charger tous les résultats. Vérifie ta connexion puis réessaie.';
+      }
     } finally {
-      _chargement = false;
-      notifyListeners();
+      if (!_dispose) {
+        _chargement = false;
+        notifyListeners();
+      }
     }
   }
 
-  void filtrerParEpreuve(String? epreuveId) {
-    _filtreEpreuveId = epreuveId;
+  Future<ResultatsCompetition> _chargerAncienneComposition(String id) async {
+    await _epreuveController.charger(id);
+    if (_epreuveController.erreur != null) {
+      throw StateError('Épreuves indisponibles.');
+    }
+    final epreuves = List<Epreuve>.of(_epreuveController.epreuves);
+    final lignes = <DashboardResultatLine>[];
+    for (final epreuve in epreuves) {
+      await _mancheController.charger(epreuve.id);
+      if (_mancheController.erreur != null) {
+        throw StateError('Manches indisponibles.');
+      }
+      for (final manche in List.of(_mancheController.manches)) {
+        await _resultatController.charger(manche.id);
+        if (_resultatController.erreur != null) {
+          throw StateError('Résultats indisponibles.');
+        }
+        lignes.addAll(
+          _resultatController.resultats.map(
+            (r) => LigneResultatsCompetition(
+              epreuve: epreuve,
+              manche: manche,
+              resultat: r,
+            ),
+          ),
+        );
+      }
+    }
+    return ResultatsCompetition(epreuves: epreuves, lignes: lignes);
+  }
+
+  void filtrerParEpreuve(String? id) {
+    _filtreEpreuveId = id;
     notifyListeners();
   }
-}
 
-class DashboardResultatLine {
-  const DashboardResultatLine({
-    required this.epreuve,
-    required this.manche,
-    required this.resultat,
-  });
-  final Epreuve epreuve;
-  final Manche manche;
-  final Resultat resultat;
+  @override
+  void dispose() {
+    _dispose = true;
+    super.dispose();
+  }
 }
 
 class DashboardAthleteStanding {
@@ -110,9 +150,8 @@ class DashboardAthleteStanding {
     required this.nom,
     required this.points,
     required this.manches,
+    this.rang = 0,
   });
-  final String athleteId;
-  final String nom;
-  final int points;
-  final int manches;
+  final String athleteId, nom;
+  final int points, manches, rang;
 }

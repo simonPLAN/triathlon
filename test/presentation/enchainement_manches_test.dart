@@ -21,6 +21,8 @@ class ManchesFake extends ChangeNotifier implements MancheController {
   int clotures = 0;
   int departs = 0;
   @override
+  bool get cycleAtomiqueDisponible => false;
+  @override
   bool get actionEnCours => false;
   @override
   String? get erreur => null;

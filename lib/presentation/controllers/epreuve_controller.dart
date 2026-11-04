@@ -1,5 +1,7 @@
 import 'package:flutter/foundation.dart';
 
+import '../../application/use_cases/resultat/consulter_resultats_competition.dart';
+
 import '../../application/use_cases/epreuve/configurer_epreuves.dart';
 
 import '../../application/use_cases/epreuve/creer_epreuve.dart';
@@ -8,7 +10,13 @@ import '../../domain/entities/epreuve.dart';
 import '../../domain/entities/type_discipline.dart';
 
 class EpreuveController extends ChangeNotifier {
-  EpreuveController(this._creerEpreuve, this._listerEpreuves, this._configurer);
+  EpreuveController(
+    this._creerEpreuve,
+    this._listerEpreuves,
+    this._configurer, {
+    this.consulterResultatsCompetition,
+  });
+  final ConsulterResultatsCompetition? consulterResultatsCompetition;
   final ConfigurerEpreuves _configurer;
   bool _actionEnCours = false;
   bool get operationEnCours =>

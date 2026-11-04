@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import '../../application/use_cases/inscrire_athlete.dart';
 
 class InscriptionAthleteDialog extends StatefulWidget {
-  const InscriptionAthleteDialog({super.key, required this.inscrireAthlete});
+  const InscriptionAthleteDialog({super.key, required this.inscrireAthlete, this.onCompteCree});
+
+  final ValueChanged<String>? onCompteCree;
 
   final InscrireAthlete inscrireAthlete;
 
@@ -35,7 +37,7 @@ class _InscriptionAthleteDialogState extends State<InscriptionAthleteDialog> {
   }
 
   Future<void> _inscrire() async {
-    if (!_formKey.currentState!.validate()) {
+    if (_chargement || !_formKey.currentState!.validate()) {
       return;
     }
 
@@ -56,12 +58,15 @@ class _InscriptionAthleteDialogState extends State<InscriptionAthleteDialog> {
         return;
       }
 
+      widget.onCompteCree?.call(_emailController.text.trim());
       Navigator.of(context).pop(true);
     } on ArgumentError catch (exception) {
+      if (!mounted) return;
       setState(() {
         _erreur = exception.message?.toString();
       });
     } catch (exception) {
+      if (!mounted) return;
       setState(() {
         _erreur = exception.toString().replaceFirst('Exception: ', '');
       });

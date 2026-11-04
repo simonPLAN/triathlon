@@ -13,6 +13,11 @@ class Manche {
     this.heurePremiereArrivee,
     this.heureFinDelai,
     this.revisionResultats = 0,
+    this.participantsDefinis = false,
+    this.participantsAthleteIds = const [],
+    this.dureeLimiteSecondes,
+    this.validationRequise = false,
+    this.revisionValidationResultats,
   });
 
   final String id;
@@ -25,7 +30,18 @@ class Manche {
   final DateTime? heureFinDelai;
 
   final bool resultatsPublies;
+  final bool validationRequise;
+  final int? revisionValidationResultats;
+  bool get resultatsValides => resultatsPublies ||
+      (revisionValidationResultats != null && revisionValidationResultats == revisionResultats);
   final int revisionResultats;
+  final bool participantsDefinis;
+  /// Identifiants dans l’ordre de départ, distinct de l’ordre d’arrivée.
+  final List<String> participantsAthleteIds;
+  final int? dureeLimiteSecondes;
+
+  bool contientParticipant(String athleteId) =>
+      !participantsDefinis || participantsAthleteIds.contains(athleteId);
 
   final DateTime dateCreation;
   final DateTime dateModification;
@@ -55,7 +71,7 @@ class Manche {
   }
 
   bool get peutPublierResultats {
-    return estTerminee && !resultatsPublies;
+    return estTerminee && !resultatsPublies && (!validationRequise || resultatsValides);
   }
 
   Manche demarrer({required DateTime heure}) {
@@ -166,6 +182,9 @@ class Manche {
       throw StateError('Les résultats sont déjà publiés.');
     }
 
+    if (validationRequise && !resultatsValides) {
+      throw StateError('Valide le classement avant publication.');
+    }
     return copierAvec(resultatsPublies: true, dateModification: DateTime.now());
   }
 
@@ -179,6 +198,11 @@ class Manche {
     DateTime? heureFinDelai,
     bool? resultatsPublies,
     int? revisionResultats,
+    bool? participantsDefinis,
+    List<String>? participantsAthleteIds,
+    int? dureeLimiteSecondes,
+    bool? validationRequise,
+    int? revisionValidationResultats,
     DateTime? dateCreation,
     DateTime? dateModification,
   }) {
@@ -192,6 +216,11 @@ class Manche {
       heureFinDelai: heureFinDelai ?? this.heureFinDelai,
       resultatsPublies: resultatsPublies ?? this.resultatsPublies,
       revisionResultats: revisionResultats ?? this.revisionResultats,
+      participantsDefinis: participantsDefinis ?? this.participantsDefinis,
+      participantsAthleteIds: participantsAthleteIds ?? this.participantsAthleteIds,
+      dureeLimiteSecondes: dureeLimiteSecondes ?? this.dureeLimiteSecondes,
+      validationRequise: validationRequise ?? this.validationRequise,
+      revisionValidationResultats: revisionValidationResultats ?? this.revisionValidationResultats,
       dateCreation: dateCreation ?? this.dateCreation,
       dateModification: dateModification ?? this.dateModification,
     );

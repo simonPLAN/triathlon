@@ -4,6 +4,7 @@ import '../../application/use_cases/deconnecter_utilisateur.dart';
 import '../../application/use_cases/inscrire_athlete.dart';
 import '../../domain/entities/athlete.dart';
 import '../controllers/athlete_controller.dart';
+import 'compte/categorie_athlete_page.dart';
 import '../theme/espacements_application.dart';
 import '../widgets/coach/carte_athlete_coach.dart';
 import '../widgets/commun/carte_section.dart';
@@ -220,7 +221,30 @@ class _AthletesPageState extends State<AthletesPage> {
               ),
             );
           }
-          return CarteAthleteCoach(athlete: athletes[index - 1]);
+          final athlete = athletes[index - 1];
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              CarteAthleteCoach(athlete: athlete),
+              if (controller.categories != null)
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton.icon(
+                    icon: const Icon(Icons.tune),
+                    label: const Text('Consulter le coefficient'),
+                    onPressed: () => Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) => CategorieAthletePage(
+                          repository: controller.categories!,
+                          athleteId: athlete.id,
+                          nomAthlete: athlete.nomComplet,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          );
         },
       ),
     );

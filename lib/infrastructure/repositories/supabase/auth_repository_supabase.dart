@@ -3,9 +3,10 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../domain/ports/auth_repository.dart';
 
 class AuthRepositorySupabase implements AuthRepository {
-  AuthRepositorySupabase(this._client);
+  AuthRepositorySupabase(this._client, {this.redirectionConfirmation});
 
   final SupabaseClient _client;
+  final Uri? redirectionConfirmation;
 
   @override
   bool get estConnecte {
@@ -43,6 +44,7 @@ class AuthRepositorySupabase implements AuthRepository {
         email: email,
         password: motDePasse,
         data: {'prenom': prenom, 'nom': nom},
+        emailRedirectTo: redirectionConfirmation?.toString(),
       );
 
       if (reponse.user == null) {

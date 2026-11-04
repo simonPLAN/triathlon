@@ -4,6 +4,19 @@ Ce document regroupe les fonctionnalités manquantes ou partielles relevées lor
 Les cases cochées correspondent au code et aux tests locaux ; les migrations et réglages serveur ne sont pas considérés comme déployés sans vérification sur Supabase.
 
 
+## Avancement du 4 novembre 2026
+
+- 119 tests Flutter et 46 tests serveur/SQL réussis ; analyse sans problème au dernier contrôle. APK debug final recompilé avec succès, y compris les ajustements de navigation.
+- Cinq nouvelles migrations sont fournies : participants/configuration, cycle atomique, validation, catégories et durcissement RLS. Les tests PGlite/serveur passent avec un runtime Deno local au projet, sans installation globale. Ils ne prouvent pas la compatibilité du schéma Supabase distant ni le déploiement.
+- Couleurs bleu marine/orange/blanc adaptées des supports Le Mans Triathlon ; graphiques interactifs réels par épreuve, durées/statuts et alternatives textuelles.
+- Catégories facultatives et barème exact fourni par l'organisateur ; aucune valeur inventée pour les tranches absentes. **La formule d'application du coefficient reste à confirmer** ; les classements officiels restent bruts.
+- Confirmation d'e-mail, détail athlète, démarrage avec reprise, validation avant publication et protections serveur sont fournis dans le dépôt.
+- La planification cron, les migrations réelles, les réglages Auth/SMTP, les données légales, l'identité et la signature Android, les tests appareil et la Play Console restent des étapes externes non réalisées.
+
+Instructions regroupées : [mise à jour BDD et application](../../docs/instructions_mise_a_jour_20261104.md), [coefficients et statistiques](../../docs/coefficients_athletes.md), [RLS et exploitation](../../docs/securite_supabase_production.md).
+
+Les cases cochées ci-dessous concernent le code fourni, pas le déploiement ni la validation de sécurité sur une base réelle.
+
 ## État de la revue du dépôt
 
 Revue du 2 novembre 2026. Les constats portent sur le code et les fichiers locaux, pas sur les réglages effectivement déployés dans Supabase ou la Play Console.
@@ -14,14 +27,14 @@ Revue du 2 novembre 2026. Les constats portent sur le code et les fichiers locau
 | Rôles | Deux rôles `athlete` et `coach`, accueil séparé via `AuthGate` | Audit serveur des droits, attribution du rôle coach, décision sur arbitre/administrateur |
 | Interface | Thème clair/sombre, composants communs, recherche d'athlètes, confirmations et chargements sur plusieurs écrans | Harmonisation des écrans restants, identité définitive, recette sur appareils réels |
 | Fonctionnel sportif | Premier arrivé, compte à rebours, résultats, hors délai, enchaînement et publication implémentés | Compléments détaillés ci-dessous ; ne pas refaire ces fonctions déjà présentes |
-| Supabase | Six migrations, dont suppression de compte et corrections transactionnelles | Schéma initial complet non fourni par ces migrations ; vérifier RLS, policies existantes et déploiement réel |
+| Supabase | Onze migrations, dont participants, validation, catégories et durcissement RLS | Schéma initial complet non fourni par ces migrations ; vérifier RLS, policies existantes et déploiement réel |
 | Tests | Tests métier, contrôleurs, widgets et échange HTTP local des horaires | Tests avec une vraie base Supabase, tests de bout en bout et recette Release |
 | Identifiant Android | `com.example.triathlon` | Choisir l'identifiant définitif avant publication |
 | Signature Release | Signature upload uniquement, sans repli debug ; configuration locale/coffre et script fournis | Confirmer/créer la clé, sauvegarder les secrets, activer Play App Signing et produire le bundle |
 | Version | `1.0.0+1`, transmise à Gradle depuis Flutter | Définir la version de lancement et la stratégie d'incrémentation |
 | API cible | targetSdk explicite 36 ; modèle Gradle vérifié : compileSdk 36, minSdk 24, NDK 28.2.13676358 | Vérifier l'artefact Release final, les bibliothèques natives et les pages 16 Ko |
 | Icône | Ressources `ic_launcher` et icône adaptative présentes | Valider l'identité graphique, le rendu et les visuels Store |
-| Démarrage | Ressource `launch_background.xml` avec fond blanc de base | Personnaliser et vérifier le splash selon les versions Android |
+| Démarrage | Splash bleu marine, ressources Android 12+, écran Flutter de chargement/erreur avec reprise | Recette visuelle sur appareils selon les versions Android |
 | Réseau | Permission `INTERNET` présente dans le manifeste principal | Tester les requêtes sur la version Release et les pertes de connexion |
 | Secrets | `main.dart` utilise une clé publique publishable ; aucune référence à une clé service_role trouvée dans le code Dart inspecté | Auditer aussi les artefacts, fichiers suivis et l'historique ; séparer staging et production |
 | Clés de signature dans Git | `android/.gitignore` exclut déjà `key.properties`, `*.jks` et `*.keystore` | Vérifier qu'aucune clé n'a déjà été suivie/committée et sécuriser les sauvegardes |
@@ -42,22 +55,22 @@ Dernières avancées :
 
 ### Participants et départs — priorité haute
 
-- [ ] Sélectionner les participants de chaque manche, au lieu d'utiliser systématiquement tous les inscrits à la compétition.
-- [ ] Enregistrer les affectations aux manches et les retrouver après rechargement.
-- [ ] Définir l'ordre de départ des athlètes, indépendamment de l'ordre des épreuves et des manches.
-- [ ] Adapter la grille des arrivées et le marquage hors délai aux seuls participants affectés à la manche.
+- [x] Sélectionner explicitement les participants de chaque manche ; migration 202611040001 fournie, à tester sur staging.
+- [x] Fournir la persistance des affectations et leur relecture (RPC contrôlée).
+- [x] Définir l'ordre de départ indépendamment de l'ordre des épreuves et des manches.
+- [x] Limiter la grille des arrivées et les hors délai aux participants affectés ; protections client et serveur fournies.
 
 ### Configuration des manches
 
-- [ ] Permettre une configuration individuelle par manche lorsque nécessaire ; actuellement le nombre de manches et le délai sont définis par épreuve.
-- [ ] Préciser les paramètres individuels autorisés et leurs règles de modification avant/après le départ.
+- [x] Configurer le délai individuel et les participants d'une manche avant son départ.
+- [x] Fournir le verrouillage de la configuration après départ dans la RPC.
 
 ### Pénalités, bonus et statuts — priorité haute
 
-- [ ] Ajouter les pénalités et les bonus avec un motif.
-- [ ] Définir leur effet : modification du temps, des points ou des deux.
-- [ ] Recalculer les classements concernés après chaque ajustement.
-- [ ] Permettre de déclarer un abandon ou une disqualification avant l'arrivée, directement depuis un participant sans résultat.
+- [x] Ajouter pénalités/bonus de temps avec motif sur les résultats arrivés ; conserver l'ajustement dans le commentaire.
+- [x] Définir l'effet retenu : ajout/retrait d'un temps, puis reclassement et recalcul des points ; pas de bonus arbitraire de points.
+- [x] Utiliser la correction transactionnelle existante après ajustement du temps.
+- [x] Fournir la déclaration d'abandon/disqualification avant arrivée, avec motif et contrôle serveur.
 - [x] Conserver le changement de statut sur un résultat existant dans le formulaire de correction d'une manche terminée.
 
 ### Saisie et correction des résultats — priorité haute
@@ -74,14 +87,14 @@ Règles, formats, concurrence et déploiement : [correction_resultats.md](../../
 
 ### Validation et publication
 
-- [ ] Ajouter une étape explicite de validation avant publication ; actuellement la publication est accessible après la fin de la manche.
-- [ ] Définir le verrouillage des résultats validés et les conditions de réouverture pour correction.
-- [ ] Distinguer clairement les résultats provisoires, validés et publiés dans l'interface.
+- [x] Fournir une validation explicite avant publication, associée à la révision courante du classement (migration 202611040003).
+- [x] Définir la réouverture : une correction invalide la révision validée et exige une nouvelle validation/publication.
+- [x] Distinguer les états provisoire, validé et publié dans l'interface des manches.
 
 ### Classements
 
-- [ ] Harmoniser les règles de classement et de départage entre les vues coach et athlète.
-- [ ] Définir les critères de départage au-delà du total des points, si nécessaire.
+- [x] Réutiliser CalculClassementGlobal côté coach et athlète, avec rangs ex aequo sur les points.
+- [x] Conserver le même rang à points égaux ; nom puis identifiant stabilisent uniquement l'ordre d'affichage.
 - [ ] Présenter explicitement les niveaux manche, épreuve et compétition.
 - [ ] Réutiliser les mêmes calculs métier dans toutes les vues, y compris après pénalité, bonus ou correction.
 
@@ -97,10 +110,10 @@ Règles, formats, concurrence et déploiement : [correction_resultats.md](../../
 
 ### Détail d'une compétition — priorité haute
 
-- [ ] Ajouter une page de détail accessible depuis les compétitions disponibles et les compétitions inscrites.
-- [ ] Afficher les informations complètes : nom, date, lieu, description et statut.
-- [ ] Regrouper l'état de l'inscription, le dossard et les actions autorisées sur cette page.
-- [ ] Donner accès au programme et aux résultats publiés depuis cette page.
+- [x] Fournir le détail d'une compétition côté athlète depuis les listes ouvertes et inscrites.
+- [x] Afficher nom, date, lieu, description et statut dans le détail athlète.
+- [x] Regrouper état de l'inscription, dossard et actions permises sur le détail.
+- [x] Donner accès au programme et aux résultats publiés depuis le détail athlète.
 
 ### Programme : épreuves et manches — priorité haute
 
@@ -109,7 +122,7 @@ Règles, formats, concurrence et déploiement : [correction_resultats.md](../../
 - [x] Afficher les statuts À venir, En cours, Terminée et Annulée.
 - [x] Préparer l'affichage de la participation personnelle lorsque la source fournit une affectation ; distinguer explicitement la participation inconnue.
 - [x] Afficher l'ordre de départ lorsqu'il est fourni et « Ordre de départ non défini » sinon.
-- [ ] Implémenter la gestion/persistance des affectations et ordres côté coach, puis brancher la RPC sur ces données : aucune table correspondante n'existe encore.
+- [x] Fournir la table participants_manche et raccorder la RPC du programme aux affectations et ordres réels.
 - [x] Fournir une page de programme en lecture seule, une RPC contrôlée et des restrictions RLS sur les lectures/écritures des épreuves et manches.
 - [x] Gérer chargement, erreur/réessai, programme vide et actualisation par bouton, glissement ou reprise.
 - [ ] Déployer la migration 202611020006 et vérifier les policies du schéma réel, notamment les accès conservés du coach.
@@ -193,9 +206,9 @@ Configuration et recette : [recuperation_mot_de_passe.md](../../docs/recuperatio
 ### Confirmation de l'adresse e-mail
 
 - [ ] Vérifier l'activation de la confirmation dans Supabase ; le message affiché dans Flutter ne prouve pas ce réglage.
-- [ ] Ajouter un écran expliquant l'attente de confirmation et permettant de renvoyer l'e-mail.
-- [ ] Gérer les liens de confirmation, leur expiration et le retour vers la connexion.
-- [ ] Ne pas annoncer une session connectée si seul le compte a été créé.
+- [x] Fournir l'écran d'attente de confirmation avec renvoi contrôlé de l'e-mail.
+- [x] Fournir la réception PKCE des liens de confirmation, erreurs et retour vers la connexion ; recette e-mail réel encore nécessaire.
+- [x] Conserver le parcours d'attente tant qu'aucune session n'est établie.
 - [ ] Vérifier les comportements avec confirmation activée et désactivée en staging.
 - [ ] Configurer et tester les modèles d'e-mails et le SMTP de production.
 
@@ -252,11 +265,11 @@ Le thème et les composants communs sont déjà présents dans `lib/presentation
 La séparation domaine / cas d'utilisation / infrastructure / présentation existe déjà, mais la refonte de tout le projet n'est pas terminée.
 
 - [ ] Réduire les grandes pages restantes et extraire leurs widgets et états spécialisés.
-- [ ] Sortir l'orchestration entre contrôleurs du dashboard dans des cas d'utilisation dépendant des ports.
-- [ ] Réutiliser le même calcul de classement pour coach et athlète.
+- [x] Injecter ConsulterResultatsCompetition dans la composition de production ; lecture par les ports sans modifier les états des écrans sportifs.
+- [x] Réutiliser CalculClassementGlobal dans les deux vues, y compris pour les ex aequo.
 - [ ] Isoler puis supprimer la couche parallèle `domain/models.dart`, `infrastructure/app_repository.dart` et les anciens fichiers `presentation/*_pages.dart`, après vérification de leurs usages.
-- [ ] Centraliser la composition des dépendances plutôt que continuer à allonger `main.dart`.
-- [ ] Éviter qu'un chargement du dashboard écrase les données partagées des contrôleurs utilisés par un autre écran.
+- [x] Centraliser les dépendances dans lib/composition/assembler_application.dart ; main.dart ne gère que le démarrage.
+- [x] Isoler le chargement du dashboard injecté des listes partagées épreuves/manches/résultats.
 - [ ] Uniformiser les horodatages UTC à l'enregistrement et les heures locales à l'affichage ; des corrections et tests existent déjà.
 - [x] Fournir la réorganisation atomique des places, points et écarts via la RPC de correction avec contrôle de révision.
 - [ ] Rendre atomiques les autres opérations liées : première arrivée + résultat, clôture + hors délai + démarrage suivant.
@@ -350,7 +363,7 @@ Bilan des derniers contrôles locaux : 94 tests Flutter réussis et analyse Flut
 - [ ] Obtenir une analyse sans erreur bloquante et des tests réussis.
 - [ ] Vérifier l'absence de crash dans les parcours principaux.
 - [ ] Générer le bundle signé puis installer la version distribuée par une piste Google Play.
-- [ ] Ajouter une intégration continue pour analyse, tests et contrôle de build.
+- [x] Fournir un workflow GitHub Actions d'analyse/tests Flutter et tests serveur ; son exécution distante reste à vérifier.
 
 ```powershell
 flutter clean

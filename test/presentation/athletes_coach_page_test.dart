@@ -3,11 +3,14 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:triathlon/application/use_cases/deconnecter_utilisateur.dart';
 import 'package:triathlon/application/use_cases/inscrire_athlete.dart';
 import 'package:triathlon/domain/entities/athlete.dart';
+import 'package:triathlon/domain/ports/categorie_athlete_repository.dart';
 import 'package:triathlon/presentation/controllers/athlete_controller.dart';
 import 'package:triathlon/presentation/pages/athletes_page.dart';
 import 'package:triathlon/presentation/theme/theme_application.dart';
 
 class AthletesFake extends ChangeNotifier implements AthleteController {
+  @override
+  CategorieAthleteRepository? get categories => null;
   @override
   List<Athlete> athletes = [
     const Athlete(

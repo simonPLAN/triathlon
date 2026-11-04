@@ -99,11 +99,17 @@ class ResultatRepositorySupabase implements ResultatRepository {
   @override
   Future<Resultat> enregistrer(Resultat resultat) async {
     try {
-      final donnees = await _client
-          .from(_nomTable)
-          .insert(_convertirPourCreation(resultat))
-          .select(_selectionComplete)
-          .single();
+      final Map<String, dynamic> donnees;
+      if (resultat.estArrive) {
+        final reponse = await _client.rpc('enregistrer_arrivee_atomique', params: {
+          'p_manche_id': resultat.mancheId, 'p_athlete_id': resultat.athlete.id,
+          'p_heure_arrivee': resultat.heureArrivee?.toUtc().toIso8601String(),
+        });
+        donnees = Map<String, dynamic>.from(reponse as Map);
+      } else {
+        donnees = await _client.from(_nomTable).insert(_convertirPourCreation(resultat))
+            .select(_selectionComplete).single();
+      }
 
       return ResultatSupabaseMapper.lire(donnees);
     } on PostgrestException catch (exception) {

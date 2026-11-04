@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../controllers/recuperation_compte_controller.dart';
 import 'auth/mot_de_passe_oublie_page.dart';
+import 'auth/confirmation_email_page.dart';
+import '../controllers/confirmation_email_controller.dart';
 
 import '../../application/use_cases/connecter_utilisateur.dart';
 import '../../application/use_cases/inscrire_athlete.dart';
@@ -13,7 +15,10 @@ class ConnexionPage extends StatefulWidget {
     required this.connecterUtilisateur,
     required this.inscrireAthlete,
     required this.recuperationCompte,
+    this.confirmationEmail,
   });
+
+  final ConfirmationEmailController? confirmationEmail;
 
   final ConnecterUtilisateur connecterUtilisateur;
   final InscrireAthlete inscrireAthlete;
@@ -82,12 +87,14 @@ class _ConnexionPageState extends State<ConnexionPage> {
   }
 
   Future<void> _ouvrirInscription() async {
+    var emailCree = '';
     final compteCree = await showDialog<bool>(
       context: context,
       barrierDismissible: false,
       builder: (dialogContext) {
         return InscriptionAthleteDialog(
           inscrireAthlete: widget.inscrireAthlete,
+          onCompteCree: (email) => emailCree = email,
         );
       },
     );
@@ -96,6 +103,11 @@ class _ConnexionPageState extends State<ConnexionPage> {
       return;
     }
 
+    final confirmation = widget.confirmationEmail;
+    if (confirmation != null) {
+      await Navigator.of(context).push<void>(MaterialPageRoute(builder: (_) => ConfirmationEmailPage(controller: confirmation, emailInitial: emailCree)));
+      return;
+    }
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text('Compte créé. Confirme ton e-mail, puis connecte-toi.'),
@@ -235,6 +247,12 @@ class _ConnexionPageState extends State<ConnexionPage> {
                                 )
                               : const Text('Se connecter'),
                         ),
+                        if (widget.confirmationEmail != null)
+                          TextButton.icon(
+                            onPressed: _chargement ? null : () => Navigator.of(context).push<void>(MaterialPageRoute(builder: (_) => ConfirmationEmailPage(controller: widget.confirmationEmail!, emailInitial: _emailController.text.trim()))),
+                            icon: const Icon(Icons.mark_email_unread_outlined),
+                            label: const Text('Confirmer mon adresse e-mail'),
+                          ),
                         const SizedBox(height: 8),
                         TextButton(
                           onPressed: _chargement ? null : _ouvrirInscription,

@@ -251,6 +251,8 @@ class _ManchesPageState extends State<ManchesPage> {
                           ? 'Publier les résultats des manches terminées de cette épreuve.'
                           : _controller.manches.any((m) => m.resultatsPublies)
                           ? 'Tous les résultats disponibles sont publiés.'
+                          : _controller.manches.any((m) => m.estTerminee)
+                          ? 'Valide les classements depuis le détail de chaque manche avant publication.'
                           : 'Termine une manche pour publier ses résultats.',
                       textAlign: TextAlign.center,
                     ),
