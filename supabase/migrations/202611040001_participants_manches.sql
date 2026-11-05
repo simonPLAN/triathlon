@@ -31,7 +31,8 @@ cross join lateral (
   select i.athlete_id from public.inscriptions i where i.competition_id=e.competition_id
   union select r.athlete_id from public.resultats r where r.manche_id=m.id
 ) p where m.statut in ('en_cours','terminee') and not m.participants_definis
-on conflict do nothing;
+-- Cibler la clé primaire immédiate ; la contrainte d'ordre est différable.
+on conflict (manche_id,athlete_id) do nothing;
 update public.manches set participants_definis=true
   where statut in ('en_cours','terminee') and not participants_definis;
 

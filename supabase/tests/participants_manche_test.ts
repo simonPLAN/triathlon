@@ -1,5 +1,17 @@
 import {fixture,utilisateur,configurer,id,assert,refuse} from "./fixtures_manches.ts";
 const migration=await Deno.readTextFile(new URL("../migrations/202611040001_participants_manches.sql",import.meta.url));
+Deno.test("migration avec manche déjà démarrée : contrainte différable et réexécution",async()=>{
+ const db=await fixture(true);
+ try {
+  const {rows}=await db.query<{athlete_id:string;ordre_depart:number}>(
+    "select athlete_id,ordre_depart from public.participants_manche order by ordre_depart");
+  assert(rows.length===2);
+  assert(rows[0].athlete_id===id(3)&&rows[0].ordre_depart===1);
+  assert(rows[1].athlete_id===id(4)&&rows[1].ordre_depart===2);
+  await db.exec(migration);
+  assert((await db.query("select * from public.participants_manche")).rows.length===2);
+ }finally{await db.close();}
+});
 Deno.test("affectations : persistance, ordre et lecture personnelle sans autres identités",async()=>{
  const db=await fixture();try{
   await utilisateur(db,1);await configurer(db);

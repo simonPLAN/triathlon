@@ -4,7 +4,7 @@ const migration = await Deno.readTextFile(new URL("../migrations/202611040001_pa
 export const id=(n:number)=>"40000000-0000-4000-8000-"+n.toString().padStart(12,"0");
 export function assert(v:unknown):asserts v { if(!v) throw new Error("Assertion échouée"); }
 export async function refuse(f:()=>Promise<unknown>) { let non=false;try{await f();}catch{non=true;}assert(non); }
-export async function fixture(){
+export async function fixture(historique=false){
   const db=new PGlite();
   await db.exec(`
     create role anon; create role authenticated; create role service_role;
@@ -33,6 +33,7 @@ export async function fixture(){
     grant select,insert,update,delete on epreuves,manches,resultats to authenticated;
   `);
   await db.exec(programme);
+  if (historique) await db.exec("update public.manches set statut='en_cours'");
   await db.exec(migration);
   return db;
 }
