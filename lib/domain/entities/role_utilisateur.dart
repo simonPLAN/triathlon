@@ -1,0 +1,1 @@
+enum RoleUtilisateur { coach, athlete }
