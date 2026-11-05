@@ -34,8 +34,7 @@ class AuthRepositorySupabase implements AuthRepository {
 
   @override
   Future<void> inscrireAthlete({
-    required String prenom,
-    required String nom,
+    required String pseudo,
     required String email,
     required String motDePasse,
   }) async {
@@ -43,7 +42,7 @@ class AuthRepositorySupabase implements AuthRepository {
       final reponse = await _client.auth.signUp(
         email: email,
         password: motDePasse,
-        data: {'prenom': prenom, 'nom': nom},
+        data: {'pseudo': pseudo},
         emailRedirectTo: redirectionConfirmation?.toString(),
       );
 

@@ -17,8 +17,7 @@ class AthleteRepositorySupabase implements AthleteRepository {
       return donnees.map<Athlete>((ligne) {
         return Athlete(
           id: ligne['id'] as String,
-          prenom: ligne['prenom'] as String,
-          nom: ligne['nom'] as String,
+          pseudo: ligne['pseudo'] as String,
         );
       }).toList();
     } on PostgrestException catch (exception) {

@@ -18,15 +18,14 @@ class AppRepository {
   }
 
   Future<void> signUp({
-    required String prenom,
-    required String nom,
+    required String pseudo,
     required String email,
     required String password,
   }) async {
     await client.auth.signUp(
       email: email.trim(),
       password: password,
-      data: {'prenom': prenom.trim(), 'nom': nom.trim()},
+      data: {'pseudo': pseudo.trim()},
     );
   }
 
@@ -35,13 +34,13 @@ class AppRepository {
   Future<ProfilUtilisateur> profilConnecte() async {
     final m = await client
         .from('profils')
-        .select('id,prenom,nom,role')
+        .select('id,pseudo,role')
         .eq('id', uid)
         .single();
     return ProfilUtilisateur(
       id: m['id'],
-      prenom: m['prenom'],
-      nom: m['nom'],
+      prenom: m['pseudo'],
+      nom: '',
       role: roleFrom(m['role']),
     );
   }

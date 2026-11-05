@@ -67,6 +67,7 @@ async function fixture() {
   `);
   await db.exec(programme);
   await db.exec(migration);
+  await db.exec(await Deno.readTextFile(new URL("../migrations/202611050001_creation_competition_rls.sql",import.meta.url)));
   return db;
 }
 async function utilisateur(db: PGlite, n: number | null, role = "authenticated") {
@@ -75,6 +76,20 @@ async function utilisateur(db: PGlite, n: number | null, role = "authenticated")
     [n == null ? "" : id(n), role]);
   await db.exec("set role " + role);
 }
+Deno.test("RLS : création avec RETURNING visible au seul coach propriétaire",async()=>{
+ const db=await fixture();
+ try{
+  await utilisateur(db,1);
+  const r=await db.query<{id:string}>("insert into competitions values($1,$2,'brouillon') returning id",[id(70),id(1)]);
+  assert(r.rows.length===1 && r.rows[0].id===id(70));
+  await refuse(()=>db.query("insert into competitions values($1,$2,'brouillon') returning id",[id(71),id(2)]));
+  await utilisateur(db,2);
+  assert((await db.query("select id from competitions where id=$1",[id(70)])).rows.length===0);
+  await utilisateur(db,3);
+  assert((await db.query("select id from competitions where id=$1",[id(70)])).rows.length===0);
+  await refuse(()=>db.query("insert into competitions values($1,$2,'brouillon') returning id",[id(72),id(3)]));
+ }finally{await db.close();}
+});
 Deno.test("RLS : athlète ne voit que son profil/inscription et les résultats publiés de sa compétition", async () => {
   const db = await fixture();
   try {

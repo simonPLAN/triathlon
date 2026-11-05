@@ -20,14 +20,13 @@ class ProfilRepositorySupabase implements ProfilRepository {
     try {
       final donnees = await _client
           .from('profils')
-          .select('id, prenom, nom, role')
+          .select('id, pseudo, role')
           .eq('id', utilisateur.id)
           .single();
 
       return ProfilUtilisateur(
         id: donnees['id'] as String,
-        prenom: donnees['prenom'] as String,
-        nom: donnees['nom'] as String,
+        pseudo: donnees['pseudo'] as String,
         role: _convertirRole(donnees['role'] as String),
       );
     } on PostgrestException catch (exception) {

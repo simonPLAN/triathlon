@@ -154,8 +154,7 @@ class InscriptionController extends ChangeNotifier {
 
   Future<bool> inscrireInvite({
     required Competition competition,
-    required String prenom,
-    required String nom,
+    required String pseudo,
     int? numeroDossard,
   }) async {
     if (operationEnCours) return false;
@@ -165,8 +164,7 @@ class InscriptionController extends ChangeNotifier {
     try {
       final inscription = await _inscrireInvite.executer(
         competition: competition,
-        prenom: prenom,
-        nom: nom,
+        pseudo: pseudo,
         numeroDossard: numeroDossard,
       );
       _remplacerInscriptionDansListe(inscription);

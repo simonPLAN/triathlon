@@ -19,18 +19,18 @@ Competition competition(StatutCompetition statut) => Competition(
 
 class FakeInviteRepository implements InviteRepository {
   int appels = 0;
+
   @override
   Future<Inscription> inscrire({
     required String competitionId,
-    required String prenom,
-    required String nom,
+    required String pseudo,
     int? numeroDossard,
   }) async {
     appels++;
     return Inscription(
       id: 'inscription',
       competitionId: competitionId,
-      athlete: Athlete(id: 'invite', prenom: prenom, nom: nom),
+      athlete: Athlete(id: 'invite', pseudo: pseudo),
       numeroDossard: numeroDossard,
       dateInscription: DateTime(2026),
     );
@@ -38,15 +38,14 @@ class FakeInviteRepository implements InviteRepository {
 }
 
 void main() {
-  test('inscrit un invité sans compte et normalise son nom', () async {
+  test('inscrit un invité avec un pseudo normalisé', () async {
     final repo = FakeInviteRepository();
     final inscription = await InscrireInvite(repo).executer(
       competition: competition(StatutCompetition.brouillon),
-      prenom: ' Julie ',
-      nom: ' Martin ',
+      pseudo: ' Julie_42 ',
       numeroDossard: 42,
     );
-    expect(inscription.athlete.nomComplet, 'Julie Martin');
+    expect(inscription.athlete.pseudo, 'Julie_42');
     expect(inscription.numeroDossard, 42);
     expect(repo.appels, 1);
   });
@@ -56,30 +55,27 @@ void main() {
     expect(
       () => InscrireInvite(repo).executer(
         competition: competition(StatutCompetition.enCours),
-        prenom: 'Julie',
-        nom: 'Martin',
+        pseudo: 'Julie_42',
       ),
       throwsStateError,
     );
     expect(repo.appels, 0);
   });
 
-  test('refuse un nom vide et un dossard invalide', () {
+  test('refuse un pseudo invalide et un dossard invalide', () {
     final repo = FakeInviteRepository();
     final useCase = InscrireInvite(repo);
     expect(
       () => useCase.executer(
         competition: competition(StatutCompetition.ouverte),
-        prenom: ' ',
-        nom: 'Martin',
+        pseudo: ' ',
       ),
       throwsArgumentError,
     );
     expect(
       () => useCase.executer(
         competition: competition(StatutCompetition.ouverte),
-        prenom: 'Julie',
-        nom: 'Martin',
+        pseudo: 'Julie_42',
         numeroDossard: 0,
       ),
       throwsArgumentError,

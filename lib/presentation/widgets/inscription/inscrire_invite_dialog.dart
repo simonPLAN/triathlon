@@ -19,16 +19,14 @@ class InscrireInviteDialog extends StatefulWidget {
 
 class _InscrireInviteDialogState extends State<InscrireInviteDialog> {
   final _form = GlobalKey<FormState>();
-  final _prenom = TextEditingController();
-  final _nom = TextEditingController();
+  final _pseudo = TextEditingController();
   final _dossard = TextEditingController();
   bool _enCours = false;
   String? _erreur;
 
   @override
   void dispose() {
-    _prenom.dispose();
-    _nom.dispose();
+    _pseudo.dispose();
     _dossard.dispose();
     super.dispose();
   }
@@ -41,8 +39,7 @@ class _InscrireInviteDialogState extends State<InscrireInviteDialog> {
     });
     final succes = await widget.controller.inscrireInvite(
       competition: widget.competition,
-      prenom: _prenom.text,
-      nom: _nom.text,
+      pseudo: _pseudo.text,
       numeroDossard: int.tryParse(_dossard.text.trim()),
     );
     if (!mounted) return;
@@ -56,8 +53,12 @@ class _InscrireInviteDialogState extends State<InscrireInviteDialog> {
     }
   }
 
-  String? _validerNom(String? value) =>
-      value == null || value.trim().isEmpty ? 'Champ obligatoire' : null;
+  String? _validerPseudo(String? value) {
+    final pseudo = value?.trim() ?? '';
+    return RegExp(r'^[A-Za-z0-9_.-]{3,30}$').hasMatch(pseudo)
+        ? null
+        : 'Choisis un pseudo valide.';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -78,20 +79,15 @@ class _InscrireInviteDialogState extends State<InscrireInviteDialog> {
                   ),
                   const SizedBox(height: 16),
                   TextFormField(
-                    controller: _prenom,
+                    controller: _pseudo,
                     enabled: !_enCours,
-                    maxLength: 100,
-                    textCapitalization: TextCapitalization.words,
-                    decoration: const InputDecoration(labelText: 'Prénom'),
-                    validator: _validerNom,
-                  ),
-                  TextFormField(
-                    controller: _nom,
-                    enabled: !_enCours,
-                    maxLength: 100,
-                    textCapitalization: TextCapitalization.words,
-                    decoration: const InputDecoration(labelText: 'Nom'),
-                    validator: _validerNom,
+                    maxLength: 30,
+                    autocorrect: false,
+                    decoration: const InputDecoration(
+                      labelText: 'Pseudo',
+                      helperText: '3 à 30 caractères : lettres, chiffres, . _ -',
+                    ),
+                    validator: _validerPseudo,
                   ),
                   TextFormField(
                     controller: _dossard,

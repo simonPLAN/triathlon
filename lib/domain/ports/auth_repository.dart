@@ -1,7 +1,6 @@
 abstract interface class AuthRepository {
   Future<void> inscrireAthlete({
-    required String prenom,
-    required String nom,
+    required String pseudo,
     required String email,
     required String motDePasse,
   });

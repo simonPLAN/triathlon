@@ -151,7 +151,6 @@ class SignupDialog extends StatefulWidget {
 
 class _SignupDialogState extends State<SignupDialog> {
   final p = TextEditingController(),
-      n = TextEditingController(),
       e = TextEditingController(),
       m = TextEditingController();
   bool busy = false;
@@ -159,8 +158,7 @@ class _SignupDialogState extends State<SignupDialog> {
     setState(() => busy = true);
     try {
       await widget.repo.signUp(
-        prenom: p.text,
-        nom: n.text,
+        pseudo: p.text,
         email: e.text,
         password: m.text,
       );
@@ -184,11 +182,11 @@ class _SignupDialogState extends State<SignupDialog> {
         children: [
           TextField(
             controller: p,
-            decoration: const InputDecoration(labelText: 'Prénom'),
-          ),
-          TextField(
-            controller: n,
-            decoration: const InputDecoration(labelText: 'Nom'),
+            autocorrect: false,
+            decoration: const InputDecoration(
+              labelText: 'Pseudo',
+              helperText: '3 à 30 caractères : lettres, chiffres, . _ -',
+            ),
           ),
           TextField(
             controller: e,

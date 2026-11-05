@@ -28,8 +28,7 @@ class ResultatRepositorySupabase implements ResultatRepository {
     date_modification,
     profils!resultats_athlete_id_fkey (
       id,
-      prenom,
-      nom
+      pseudo
     )
   ''';
 

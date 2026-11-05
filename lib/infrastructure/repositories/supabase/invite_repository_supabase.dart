@@ -11,8 +11,7 @@ class InviteRepositorySupabase implements InviteRepository {
   @override
   Future<Inscription> inscrire({
     required String competitionId,
-    required String prenom,
-    required String nom,
+    required String pseudo,
     int? numeroDossard,
   }) async {
     try {
@@ -20,8 +19,7 @@ class InviteRepositorySupabase implements InviteRepository {
         'inscrire_invite',
         params: {
           'p_competition_id': competitionId,
-          'p_prenom': prenom,
-          'p_nom': nom,
+          'p_pseudo': pseudo,
           'p_numero_dossard': numeroDossard,
         },
       );
@@ -29,22 +27,20 @@ class InviteRepositorySupabase implements InviteRepository {
       return Inscription(
         id: row['id'] as String,
         competitionId: competitionId,
-        athlete: Athlete(
-          id: row['athlete_id'] as String,
-          prenom: prenom,
-          nom: nom,
-        ),
+        athlete: Athlete(id: row['athlete_id'] as String, pseudo: pseudo),
         numeroDossard: row['numero_dossard'] as int?,
         dateInscription: DateTime.parse(row['date_inscription'] as String),
       );
     } on PostgrestException catch (e) {
       if (e.code == '23505') {
-        throw StateError('Ce dossard est déjà utilisé dans cette compétition.');
+        throw StateError(
+          e.message.toLowerCase().contains('pseudo')
+              ? 'Ce pseudo est déjà utilisé.'
+              : 'Ce dossard est déjà utilisé dans cette compétition.',
+        );
       }
       if (e.code == 'PGRST202') {
-        throw StateError(
-          'L’ajout des invités doit être activé sur le serveur.',
-        );
+        throw StateError('La migration des pseudos doit être appliquée sur le serveur.');
       }
       throw StateError(e.message);
     }

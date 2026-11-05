@@ -18,8 +18,7 @@ class InscriptionAthleteDialog extends StatefulWidget {
 class _InscriptionAthleteDialogState extends State<InscriptionAthleteDialog> {
   final _formKey = GlobalKey<FormState>();
 
-  final _prenomController = TextEditingController();
-  final _nomController = TextEditingController();
+  final _pseudoController = TextEditingController();
   final _emailController = TextEditingController();
   final _motDePasseController = TextEditingController();
 
@@ -29,8 +28,7 @@ class _InscriptionAthleteDialogState extends State<InscriptionAthleteDialog> {
 
   @override
   void dispose() {
-    _prenomController.dispose();
-    _nomController.dispose();
+    _pseudoController.dispose();
     _emailController.dispose();
     _motDePasseController.dispose();
     super.dispose();
@@ -48,8 +46,7 @@ class _InscriptionAthleteDialogState extends State<InscriptionAthleteDialog> {
 
     try {
       await widget.inscrireAthlete.executer(
-        prenom: _prenomController.text,
-        nom: _nomController.text,
+        pseudo: _pseudoController.text,
         email: _emailController.text,
         motDePasse: _motDePasseController.text,
       );
@@ -92,29 +89,19 @@ class _InscriptionAthleteDialogState extends State<InscriptionAthleteDialog> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 TextFormField(
-                  controller: _prenomController,
+                  controller: _pseudoController,
                   textInputAction: TextInputAction.next,
-                  textCapitalization: TextCapitalization.words,
-                  decoration: const InputDecoration(labelText: 'Prénom'),
+                  autocorrect: false,
+                  maxLength: 30,
+                  decoration: const InputDecoration(
+                    labelText: 'Pseudo',
+                    helperText: '3 à 30 caractères : lettres, chiffres, . _ -',
+                  ),
                   validator: (valeur) {
-                    if (valeur == null || valeur.trim().isEmpty) {
-                      return 'Saisis un prénom.';
+                    final pseudo = valeur?.trim() ?? '';
+                    if (!RegExp(r'^[A-Za-z0-9_.-]{3,30}$').hasMatch(pseudo)) {
+                      return 'Choisis un pseudo valide.';
                     }
-
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: _nomController,
-                  textInputAction: TextInputAction.next,
-                  textCapitalization: TextCapitalization.words,
-                  decoration: const InputDecoration(labelText: 'Nom'),
-                  validator: (valeur) {
-                    if (valeur == null || valeur.trim().isEmpty) {
-                      return 'Saisis un nom.';
-                    }
-
                     return null;
                   },
                 ),

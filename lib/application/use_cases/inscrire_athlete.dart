@@ -6,21 +6,17 @@ class InscrireAthlete {
   final AuthRepository _authRepository;
 
   Future<void> executer({
-    required String prenom,
-    required String nom,
+    required String pseudo,
     required String email,
     required String motDePasse,
   }) async {
-    final prenomNettoye = prenom.trim();
-    final nomNettoye = nom.trim();
+    final pseudoNettoye = pseudo.trim();
     final emailNettoye = email.trim().toLowerCase();
 
-    if (prenomNettoye.isEmpty) {
-      throw ArgumentError('Le prénom est obligatoire.');
-    }
-
-    if (nomNettoye.isEmpty) {
-      throw ArgumentError('Le nom est obligatoire.');
+    if (!RegExp(r'^[A-Za-z0-9_.-]{3,30}$').hasMatch(pseudoNettoye)) {
+      throw ArgumentError(
+        'Le pseudo doit contenir 3 à 30 lettres, chiffres, points, tirets ou underscores.',
+      );
     }
 
     if (!emailNettoye.contains('@')) {
@@ -34,8 +30,7 @@ class InscrireAthlete {
     }
 
     await _authRepository.inscrireAthlete(
-      prenom: prenomNettoye,
-      nom: nomNettoye,
+      pseudo: pseudoNettoye,
       email: emailNettoye,
       motDePasse: motDePasse,
     );

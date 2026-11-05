@@ -10,10 +10,12 @@ class ResultatSupabaseMapper {
       throw const FormatException('Le profil de l’athlète est introuvable.');
     }
 
+    final pseudo = donneesProfil['pseudo'] as String?;
     final athlete = Athlete(
       id: donneesProfil['id'] as String,
-      prenom: donneesProfil['prenom'] as String,
-      nom: donneesProfil['nom'] as String,
+      pseudo: pseudo,
+      prenom: pseudo == null ? donneesProfil['prenom'] as String? ?? '' : '',
+      nom: pseudo == null ? donneesProfil['nom'] as String? ?? '' : '',
     );
 
     return Resultat(

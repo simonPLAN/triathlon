@@ -19,8 +19,7 @@ class InscriptionRepositorySupabase implements InscriptionRepository {
     date_inscription,
     profils!inscriptions_athlete_id_fkey (
       id,
-      prenom,
-      nom
+      pseudo
     )
   ''';
 
@@ -177,8 +176,7 @@ class InscriptionRepositorySupabase implements InscriptionRepository {
 
     final athlete = Athlete(
       id: donneesProfil['id'] as String,
-      prenom: donneesProfil['prenom'] as String,
-      nom: donneesProfil['nom'] as String,
+      pseudo: donneesProfil['pseudo'] as String,
     );
 
     return Inscription(
