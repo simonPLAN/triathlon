@@ -7,6 +7,7 @@ import '../../controllers/inscription_controller.dart';
 import '../../controllers/manche_controller.dart';
 import '../../controllers/resultat_controller.dart';
 import '../../widgets/manche/actions_manche.dart';
+import '../../widgets/manche/configurer_participants_dialog.dart';
 import '../../widgets/manche/badge_statut_manche.dart';
 import '../../widgets/manche/chronometre_manche.dart';
 import '../../widgets/manche/informations_manche.dart';
@@ -39,12 +40,36 @@ class DetailManchePage extends StatefulWidget {
 
 class _DetailManchePageState extends State<DetailManchePage> {
   late Manche _manche;
+  bool _configurationEnCours = false;
 
   @override
   void initState() {
     super.initState();
 
     _manche = widget.manche;
+  }
+
+  Future<void> _configurer() async {
+    if (_configurationEnCours || widget.controller.actionEnCours) return;
+    setState(() => _configurationEnCours = true);
+    try {
+    await widget.inscriptionController.charger(competitionId: widget.competition.id);
+    if (!mounted) return;
+    if (widget.inscriptionController.erreur != null) {
+      _afficherErreur(widget.inscriptionController.erreur!);
+      return;
+    }
+    final choix = await showDialog<ConfigurationParticipants>(context: context,
+      builder: (_) => ConfigurerParticipantsDialog(manche: _manche,
+        inscriptions: widget.inscriptionController.inscriptions,
+        dureeParDefaut: widget.epreuve.dureeLimiteSecondes));
+    if (choix == null || !mounted) return;
+    final modifiee = await widget.controller.configurer(manche: _manche,
+      athleteIds: choix.athleteIds, dureeLimiteSecondes: choix.dureeLimiteSecondes);
+    _traiterResultatAction(modifiee, 'Participants, départs et délai enregistrés.');
+    } finally {
+      if (mounted) setState(() => _configurationEnCours = false);
+    }
   }
 
   Future<void> _demarrer() async {
@@ -133,6 +158,15 @@ class _DetailManchePageState extends State<DetailManchePage> {
     final mancheActualisee = await widget.controller.annuler(_manche);
 
     _traiterResultatAction(mancheActualisee, 'La manche a été annulée.');
+  }
+
+  Future<void> _validerResultats() async {
+    final confirmation = await _confirmerAction(titre: 'Valider le classement ?',
+      message: 'Vérifie les résultats de chaque participant. Une correction rendra cette validation caduque et imposera une nouvelle validation.',
+      libelleConfirmation: 'Valider');
+    if (!confirmation) return;
+    final validee = await widget.controller.validerResultats(_manche);
+    _traiterResultatAction(validee, 'Classement validé. Il peut maintenant être publié.');
   }
 
   Future<void> _publierResultats() async {
@@ -304,8 +338,22 @@ class _DetailManchePageState extends State<DetailManchePage> {
                     const SizedBox(height: 16),
 
                   InformationsManche(manche: _manche),
+                  const SizedBox(height: 8),
+                  Text(_manche.participantsDefinis
+                      ? '${_manche.participantsAthleteIds.length} participants affectés · délai ${_manche.dureeLimiteSecondes ?? widget.epreuve.dureeLimiteSecondes} s'
+                      : 'Participants non configurés'),
+                  if (_manche.estAVenir)
+                    OutlinedButton.icon(onPressed: widget.controller.actionEnCours || _configurationEnCours ? null : _configurer,
+                      icon: _configurationEnCours ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.people_outline), label: Text(_configurationEnCours ? 'Chargement des participants…' : 'Participants et ordre de départ'))
+                  else
+                    const Text('Les affectations et le délai sont figés après le départ.'),
                   const SizedBox(height: 16),
 
+                  if (_manche.estTerminee && _manche.validationRequise && !_manche.resultatsValides)
+                    FilledButton.icon(onPressed: widget.controller.actionEnCours ? null : _validerResultats,
+                      icon: const Icon(Icons.fact_check_outlined), label: const Text('Valider le classement')),
+                  if (_manche.estTerminee)
+                    Text(_manche.resultatsPublies ? 'Résultats publiés' : _manche.resultatsValides ? 'Résultats validés, non publiés' : 'Résultats provisoires'),
                   ActionsManche(
                     manche: _manche,
                     actionEnCours: widget.controller.actionEnCours,

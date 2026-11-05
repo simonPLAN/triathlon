@@ -2,25 +2,35 @@ import 'package:flutter/material.dart';
 
 import 'resultats_athlete_page.dart';
 import 'programme_athlete_page.dart';
+import 'detail_competition_athlete_page.dart';
 
 import '../../../application/use_cases/deconnecter_utilisateur.dart';
 import '../../../domain/entities/competition.dart';
+import '../../../domain/ports/categorie_athlete_repository.dart';
+import '../compte/categorie_athlete_page.dart';
+import '../compte/informations_application_page.dart';
+import '../../widgets/commun/menu_compte_application.dart';
 import '../../../domain/entities/inscription.dart';
 import '../../../domain/entities/profil_utilisateur.dart';
 import '../../controllers/competitions_ouvertes_controller.dart';
 import '../../controllers/inscription_controller.dart';
 import '../../widgets/athlete/carte_competition_athlete.dart';
+import '../../widgets/athlete/entete_athlete.dart';
+import '../../widgets/athlete/contenu_competitions_athlete.dart';
+import '../../widgets/athlete/confirmation_inscription_athlete.dart';
 
 class AthleteDashboardPage extends StatefulWidget {
   const AthleteDashboardPage({
     super.key,
     required this.profil,
     this.onMonCompte,
+    this.categoriesAthletes,
     required this.competitionsController,
     required this.inscriptionController,
     required this.deconnecterUtilisateur,
   });
 
+  final CategorieAthleteRepository? categoriesAthletes;
   final ProfilUtilisateur profil;
   final VoidCallback? onMonCompte;
 
@@ -39,6 +49,8 @@ class AthleteDashboardPage extends StatefulWidget {
 class _AthleteDashboardPageState extends State<AthleteDashboardPage>
     with WidgetsBindingObserver {
   bool _actualisationEnCours = false;
+  bool _confirmationEnCours = false;
+  bool _deconnexionEnCours = false;
   bool _mesCompetitions = true;
   List<Competition> get _competitionsAffichees => _mesCompetitions
       ? _competitionsController.inscrites
@@ -48,6 +60,26 @@ class _AthleteDashboardPageState extends State<AthleteDashboardPage>
     for (final c in _competitionsController.competitions) c.id: c,
     for (final c in _competitionsController.inscrites) c.id: c,
   }.values.toList();
+
+  void _ouvrirDetail(Competition competition) {
+    Navigator.of(context).push<void>(
+      MaterialPageRoute(
+        builder: (_) => DetailCompetitionAthletePage(
+          competition: competition,
+          competitions: _competitionsController,
+          inscriptions: _inscriptionController,
+          onInscrire: _inscrire,
+          onDesinscrire: (c) async {
+            final inscription = _inscriptionController
+                .inscriptionUtilisateurPour(c.id);
+            if (inscription != null) await _desinscrire(c, inscription);
+          },
+          onProgramme: _ouvrirProgramme,
+          onResultats: _ouvrirResultats,
+        ),
+      ),
+    );
+  }
 
   void _ouvrirProgramme(Competition competition) {
     Navigator.of(context).push<void>(
@@ -89,37 +121,7 @@ class _AthleteDashboardPageState extends State<AthleteDashboardPage>
       return;
     }
 
-    final confirmation = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) {
-        return AlertDialog(
-          title: const Text('Confirmer la désinscription'),
-          content: Text(
-            'Souhaites-tu te désinscrire de la compétition '
-            '« ${competition.nom} » ?',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(dialogContext).pop(false);
-              },
-              child: const Text('Annuler'),
-            ),
-            FilledButton.icon(
-              onPressed: () {
-                Navigator.of(dialogContext).pop(true);
-              },
-              style: FilledButton.styleFrom(
-                backgroundColor: Theme.of(context).colorScheme.error,
-                foregroundColor: Theme.of(context).colorScheme.onError,
-              ),
-              icon: const Icon(Icons.person_remove_outlined),
-              label: const Text('Se désinscrire'),
-            ),
-          ],
-        );
-      },
-    );
+    final confirmation = await _confirmer(competition, inscrire: false);
 
     if (confirmation != true || !mounted) {
       return;
@@ -201,6 +203,8 @@ class _AthleteDashboardPageState extends State<AthleteDashboardPage>
   Future<void> _recharger() => _chargerCompetitionsEtInscriptions();
 
   Future<void> _deconnecter() async {
+    if (_deconnexionEnCours) return;
+    setState(() => _deconnexionEnCours = true);
     try {
       await widget.deconnecterUtilisateur.executer();
     } catch (exception) {
@@ -208,7 +212,9 @@ class _AthleteDashboardPageState extends State<AthleteDashboardPage>
         return;
       }
 
-      _afficherErreur(_nettoyerMessageErreur(exception));
+      _afficherErreur('La déconnexion a échoué. Réessaie.');
+    } finally {
+      if (mounted) setState(() => _deconnexionEnCours = false);
     }
   }
 
@@ -221,33 +227,7 @@ class _AthleteDashboardPageState extends State<AthleteDashboardPage>
       return;
     }
 
-    final confirmation = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) {
-        return AlertDialog(
-          title: const Text('Confirmer l’inscription'),
-          content: Text(
-            'Souhaites-tu t’inscrire à la compétition '
-            '« ${competition.nom} » ?',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(dialogContext).pop(false);
-              },
-              child: const Text('Annuler'),
-            ),
-            FilledButton.icon(
-              onPressed: () {
-                Navigator.of(dialogContext).pop(true);
-              },
-              icon: const Icon(Icons.how_to_reg),
-              label: const Text('S’inscrire'),
-            ),
-          ],
-        );
-      },
-    );
+    final confirmation = await _confirmer(competition, inscrire: true);
 
     if (confirmation != true || !mounted) {
       return;
@@ -290,285 +270,154 @@ class _AthleteDashboardPageState extends State<AthleteDashboardPage>
     );
   }
 
-  String _nettoyerMessageErreur(Object exception) {
-    return exception
-        .toString()
-        .replaceFirst('Exception: ', '')
-        .replaceFirst('Bad state: ', '')
-        .replaceFirst('Invalid argument(s): ', '');
+  Future<bool> _confirmer(
+    Competition competition, {
+    required bool inscrire,
+  }) async {
+    if (_confirmationEnCours) return false;
+    _confirmationEnCours = true;
+    try {
+      return await confirmerInscriptionAthlete(
+        context,
+        competition,
+        inscrire: inscrire,
+      );
+    } finally {
+      _confirmationEnCours = false;
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    final erreur = _mesCompetitions
+        ? _competitionsController.erreurInscriptions
+        : _competitionsController.erreur;
     return Scaffold(
       appBar: AppBar(
         title: const Text('Espace athlète'),
         actions: [
           IconButton(
-            tooltip: 'Supprimer mon compte',
-            onPressed: widget.onMonCompte,
-            icon: const Icon(Icons.manage_accounts_outlined),
+            tooltip: 'Informations',
+            icon: const Icon(Icons.info_outline),
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => InformationsApplicationPage(
+                  onSupprimerCompte: widget.onMonCompte,
+                ),
+              ),
+            ),
           ),
           IconButton(
             tooltip: 'Actualiser',
-            onPressed: _competitionsController.chargement ? null : _recharger,
             icon: const Icon(Icons.refresh),
+            onPressed: _competitionsController.chargement ? null : _recharger,
           ),
-          IconButton(
-            tooltip: 'Se déconnecter',
-            onPressed: _deconnecter,
-            icon: const Icon(Icons.logout),
+          MenuCompteApplication(
+            operationEnCours: _deconnexionEnCours,
+            onDeconnecter: _deconnecter,
+            onSupprimerCompte: widget.onMonCompte,
+            onCoefficient: widget.categoriesAthletes == null
+                ? null
+                : () => Navigator.of(context).push<void>(
+                    MaterialPageRoute(
+                      builder: (_) => CategorieAthletePage(
+                        repository: widget.categoriesAthletes!,
+                        athleteId: widget.profil.id,
+                        nomAthlete: widget.profil.nomComplet,
+                      ),
+                    ),
+                  ),
           ),
         ],
       ),
       body: SafeArea(
-        child: Column(
-          children: [
-            _EnteteAthlete(profil: widget.profil),
-            Padding(
-              padding: const EdgeInsets.all(12),
-              child: Wrap(
-                spacing: 8,
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 960),
+            child: ContenuCompetitionsAthlete(
+              competitions: _competitionsAffichees,
+              chargement: _competitionsController.chargement,
+              mesCompetitions: _mesCompetitions,
+              erreur: erreur,
+              onRecharger: _recharger,
+              onVoirOuvertes: () => setState(() => _mesCompetitions = false),
+              construireCarte: _carteCompetition,
+              entete: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  ChoiceChip(
-                    label: const Text('Mes compétitions'),
-                    selected: _mesCompetitions,
-                    onSelected: (_) => setState(() => _mesCompetitions = true),
+                  EnteteAthlete(profil: widget.profil),
+                  Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        ChoiceChip(
+                          label: const Text('Mes compétitions'),
+                          selected: _mesCompetitions,
+                          onSelected: (_) =>
+                              setState(() => _mesCompetitions = true),
+                        ),
+                        ChoiceChip(
+                          label: const Text('Inscriptions ouvertes'),
+                          selected: !_mesCompetitions,
+                          onSelected: (_) =>
+                              setState(() => _mesCompetitions = false),
+                        ),
+                      ],
+                    ),
                   ),
-                  ChoiceChip(
-                    label: const Text('Inscriptions ouvertes'),
-                    selected: !_mesCompetitions,
-                    onSelected: (_) => setState(() => _mesCompetitions = false),
-                  ),
+                  if (_competitionsController.chargement)
+                    const LinearProgressIndicator(),
+                  if (_competitionsAffichees.isNotEmpty && erreur != null)
+                    MaterialBanner(
+                      content: const Text(
+                        'Actualisation impossible. Les dernières informations connues restent affichées.',
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: _recharger,
+                          child: const Text('Réessayer'),
+                        ),
+                      ],
+                    ),
                 ],
               ),
-            ),
-            if (_competitionsController.chargement)
-              const LinearProgressIndicator(),
-            if (_competitionsAffichees.isNotEmpty &&
-                (_mesCompetitions
-                        ? _competitionsController.erreurInscriptions
-                        : _competitionsController.erreur) !=
-                    null)
-              MaterialBanner(
-                content: const Text(
-                  'Actualisation impossible. Les dernières informations connues restent affichées.',
-                ),
-                actions: [
-                  TextButton(
-                    onPressed: _recharger,
-                    child: const Text('Réessayer'),
-                  ),
-                ],
-              ),
-            Expanded(child: _construireContenu()),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _construireContenu() {
-    if (_competitionsController.chargement && _competitionsAffichees.isEmpty) {
-      return const _ChargementCompetitions();
-    }
-
-    if (!_mesCompetitions &&
-        _competitionsController.erreur != null &&
-        _competitionsAffichees.isEmpty) {
-      return _ErreurCompetitions(
-        message: _competitionsController.erreur!,
-        onReessayer: _recharger,
-      );
-    }
-
-    if (_mesCompetitions &&
-        _competitionsController.erreurInscriptions != null &&
-        _competitionsAffichees.isEmpty) {
-      return _ErreurCompetitions(
-        message: _competitionsController.erreurInscriptions!,
-        onReessayer: _recharger,
-      );
-    }
-    if (_competitionsAffichees.isEmpty) {
-      if (!_mesCompetitions) return const _AucuneCompetitionOuverte();
-      return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text('Tu n’es inscrit à aucune compétition.'),
-            const SizedBox(height: 12),
-            TextButton(
-              onPressed: () => setState(() => _mesCompetitions = false),
-              child: const Text('Voir les inscriptions ouvertes'),
-            ),
-          ],
-        ),
-      );
-    }
-
-    return RefreshIndicator(
-      onRefresh: _recharger,
-      child: ListView.separated(
-        padding: const EdgeInsets.all(16),
-        itemCount: _competitionsAffichees.length,
-        separatorBuilder: (_, _) {
-          return const SizedBox(height: 12);
-        },
-        itemBuilder: (context, index) {
-          final competition = _competitionsAffichees[index];
-
-          final inscription = _inscriptionController.inscriptionUtilisateurPour(
-            competition.id,
-          );
-
-          return CarteCompetitionAthlete(
-            competition: competition,
-            onVoirProgramme: () => _ouvrirProgramme(competition),
-            etatInscription: _inscriptionController.suiviUtilisateur.pour(
-              competition.id,
-            ),
-            onReessayer: () => _inscriptionController
-                .verifierInscriptionUtilisateur(competition: competition),
-            inscriptionEnCours: _inscriptionController.inscriptionEnCours,
-            desinscriptionEnCours: _inscriptionController.desinscriptionEnCours,
-            onInscrire:
-                competition.estOuverte && !_competitionsController.chargement
-                ? () => _inscrire(competition)
-                : null,
-            onVoirResultats: inscription != null || _mesCompetitions
-                ? () => _ouvrirResultats(competition)
-                : null,
-            onDesinscrire:
-                inscription == null ||
-                    !competition.estOuverte ||
-                    _competitionsController.chargement
-                ? null
-                : () {
-                    _desinscrire(competition, inscription);
-                  },
-          );
-        },
-      ),
-    );
-  }
-}
-
-class _EnteteAthlete extends StatelessWidget {
-  const _EnteteAthlete({required this.profil});
-
-  final ProfilUtilisateur profil;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      color: Theme.of(context).colorScheme.primaryContainer,
-      padding: const EdgeInsets.all(16),
-      child: Row(
-        children: [
-          CircleAvatar(child: Text(_initiales)),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Bonjour ${profil.prenom}',
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
-                const SizedBox(height: 2),
-                const Text('Tes compétitions et tes résultats'),
-              ],
             ),
           ),
-        ],
-      ),
-    );
-  }
-
-  String get _initiales {
-    final initialePrenom = profil.prenom.isEmpty ? '' : profil.prenom[0];
-
-    final initialeNom = profil.nom.isEmpty ? '' : profil.nom[0];
-
-    return '$initialePrenom$initialeNom'.toUpperCase();
-  }
-}
-
-class _ChargementCompetitions extends StatelessWidget {
-  const _ChargementCompetitions();
-
-  @override
-  Widget build(BuildContext context) {
-    return const Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          CircularProgressIndicator(),
-          SizedBox(height: 16),
-          Text('Chargement des compétitions...'),
-        ],
-      ),
-    );
-  }
-}
-
-class _ErreurCompetitions extends StatelessWidget {
-  const _ErreurCompetitions({required this.message, required this.onReessayer});
-
-  final String message;
-  final Future<void> Function() onReessayer;
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.error_outline,
-              size: 56,
-              color: Theme.of(context).colorScheme.error,
-            ),
-            const SizedBox(height: 16),
-            Text(message, textAlign: TextAlign.center),
-            const SizedBox(height: 16),
-            FilledButton.icon(
-              onPressed: onReessayer,
-              icon: const Icon(Icons.refresh),
-              label: const Text('Réessayer'),
-            ),
-          ],
         ),
       ),
     );
   }
-}
 
-class _AucuneCompetitionOuverte extends StatelessWidget {
-  const _AucuneCompetitionOuverte();
-
-  @override
-  Widget build(BuildContext context) {
-    return const Center(
-      child: Padding(
-        padding: EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.event_busy_outlined, size: 64),
-            SizedBox(height: 16),
-            Text(
-              'Aucune compétition ouverte '
-              'aux inscriptions.',
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
+  Widget _carteCompetition(Competition competition) {
+    final inscription = _inscriptionController.inscriptionUtilisateurPour(
+      competition.id,
+    );
+    return CarteCompetitionAthlete(
+      competition: competition,
+      onVoirDetail: () => _ouvrirDetail(competition),
+      onVoirProgramme: () => _ouvrirProgramme(competition),
+      etatInscription: _inscriptionController.suiviUtilisateur.pour(
+        competition.id,
       ),
+      onReessayer: () => _inscriptionController.verifierInscriptionUtilisateur(
+        competition: competition,
+      ),
+      inscriptionEnCours: _inscriptionController.inscriptionEnCours,
+      desinscriptionEnCours: _inscriptionController.desinscriptionEnCours,
+      onInscrire: competition.estOuverte && !_competitionsController.chargement
+          ? () => _inscrire(competition)
+          : null,
+      onVoirResultats: inscription != null || _mesCompetitions
+          ? () => _ouvrirResultats(competition)
+          : null,
+      onDesinscrire:
+          inscription == null ||
+              !competition.estOuverte ||
+              _competitionsController.chargement
+          ? null
+          : () => _desinscrire(competition, inscription),
     );
   }
 }

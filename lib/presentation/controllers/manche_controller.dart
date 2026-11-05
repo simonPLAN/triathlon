@@ -9,6 +9,10 @@ import '../../application/use_cases/manche/publier_resultats_manche.dart';
 import '../../application/use_cases/manche/terminer_manche.dart';
 import '../../domain/entities/epreuve.dart';
 import '../../domain/entities/manche.dart';
+import '../../domain/ports/configuration_manche_repository.dart';
+import '../../domain/ports/cycle_manche_repository.dart';
+import '../../domain/entities/statut_resultat.dart';
+import '../../application/use_cases/manche/configurer_manche.dart';
 
 class MancheController extends ChangeNotifier {
   MancheController(
@@ -18,8 +22,49 @@ class MancheController extends ChangeNotifier {
     this._enregistrerPremiereArrivee,
     this._terminerManche,
     this._annulerManche,
-    this._publierResultatsManche,
-  );
+    this._publierResultatsManche, {
+    this.configurationRepository,
+  });
+
+  final ConfigurationMancheRepository? configurationRepository;
+  bool get cycleAtomiqueDisponible => configurationRepository is CycleMancheRepository;
+
+  Future<Manche?> validerResultats(Manche manche) {
+    final repository = configurationRepository;
+    if (repository is! CycleMancheRepository) return Future.value(null);
+    return _executerAction(() => (repository as CycleMancheRepository).validerResultats(manche.id, manche.revisionResultats));
+  }
+
+  Future<Manche?> cloturerDelaiAtomique(Manche manche) {
+    final repository = configurationRepository;
+    if (repository is! CycleMancheRepository) return Future.value(null);
+    return _executerAction(() => (repository as CycleMancheRepository).cloturerDelai(manche.id));
+  }
+
+  Future<Manche?> declarerStatut({required Manche manche, required String athleteId,
+    required StatutResultat statut, required String motif}) {
+    final repository = configurationRepository;
+    if (repository is! CycleMancheRepository) return Future.value(null);
+    return _executerAction(() async {
+      if (statut != StatutResultat.abandon && statut != StatutResultat.disqualifie) {
+        throw ArgumentError('Choisis abandon ou disqualification.');
+      }
+      if (motif.trim().isEmpty) throw ArgumentError('Le motif est obligatoire.');
+      await (repository as CycleMancheRepository).declarerStatut(mancheId: manche.id, athleteId: athleteId, statut: statut, motif: motif.trim());
+      return manche;
+    });
+  }
+
+  Future<Manche?> configurer({required Manche manche, required List<String> athleteIds, required int dureeLimiteSecondes}) {
+    final repository = configurationRepository;
+    if (repository == null) {
+      _erreur = 'La configuration des participants n’est pas disponible.';
+      notifyListeners();
+      return Future.value(null);
+    }
+    return _executerAction(() => ConfigurerManche(repository).executer(
+      manche: manche, athleteIds: athleteIds, dureeLimiteSecondes: dureeLimiteSecondes));
+  }
 
   final GenererManchesPourEpreuve _genererManches;
   final ListerManches _listerManches;

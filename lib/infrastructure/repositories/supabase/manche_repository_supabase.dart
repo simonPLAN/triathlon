@@ -21,6 +21,10 @@ class MancheRepositorySupabase implements MancheRepository {
     heure_fin_delai,
     resultats_publies,
     revision_resultats,
+    revision_validation_resultats,
+    participants_definis,
+    duree_limite_secondes,
+    participants_manche(athlete_id,ordre_depart),
     date_creation,
     date_modification
   ''';
@@ -145,7 +149,7 @@ class MancheRepositorySupabase implements MancheRepository {
         );
         return _convertirDepuisSupabase(
           Map<String, dynamic>.from(donnees as Map),
-        );
+        ).copierAvec(participantsAthleteIds: manche.participantsAthleteIds);
       }
       final donnees = await _client
           .from(_nomTable)
@@ -194,6 +198,11 @@ class MancheRepositorySupabase implements MancheRepository {
       heureFinDelai: _convertirDateFacultative(donnees['heure_fin_delai']),
       resultatsPublies: donnees['resultats_publies'] as bool,
       revisionResultats: (donnees['revision_resultats'] as num?)?.toInt() ?? 0,
+      validationRequise: donnees.containsKey('revision_validation_resultats'),
+      revisionValidationResultats: (donnees['revision_validation_resultats'] as num?)?.toInt(),
+      participantsDefinis: donnees['participants_definis'] == true,
+      participantsAthleteIds: _participants(donnees),
+      dureeLimiteSecondes: (donnees['duree_limite_secondes'] as num?)?.toInt(),
       dateCreation: DateTime.parse(donnees['date_creation'] as String),
       dateModification: DateTime.parse(donnees['date_modification'] as String),
     );
@@ -223,6 +232,13 @@ class MancheRepositorySupabase implements MancheRepository {
       'heure_fin_delai': manche.heureFinDelai?.toUtc().toIso8601String(),
       'resultats_publies': manche.resultatsPublies,
     };
+  }
+
+  List<String> _participants(Map<String, dynamic> donnees) {
+    final lignes = (donnees['participants_manche'] as List? ?? [])
+        .map((e) => Map<String, dynamic>.from(e as Map)).toList();
+    lignes.sort((a, b) => (a['ordre_depart'] as num).compareTo(b['ordre_depart'] as num));
+    return List.unmodifiable(lignes.map((e) => e['athlete_id'] as String));
   }
 
   DateTime? _convertirDateFacultative(dynamic valeur) {

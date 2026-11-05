@@ -3,9 +3,11 @@ import 'package:flutter/material.dart';
 import '../../../application/use_cases/deconnecter_utilisateur.dart';
 import '../../../domain/entities/profil_utilisateur.dart';
 import '../../widgets/coach/entete_coach.dart';
+import '../compte/informations_application_page.dart';
 import '../../widgets/coach/grille_actions_coach.dart';
+import '../../widgets/commun/menu_compte_application.dart';
 
-class CoachDashboardPage extends StatelessWidget {
+class CoachDashboardPage extends StatefulWidget {
   const CoachDashboardPage({
     super.key,
     required this.profil,
@@ -21,16 +23,25 @@ class CoachDashboardPage extends StatelessWidget {
   final VoidCallback onVoirCompetitions;
   final VoidCallback onVoirAthletes;
 
-  Future<void> _deconnecter(BuildContext context) async {
+  @override
+  State<CoachDashboardPage> createState() => _CoachDashboardPageState();
+}
+
+class _CoachDashboardPageState extends State<CoachDashboardPage> {
+  bool _deconnexionEnCours = false;
+
+  Future<void> _deconnecter() async {
+    if (_deconnexionEnCours) return;
+    setState(() => _deconnexionEnCours = true);
     try {
-      await deconnecterUtilisateur.executer();
+      await widget.deconnecterUtilisateur.executer();
     } catch (exception) {
-      if (!context.mounted) return;
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(exception.toString().replaceFirst('Exception: ', '')),
-        ),
+        SnackBar(content: const Text('La déconnexion a échoué. Réessaie.')),
       );
+    } finally {
+      if (mounted) setState(() => _deconnexionEnCours = false);
     }
   }
 
@@ -43,14 +54,20 @@ class CoachDashboardPage extends StatelessWidget {
         title: const Text('Espace coach'),
         actions: [
           IconButton(
-            tooltip: 'Supprimer mon compte',
-            onPressed: onMonCompte,
-            icon: const Icon(Icons.manage_accounts_outlined),
+            tooltip: 'Informations',
+            icon: const Icon(Icons.info_outline),
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => InformationsApplicationPage(
+                  onSupprimerCompte: widget.onMonCompte,
+                ),
+              ),
+            ),
           ),
-          IconButton(
-            tooltip: 'Se déconnecter',
-            onPressed: () => _deconnecter(context),
-            icon: const Icon(Icons.logout_outlined),
+          MenuCompteApplication(
+            onDeconnecter: _deconnecter,
+            onSupprimerCompte: widget.onMonCompte,
+            operationEnCours: _deconnexionEnCours,
           ),
           const SizedBox(width: 8),
         ],
@@ -64,7 +81,7 @@ class CoachDashboardPage extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  EnteteCoach(profil: profil),
+                  EnteteCoach(profil: widget.profil),
                   const SizedBox(height: 32),
                   Text(
                     'Votre espace de gestion',
@@ -79,8 +96,8 @@ class CoachDashboardPage extends StatelessWidget {
                   ),
                   const SizedBox(height: 20),
                   GrilleActionsCoach(
-                    onVoirCompetitions: onVoirCompetitions,
-                    onVoirAthletes: onVoirAthletes,
+                    onVoirCompetitions: widget.onVoirCompetitions,
+                    onVoirAthletes: widget.onVoirAthletes,
                   ),
                 ],
               ),

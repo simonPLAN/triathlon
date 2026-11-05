@@ -9,6 +9,9 @@
 /config/production.json
 /config/staging.json
 
+# Outils locaux de verification (non livres dans l'application)
+/.outils-locaux/
+
 # Miscellaneous
 *.class
 *.log

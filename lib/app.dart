@@ -8,6 +8,8 @@ import 'package:triathlon/presentation/controllers/manche_controller.dart';
 import 'package:triathlon/presentation/controllers/resultat_controller.dart';
 
 import 'application/use_cases/connecter_utilisateur.dart';
+import 'domain/ports/categorie_athlete_repository.dart';
+import 'presentation/controllers/confirmation_email_controller.dart';
 import 'configuration/identite_application.dart';
 import 'application/use_cases/auth/supprimer_mon_compte.dart';
 import 'application/use_cases/deconnecter_utilisateur.dart';
@@ -38,6 +40,8 @@ class TriathlonApp extends StatefulWidget {
     required this.recuperationCompte,
     required this.sourceLiensRecuperation,
     required this.supprimerMonCompte,
+    this.confirmationEmail,
+    this.categoriesAthletes,
   });
 
   final SupabaseClient clientSupabase;
@@ -56,6 +60,8 @@ class TriathlonApp extends StatefulWidget {
   final RecuperationCompteController recuperationCompte;
   final SourceLiensRecuperation sourceLiensRecuperation;
   final SupprimerMonCompte supprimerMonCompte;
+  final ConfirmationEmailController? confirmationEmail;
+  final CategorieAthleteRepository? categoriesAthletes;
 
   @override
   State<TriathlonApp> createState() => _TriathlonAppState();
@@ -68,6 +74,7 @@ class _TriathlonAppState extends State<TriathlonApp> {
   Widget build(BuildContext context) {
     return RecuperationCompteHost(
       controller: widget.recuperationCompte,
+      confirmationEmail: widget.confirmationEmail,
       sourceLiens: widget.sourceLiensRecuperation,
       navigatorKey: _navigatorKey,
       child: MaterialApp(
@@ -78,6 +85,8 @@ class _TriathlonAppState extends State<TriathlonApp> {
         darkTheme: ThemeApplication.sombre,
         themeMode: ThemeMode.system,
         home: AuthGate(
+          confirmationEmail: widget.confirmationEmail,
+          categoriesAthletes: widget.categoriesAthletes,
           supprimerMonCompte: widget.supprimerMonCompte,
           recuperationCompte: widget.recuperationCompte,
           clientSupabase: widget.clientSupabase,

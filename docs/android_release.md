@@ -14,6 +14,8 @@ Le titre Flutter vient de `APP_NAME` et doit correspondre au libellé Android ; 
 
 Copier les exemples `config/production.example.json` et `config/staging.example.json` vers `config/production.json` et `config/staging.json` (ignorés par Git). Renseigner une URL et une clé **publique** publishable ou anon, jamais une clé secrète/service_role. Les paramètres compilés dans Flutter restent extractibles : ce ne sont pas des secrets et ils ne remplacent pas RLS.
 
+Renseigner aussi `PRIVACY_POLICY_URL`, `ACCOUNT_DELETION_URL` et `SUPPORT_EMAIL` dans le fichier de configuration local. Les pages doivent être publiques en HTTPS et leur contenu validé par l'organisateur. La Release production vérifie leur format, mais ce contrôle ne prouve pas leur hébergement ni leur conformité. L'écran Informations permet de les ouvrir depuis les deux espaces.
+
 La production est actuellement liée à `dgjtfhslcbrgsdczlvdg.supabase.co`. Staging doit utiliser un autre projet. Si le projet de production change, mettre à jour ensemble `productionSupabaseHost` dans `android/application.properties`, `ConfigurationAuthentification.hoteProduction` dans Dart et les configurations locales. APP_ENV doit correspondre au flavor ; APP_NAME vaut le nom public, suffixé « (test) » pour staging.
 
 ```powershell

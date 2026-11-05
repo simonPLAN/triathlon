@@ -4,6 +4,7 @@ import '../../application/use_cases/auth/supprimer_mon_compte.dart';
 import 'compte/supprimer_compte_page.dart';
 
 import '../controllers/recuperation_compte_controller.dart';
+import '../controllers/confirmation_email_controller.dart';
 
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -13,6 +14,7 @@ import '../../application/use_cases/deconnecter_utilisateur.dart';
 import '../../application/use_cases/inscrire_athlete.dart';
 import '../../application/use_cases/obtenir_profil_connecte.dart';
 import '../../domain/entities/profil_utilisateur.dart';
+import '../../domain/ports/categorie_athlete_repository.dart';
 import '../controllers/athlete_controller.dart';
 import '../controllers/competition_controller.dart';
 import '../controllers/competitions_ouvertes_controller.dart';
@@ -43,7 +45,13 @@ class AuthGate extends StatefulWidget {
     required this.resultatController,
     required this.recuperationCompte,
     required this.supprimerMonCompte,
+    this.confirmationEmail,
+    this.categoriesAthletes,
   });
+
+  final CategorieAthleteRepository? categoriesAthletes;
+
+  final ConfirmationEmailController? confirmationEmail;
 
   final SupabaseClient clientSupabase;
   final AthleteController athleteController;
@@ -176,6 +184,7 @@ class _AuthGateState extends State<AuthGate> {
     if (session == null) {
       return ConnexionPage(
         recuperationCompte: widget.recuperationCompte,
+        confirmationEmail: widget.confirmationEmail,
         connecterUtilisateur: widget.connecterUtilisateur,
         inscrireAthlete: widget.inscrireAthlete,
       );
@@ -227,6 +236,7 @@ class _AuthGateState extends State<AuthGate> {
         }
 
         return AthleteDashboardPage(
+          categoriesAthletes: widget.categoriesAthletes,
           onMonCompte: _ouvrirMonCompte,
           key: ValueKey(session.user.id),
           profil: profil,

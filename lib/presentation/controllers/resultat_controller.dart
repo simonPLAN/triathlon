@@ -4,6 +4,7 @@ import '../../domain/entities/edition_resultat.dart';
 
 import '../../application/use_cases/resultat/enregistrer_arrivee.dart';
 import '../../application/use_cases/resultat/corriger_resultat.dart';
+import '../../application/use_cases/resultat/ajuster_temps_resultat.dart';
 import '../../domain/entities/statut_resultat.dart';
 import '../../application/use_cases/resultat/lister_resultats_manche.dart';
 import '../../application/use_cases/resultat/marquer_athletes_hors_delai.dart';
@@ -208,6 +209,20 @@ class ResultatController extends ChangeNotifier {
       _enregistrementEnCours = false;
       notifyListeners();
     }
+  }
+
+  Future<EditionResultats?> ajusterTemps({required Manche manche, required Resultat resultat,
+    required int deltaMillisecondes, required String motif, bool accepterDepublication = false}) async {
+    if (operationEnCours) return null;
+    _enregistrementEnCours = true; _erreur = null; notifyListeners();
+    try {
+      final edition = await AjusterTempsResultat(_corrigerResultat).executer(manche: manche,
+        resultat: resultat, deltaMillisecondes: deltaMillisecondes, motif: motif,
+        accepterDepublication: accepterDepublication);
+      _resultats = edition.resultats; _mancheChargeeId = manche.id; _trierResultats();
+      return edition;
+    } catch (e) { _erreur = _extraireMessageErreur(e); return null; }
+    finally { _enregistrementEnCours = false; notifyListeners(); }
   }
 
   bool possedeResultatPour(String athleteId) {

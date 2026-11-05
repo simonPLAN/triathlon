@@ -18,6 +18,9 @@ class EnregistrerArrivee {
   }) async {
     _verifierManche(manche);
     _verifierAthlete(athlete);
+    if (!manche.contientParticipant(athlete.id)) {
+      throw StateError('Cet athlète n’est pas affecté à cette manche.');
+    }
 
     final heureDepart = manche.heureDepart!;
     final arrivee = heureArrivee ?? DateTime.now();

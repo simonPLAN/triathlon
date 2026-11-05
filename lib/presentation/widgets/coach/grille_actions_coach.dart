@@ -28,7 +28,7 @@ class GrilleActionsCoach extends StatelessWidget {
         description:
             'Retrouvez les profils et gérez les athlètes de votre club.',
         icone: Icons.groups_outlined,
-        couleur: couleurs.tertiary,
+        couleur: couleurs.secondary,
         onTap: onVoirAthletes,
       ),
     ];

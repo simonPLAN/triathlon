@@ -17,7 +17,10 @@ class CarteCompetitionAthlete extends StatelessWidget {
     required this.onDesinscrire,
     this.onVoirResultats,
     this.onVoirProgramme,
+    this.onVoirDetail,
   });
+
+  final VoidCallback? onVoirDetail;
 
   final Competition competition;
   final EtatInscriptionUtilisateur etatInscription;
@@ -60,10 +63,10 @@ class CarteCompetitionAthlete extends StatelessWidget {
                     style: Theme.of(context).textTheme.titleLarge,
                   ),
                 ),
-                const SizedBox(width: 8),
-                BadgeStatutCompetition(statut: competition.statut),
               ],
             ),
+            const SizedBox(height: 12),
+            BadgeStatutCompetition(statut: competition.statut),
             const SizedBox(height: 16),
             _InformationCompetition(
               icone: Icons.calendar_today_outlined,
@@ -83,6 +86,10 @@ class CarteCompetitionAthlete extends StatelessWidget {
                 maxLines: 4,
                 overflow: TextOverflow.ellipsis,
               ),
+            ],
+            if (onVoirDetail != null) ...[
+              const SizedBox(height: 12),
+              TextButton.icon(onPressed: onVoirDetail, icon: const Icon(Icons.info_outline), label: const Text('Voir le détail')),
             ],
             const SizedBox(height: 16),
             SectionInscriptionAthlete(

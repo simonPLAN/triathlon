@@ -11,12 +11,8 @@ class AthleteRepositorySupabase implements AthleteRepository {
   @override
   Future<List<Athlete>> obtenirTous() async {
     try {
-      final donnees = await _client
-          .from('profils')
-          .select('id, prenom, nom')
-          .eq('role', 'athlete')
-          .order('nom')
-          .order('prenom');
+      final reponse = await _client.rpc('annuaire_athletes_coach');
+      final donnees = (reponse as List).cast<Map<String, dynamic>>();
 
       return donnees.map<Athlete>((ligne) {
         return Athlete(
