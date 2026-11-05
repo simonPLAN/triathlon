@@ -2,6 +2,7 @@ import {fixture,utilisateur,configurer,id,assert,refuse} from "./fixtures_manche
 import type {PGlite} from "npm:@electric-sql/pglite@0.5.14";
 const corrections=await Deno.readTextFile(new URL("../migrations/202611020005_corrections_resultats.sql",import.meta.url));
 const cycle=await Deno.readTextFile(new URL("../migrations/202611040002_cycle_manche_atomique.sql",import.meta.url));
+const enchainement=await Deno.readTextFile(new URL("../migrations/202611050008_enchainement_manches.sql",import.meta.url));
 const validation=await Deno.readTextFile(new URL("../migrations/202611040003_validation_resultats.sql",import.meta.url));
 async function complete(){
  const db=await fixture();
@@ -19,7 +20,7 @@ async function complete(){
      add column date_creation timestamptz default now(),add column date_modification timestamptz default now(),
      add unique(manche_id,athlete_id);
  `);
- await db.exec(corrections);await db.exec(cycle);await db.exec(validation);return db;
+ await db.exec(corrections);await db.exec(cycle);await db.exec(enchainement);await db.exec(validation);return db;
 }
 async function depart(db:PGlite){
  await utilisateur(db,1);await configurer(db);
@@ -57,11 +58,12 @@ Deno.test("clôture : hors délai des affectés seulement, démarrage suivant et
  const db=await complete();try{
    await db.query("insert into manches(id,epreuve_id,numero,statut) values($1,$2,2,'a_venir')",[id(31),id(20)]);
    await utilisateur(db,1);
-   await db.query("select configurer_participants_manche($1,$2::uuid[],60)",[id(31),[id(3)]]);
    await configurer(db,[3]);await db.query("update manches set statut='en_cours',heure_depart=now()-interval '10 seconds' where id=$1",[id(30)]);
    await arrivee(db,3);
    await db.query("update manches set heure_fin_delai=now()-interval '1 second' where id=$1",[id(30)]);
    const {rows}=await db.query<{id:string}>("select cloturer_delai_manche($1) id",[id(30)]);assert(rows[0].id===id(31));
+   const suivante=await db.query<{n:number,s:string}>("select count(*)::int n,min(m.statut) s from participants_manche p join manches m on m.id=p.manche_id where p.manche_id=$1",[id(31)]);
+   assert(suivante.rows[0].n===1&&suivante.rows[0].s==='en_cours');
    assert((await db.query("select * from resultats where athlete_id=$1",[id(4)])).rows.length===0);
    await db.query("select cloturer_delai_manche($1)",[id(30)]);
    assert((await db.query("select * from resultats")).rows.length===1);

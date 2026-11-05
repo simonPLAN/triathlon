@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 
 import '../../application/use_cases/deconnecter_utilisateur.dart';
 import '../../application/use_cases/inscrire_athlete.dart';
+import '../../application/use_cases/athlete/gerer_groupes_athletes.dart';
 import '../../domain/entities/athlete.dart';
 import '../controllers/athlete_controller.dart';
 import 'compte/categorie_athlete_page.dart';
+import 'athlete/groupes_athletes_page.dart';
 import '../theme/espacements_application.dart';
 import '../widgets/coach/carte_athlete_coach.dart';
 import '../widgets/commun/carte_section.dart';
@@ -17,11 +19,13 @@ class AthletesPage extends StatefulWidget {
     required this.controller,
     required this.inscrireAthlete,
     required this.deconnecterUtilisateur,
+    this.groupes,
   });
 
   final AthleteController controller;
   final InscrireAthlete inscrireAthlete;
   final DeconnecterUtilisateur deconnecterUtilisateur;
+  final GererGroupesAthletes? groupes;
 
   @override
   State<AthletesPage> createState() => _AthletesPageState();
@@ -76,12 +80,9 @@ class _AthletesPageState extends State<AthletesPage> {
       final nom = _normaliser(athlete.nomComplet);
       return mots.every(nom.contains);
     }).toList();
-    athletes.sort((a, b) {
-      final comparaison = _normaliser(a.nom).compareTo(_normaliser(b.nom));
-      return comparaison != 0
-          ? comparaison
-          : _normaliser(a.prenom).compareTo(_normaliser(b.prenom));
-    });
+    athletes.sort(
+      (a, b) => _normaliser(a.pseudo).compareTo(_normaliser(b.pseudo)),
+    );
     return athletes;
   }
 
@@ -104,6 +105,21 @@ class _AthletesPageState extends State<AthletesPage> {
       appBar: AppBar(
         title: const Text('Athlètes'),
         actions: [
+          if (widget.groupes != null)
+            IconButton(
+              tooltip: 'Gérer les groupes',
+              onPressed: controller.chargement
+                  ? null
+                  : () => Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) => GroupesAthletesPage(
+                          gererGroupes: widget.groupes!,
+                          athletes: controller.athletes,
+                        ),
+                      ),
+                    ),
+              icon: const Icon(Icons.group_work_outlined),
+            ),
           IconButton(
             tooltip: 'Actualiser',
             onPressed: controller.chargement ? null : controller.charger,
@@ -129,7 +145,7 @@ class _AthletesPageState extends State<AthletesPage> {
                   padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
                   child: CarteSection(
                     titre: 'Répertoire des athlètes',
-                    sousTitre: 'Retrouve rapidement un participant par son nom ou son prénom.',
+                    sousTitre: 'Recherche un athlète par son pseudo et organise tes groupes.',
                     icone: Icons.groups_outlined,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -145,7 +161,7 @@ class _AthletesPageState extends State<AthletesPage> {
                           textInputAction: TextInputAction.search,
                           decoration: InputDecoration(
                             labelText: 'Rechercher un athlète',
-                            hintText: 'Prénom ou nom',
+                            hintText: 'Pseudo',
                             prefixIcon: const Icon(Icons.search),
                             suffixIcon: _recherche.text.isEmpty
                                 ? null

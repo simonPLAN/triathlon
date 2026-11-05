@@ -4,6 +4,7 @@ import 'suivi_inscription_utilisateur.dart';
 import '../models/etat_inscription_utilisateur.dart';
 
 import '../../application/use_cases/inscription/inscrire_invite.dart';
+import '../../application/use_cases/athlete/gerer_groupes_athletes.dart';
 
 import '../../application/use_cases/inscription/desinscrire_athlete_competition.dart';
 import '../../application/use_cases/inscription/inscrire_athlete_competition.dart';
@@ -22,16 +23,18 @@ class InscriptionController extends ChangeNotifier {
     this._desinscrireAthleteCompetition,
     this._inscrireUtilisateurConnecte,
     ObtenirInscriptionUtilisateurConnecte obtenirInscriptionUtilisateurConnecte,
-    this._inscrireInvite,
-  ) : suiviUtilisateur = SuiviInscriptionUtilisateur(
-        obtenirInscriptionUtilisateurConnecte,
-      ) {
+    this._inscrireInvite, {
+    this.groupes,
+  }) : suiviUtilisateur = SuiviInscriptionUtilisateur(
+         obtenirInscriptionUtilisateurConnecte,
+       ) {
     suiviUtilisateur.addListener(notifyListeners);
   }
 
   final SuiviInscriptionUtilisateur suiviUtilisateur;
 
   final InscrireInvite _inscrireInvite;
+  final GererGroupesAthletes? groupes;
 
   final ListerInscriptions _listerInscriptions;
 

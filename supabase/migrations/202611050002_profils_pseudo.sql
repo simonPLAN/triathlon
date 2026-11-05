@@ -27,6 +27,11 @@ create unique index if not exists profils_pseudo_unique_ci
 -- un prénom ou un nom réel.
 alter table public.profils alter column prenom drop not null;
 alter table public.profils alter column nom drop not null;
+alter table public.profils
+  drop constraint if exists profils_nom_non_vide,
+  drop constraint if exists profils_prenom_non_vide,
+  drop constraint if exists profils_nom_check,
+  drop constraint if exists profils_prenom_check;
 update public.profils set prenom = pseudo, nom = '';
 
 create or replace function public.initialiser_compte_profil()

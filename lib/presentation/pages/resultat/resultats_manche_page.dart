@@ -41,7 +41,8 @@ class ResultatsManchePage extends StatefulWidget {
   }
 }
 
-class _ResultatsManchePageState extends State<ResultatsManchePage> with WidgetsBindingObserver {
+class _ResultatsManchePageState extends State<ResultatsManchePage>
+    with WidgetsBindingObserver {
   late Manche _manche;
   bool _clotureEnCours = false;
   bool _chargementDonnees = true;
@@ -103,18 +104,31 @@ class _ResultatsManchePageState extends State<ResultatsManchePage> with WidgetsB
         return;
       }
 
-      if (_mancheController.cycleAtomiqueDisponible && _manche.participantsDefinis) {
+      if (_mancheController.cycleAtomiqueDisponible &&
+          _manche.participantsDefinis) {
         final cloturee = await _mancheController.cloturerDelaiAtomique(_manche);
         if (!mounted) return;
         if (cloturee == null) {
-          _afficherErreur(_mancheController.erreur ?? 'Clôture non confirmée : actualise avant de réessayer.');
+          _afficherErreur(
+            _mancheController.erreur ??
+                'Clôture non confirmée : actualise avant de réessayer.',
+          );
           return;
         }
-        setState(() { _manche = cloturee; _delaiSignaleCommeEcoule = false; });
+        setState(() {
+          _manche = cloturee;
+          _delaiSignaleCommeEcoule = false;
+        });
         await _mancheController.charger(widget.epreuve.id);
         _resultatController.reinitialiser();
         await _resultatController.charger(cloturee.id);
-        if (mounted) _afficherMessage(cloturee.estEnCours ? 'La manche ${cloturee.numero} a démarré.' : 'Manche clôturée. Participants restants hors délai.');
+        if (mounted) {
+          _afficherMessage(
+            cloturee.estEnCours
+                ? 'La manche ${cloturee.numero} a démarré.'
+                : 'Manche clôturée. Participants restants hors délai.',
+          );
+        }
         return;
       }
 
@@ -162,40 +176,34 @@ class _ResultatsManchePageState extends State<ResultatsManchePage> with WidgetsB
           'La manche est maintenant terminée.';
 
       if (widget.competition.demarrageAutomatiqueMancheSuivante) {
-        final manchesSuivantes =
-            _mancheController.manches
-                .where(
-                  (manche) =>
-                      manche.numero > mancheTerminee.numero && manche.estAVenir,
-                )
-                .toList()
-              ..sort((a, b) => a.numero.compareTo(b.numero));
+        final existeUneSuivante = _mancheController.manches.any(
+          (manche) =>
+              manche.epreuveId == mancheTerminee.epreuveId &&
+              manche.numero > mancheTerminee.numero &&
+              manche.estAVenir,
+        );
+        final mancheDemarree = await _mancheController
+            .demarrerSuivanteAutomatiquement(mancheTerminee);
 
-        if (manchesSuivantes.isNotEmpty) {
-          final mancheDemarree = await _mancheController.demarrer(
-            manchesSuivantes.first,
+        if (!mounted) {
+          return;
+        }
+
+        if (mancheDemarree != null) {
+          setState(() {
+            _manche = mancheDemarree;
+            _delaiSignaleCommeEcoule = false;
+          });
+          _resultatController.reinitialiser();
+          await _resultatController.charger(mancheDemarree.id);
+          if (!mounted) return;
+          message += ' La manche ${mancheDemarree.numero} a démarré.';
+        } else if (existeUneSuivante) {
+          _afficherErreur(
+            _mancheController.erreur ??
+                'La manche suivante n’a pas pu démarrer automatiquement.',
           );
-
-          if (!mounted) {
-            return;
-          }
-
-          if (mancheDemarree != null) {
-            setState(() {
-              _manche = mancheDemarree;
-              _delaiSignaleCommeEcoule = false;
-            });
-            _resultatController.reinitialiser();
-            await _resultatController.charger(mancheDemarree.id);
-            if (!mounted) return;
-            message += ' La manche ${mancheDemarree.numero} a démarré.';
-          } else {
-            _afficherErreur(
-              _mancheController.erreur ??
-                  'La manche suivante n’a pas pu démarrer automatiquement.',
-            );
-            return;
-          }
+          return;
         }
       }
 
@@ -219,7 +227,9 @@ class _ResultatsManchePageState extends State<ResultatsManchePage> with WidgetsB
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed && mounted && !_operationEnCours) _recharger();
+    if (state == AppLifecycleState.resumed && mounted && !_operationEnCours) {
+      _recharger();
+    }
   }
 
   void _actualiser() {
@@ -247,10 +257,17 @@ class _ResultatsManchePageState extends State<ResultatsManchePage> with WidgetsB
       for (final manche in _mancheController.manches) {
         if (manche.id == _manche.id) _manche = manche;
       }
-      if (_manche.estTerminee && widget.competition.demarrageAutomatiqueMancheSuivante) {
-        final actives = _mancheController.manches.where((m) => m.estEnCours && m.numero > _manche.numero).toList()
-          ..sort((a, b) => a.numero.compareTo(b.numero));
-        if (actives.isNotEmpty) { _manche = actives.first; _delaiSignaleCommeEcoule = false; }
+      if (_manche.estTerminee &&
+          widget.competition.demarrageAutomatiqueMancheSuivante) {
+        final actives =
+            _mancheController.manches
+                .where((m) => m.estEnCours && m.numero > _manche.numero)
+                .toList()
+              ..sort((a, b) => a.numero.compareTo(b.numero));
+        if (actives.isNotEmpty) {
+          _manche = actives.first;
+          _delaiSignaleCommeEcoule = false;
+        }
       }
     });
     if (_manche.id != idAvant) {
@@ -289,11 +306,15 @@ class _ResultatsManchePageState extends State<ResultatsManchePage> with WidgetsB
 
     // La première arrivée déclenche automatiquement
     // le délai configuré sur l’épreuve.
-    if (!_manche.participantsDefinis && _resultatController.resultats.isEmpty && !_manche.premierArrive) {
+    if (!_manche.participantsDefinis &&
+        _resultatController.resultats.isEmpty &&
+        !_manche.premierArrive) {
       final mancheActualisee = await _mancheController
           .enregistrerPremiereArrivee(
             manche: _manche,
-            dureeLimiteSecondes: _manche.dureeLimiteSecondes ?? widget.epreuve.dureeLimiteSecondes,
+            dureeLimiteSecondes:
+                _manche.dureeLimiteSecondes ??
+                widget.epreuve.dureeLimiteSecondes,
           );
 
       if (!mounted) {
@@ -349,13 +370,23 @@ class _ResultatsManchePageState extends State<ResultatsManchePage> with WidgetsB
 
   Future<void> _declarerStatut() async {
     if (_operationEnCours || !_manche.estEnCours) return;
-    final choix = await showDialog<DeclarationStatutParticipant>(context: context,
-      builder: (_) => DeclarerStatutDialog(participants: _inscriptionsDisponibles));
+    final choix = await showDialog<DeclarationStatutParticipant>(
+      context: context,
+      builder: (_) =>
+          DeclarerStatutDialog(participants: _inscriptionsDisponibles),
+    );
     if (choix == null || !mounted) return;
-    final confirmation = await _mancheController.declarerStatut(manche: _manche,
-      athleteId: choix.athleteId, statut: choix.statut, motif: choix.motif);
+    final confirmation = await _mancheController.declarerStatut(
+      manche: _manche,
+      athleteId: choix.athleteId,
+      statut: choix.statut,
+      motif: choix.motif,
+    );
     if (!mounted) return;
-    if (confirmation == null) { _afficherErreur(_mancheController.erreur ?? 'Statut non confirmé.'); return; }
+    if (confirmation == null) {
+      _afficherErreur(_mancheController.erreur ?? 'Statut non confirmé.');
+      return;
+    }
     await _resultatController.charger(_manche.id);
     if (mounted) _afficherMessage('Statut enregistré sans place ni point.');
   }
@@ -435,32 +466,70 @@ class _ResultatsManchePageState extends State<ResultatsManchePage> with WidgetsB
 
   Future<void> _ajusterTemps() async {
     if (_operationEnCours) return;
-    final applique = await showDialog<bool>(context: context, barrierDismissible: false,
-      builder: (_) => AjusterTempsDialog(manche: _manche, resultats: _resultatController.resultats,
+    final applique = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => AjusterTempsDialog(
+        manche: _manche,
+        resultats: _resultatController.resultats,
         appliquer: (choix) async {
-          final edition = await _resultatController.ajusterTemps(manche: _manche,
-            resultat: choix.resultat, deltaMillisecondes: choix.deltaMs, motif: choix.motif,
-            accepterDepublication: choix.accord);
+          final edition = await _resultatController.ajusterTemps(
+            manche: _manche,
+            resultat: choix.resultat,
+            deltaMillisecondes: choix.deltaMs,
+            motif: choix.motif,
+            accepterDepublication: choix.accord,
+          );
           if (!mounted) return 'L’écran a été fermé.';
-          if (edition == null) return _resultatController.erreur ?? 'Ajustement non confirmé.';
-          setState(() => _manche = _manche.copierAvec(revisionResultats: edition.revision, resultatsPublies: false));
+          if (edition == null) {
+            return _resultatController.erreur ?? 'Ajustement non confirmé.';
+          }
+          setState(
+            () => _manche = _manche.copierAvec(
+              revisionResultats: edition.revision,
+              resultatsPublies: false,
+            ),
+          );
           _mancheController.remplacerLocalement(_manche);
           return null;
-        }));
-    if (applique == true && mounted) _afficherMessage('Ajustement appliqué. Classement recalculé et à valider.');
+        },
+      ),
+    );
+    if (applique == true && mounted) {
+      _afficherMessage(
+        'Ajustement appliqué. Classement recalculé et à valider.',
+      );
+    }
   }
 
   Future<void> _valider() async {
     if (_operationEnCours) return;
-    final confirmation = await showDialog<bool>(context: context, builder: (context) => AlertDialog(
-      title: const Text('Valider le classement ?'),
-      content: const Text('Confirme que les résultats de chaque participant sont vérifiés. Toute correction imposera une nouvelle validation.'),
-      actions: [TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Retour')),
-        FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('Valider'))]));
+    final confirmation = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Valider le classement ?'),
+        content: const Text(
+          'Confirme que les résultats de chaque participant sont vérifiés. Toute correction imposera une nouvelle validation.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Retour'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Valider'),
+          ),
+        ],
+      ),
+    );
     if (confirmation != true || !mounted) return;
     final validee = await _mancheController.validerResultats(_manche);
     if (!mounted) return;
-    if (validee == null) { _afficherErreur(_mancheController.erreur ?? 'Validation non confirmée.'); return; }
+    if (validee == null) {
+      _afficherErreur(_mancheController.erreur ?? 'Validation non confirmée.');
+      return;
+    }
     setState(() => _manche = validee);
     _afficherMessage('Classement validé. Publication disponible.');
   }
@@ -537,7 +606,8 @@ class _ResultatsManchePageState extends State<ResultatsManchePage> with WidgetsB
   @override
   Widget build(BuildContext context) {
     final nombreInscrits = _inscriptionController.inscriptions
-        .where((i) => _manche.contientParticipant(i.athlete.id)).length;
+        .where((i) => _manche.contientParticipant(i.athlete.id))
+        .length;
 
     final nombreResultats = _resultatController.resultats.length;
 
@@ -708,8 +778,13 @@ class _ResultatsManchePageState extends State<ResultatsManchePage> with WidgetsB
               },
             ),
           if (_manche.estEnCours && _mancheController.cycleAtomiqueDisponible)
-            OutlinedButton.icon(onPressed: _operationEnCours || disponibles.isEmpty ? null : _declarerStatut,
-              icon: const Icon(Icons.person_off_outlined), label: const Text('Abandon ou disqualification')),
+            OutlinedButton.icon(
+              onPressed: _operationEnCours || disponibles.isEmpty
+                  ? null
+                  : _declarerStatut,
+              icon: const Icon(Icons.person_off_outlined),
+              label: const Text('Abandon ou disqualification'),
+            ),
           const SizedBox(height: 24),
           if (_manche.estTerminee) ...[
             OutlinedButton.icon(
@@ -717,14 +792,26 @@ class _ResultatsManchePageState extends State<ResultatsManchePage> with WidgetsB
               icon: const Icon(Icons.edit_note),
               label: const Text('Saisir un résultat manuel'),
             ),
-            OutlinedButton.icon(onPressed: _operationEnCours || !resultats.any((r) => r.estArrive) ? null : _ajusterTemps,
-              icon: const Icon(Icons.tune), label: const Text('Pénalité ou bonus de temps')),
+            OutlinedButton.icon(
+              onPressed: _operationEnCours || !resultats.any((r) => r.estArrive)
+                  ? null
+                  : _ajusterTemps,
+              icon: const Icon(Icons.tune),
+              label: const Text('Pénalité ou bonus de temps'),
+            ),
             Text(
-              _manche.resultatsPublies ? 'Classement publié.' : _manche.resultatsValides ? 'Classement validé, non publié.' : 'Classement provisoire : vérifie puis valide les résultats.',
+              _manche.resultatsPublies
+                  ? 'Classement publié.'
+                  : _manche.resultatsValides
+                  ? 'Classement validé, non publié.'
+                  : 'Classement provisoire : vérifie puis valide les résultats.',
             ),
             if (_manche.validationRequise && !_manche.resultatsValides)
-              FilledButton.icon(onPressed: _operationEnCours ? null : _valider,
-                icon: const Icon(Icons.fact_check_outlined), label: const Text('Valider le classement')),
+              FilledButton.icon(
+                onPressed: _operationEnCours ? null : _valider,
+                icon: const Icon(Icons.fact_check_outlined),
+                label: const Text('Valider le classement'),
+              ),
             if (_manche.peutPublierResultats)
               FilledButton.icon(
                 onPressed: _operationEnCours ? null : _publier,

@@ -10,9 +10,14 @@ import '../../widgets/competition/badge_statut_competition.dart';
 /// Présentation en lecture seule ; les seules écritures sont celles de son inscription.
 class DetailCompetitionAthletePage extends StatefulWidget {
   const DetailCompetitionAthletePage({
-    super.key, required this.competition, required this.competitions,
-    required this.inscriptions, required this.onInscrire, required this.onDesinscrire,
-    required this.onProgramme, required this.onResultats,
+    super.key,
+    required this.competition,
+    required this.competitions,
+    required this.inscriptions,
+    required this.onInscrire,
+    required this.onDesinscrire,
+    required this.onProgramme,
+    required this.onResultats,
   });
   final Competition competition;
   final CompetitionsOuvertesController competitions;
@@ -23,14 +28,20 @@ class DetailCompetitionAthletePage extends StatefulWidget {
   final void Function(Competition) onResultats;
 
   @override
-  State<DetailCompetitionAthletePage> createState() => _DetailCompetitionAthletePageState();
+  State<DetailCompetitionAthletePage> createState() =>
+      _DetailCompetitionAthletePageState();
 }
 
-class _DetailCompetitionAthletePageState extends State<DetailCompetitionAthletePage> with WidgetsBindingObserver {
+class _DetailCompetitionAthletePageState
+    extends State<DetailCompetitionAthletePage>
+    with WidgetsBindingObserver {
   bool _actualisation = false;
 
   Competition get _competition {
-    for (final c in [...widget.competitions.inscrites, ...widget.competitions.competitions]) {
+    for (final c in [
+      ...widget.competitions.inscrites,
+      ...widget.competitions.competitions,
+    ]) {
       if (c.id == widget.competition.id) return c;
     }
     return widget.competition;
@@ -42,10 +53,14 @@ class _DetailCompetitionAthletePageState extends State<DetailCompetitionAthleteP
     WidgetsBinding.instance.addObserver(this);
     widget.competitions.addListener(_actualiser);
     widget.inscriptions.addListener(_actualiser);
-    widget.inscriptions.verifierInscriptionUtilisateur(competition: _competition);
+    widget.inscriptions.verifierInscriptionUtilisateur(
+      competition: _competition,
+    );
   }
 
-  void _actualiser() { if (mounted) setState(() {}); }
+  void _actualiser() {
+    if (mounted) setState(() {});
+  }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
@@ -58,7 +73,9 @@ class _DetailCompetitionAthletePageState extends State<DetailCompetitionAthleteP
     try {
       await widget.competitions.recharger();
       if (!mounted) return;
-      await widget.inscriptions.verifierInscriptionUtilisateur(competition: _competition);
+      await widget.inscriptions.verifierInscriptionUtilisateur(
+        competition: _competition,
+      );
     } finally {
       if (mounted) setState(() => _actualisation = false);
     }
@@ -79,7 +96,13 @@ class _DetailCompetitionAthletePageState extends State<DetailCompetitionAthleteP
     return Scaffold(
       appBar: AppBar(
         title: const Text('Détail de la compétition'),
-        actions: [IconButton(tooltip: 'Actualiser', onPressed: _actualisation ? null : _recharger, icon: const Icon(Icons.refresh))],
+        actions: [
+          IconButton(
+            tooltip: 'Actualiser',
+            onPressed: _actualisation ? null : _recharger,
+            icon: const Icon(Icons.refresh),
+          ),
+        ],
       ),
       body: SafeArea(
         child: RefreshIndicator(
@@ -92,8 +115,14 @@ class _DetailCompetitionAthletePageState extends State<DetailCompetitionAthleteP
                 padding: const EdgeInsets.all(16),
                 children: [
                   if (_actualisation) const LinearProgressIndicator(),
-                  if (widget.competitions.erreur != null || widget.competitions.erreurInscriptions != null)
-                    const Padding(padding: EdgeInsets.all(8), child: Text('Actualisation incomplète. Les dernières informations connues restent affichées. Réessaie avec Actualiser.')),
+                  if (widget.competitions.erreur != null ||
+                      widget.competitions.erreurInscriptions != null)
+                    const Padding(
+                      padding: EdgeInsets.all(8),
+                      child: Text(
+                        'Actualisation incomplète. Les dernières informations connues restent affichées. Réessaie avec Actualiser.',
+                      ),
+                    ),
                   CarteSection(
                     titre: c.nom,
                     icone: Icons.emoji_events_outlined,
@@ -102,11 +131,22 @@ class _DetailCompetitionAthletePageState extends State<DetailCompetitionAthleteP
                       children: [
                         BadgeStatutCompetition(statut: c.statut),
                         const SizedBox(height: 16),
-                        Text('Date : ${c.dateCompetition.day.toString().padLeft(2, '0')}/${c.dateCompetition.month.toString().padLeft(2, '0')}/${c.dateCompetition.year}', style: theme.textTheme.titleMedium),
+                        Text(
+                          'Date : ${c.dateCompetition.day.toString().padLeft(2, '0')}/${c.dateCompetition.month.toString().padLeft(2, '0')}/${c.dateCompetition.year}',
+                          style: theme.textTheme.titleMedium,
+                        ),
                         const SizedBox(height: 8),
-                        Text(c.lieu?.trim().isNotEmpty == true ? 'Lieu : ${c.lieu}' : 'Lieu non précisé'),
+                        Text(
+                          c.lieu?.trim().isNotEmpty == true
+                              ? 'Lieu : ${c.lieu}'
+                              : 'Lieu non précisé',
+                        ),
                         const SizedBox(height: 16),
-                        SelectableText(c.description?.trim().isNotEmpty == true ? c.description! : 'Aucune description fournie.'),
+                        SelectableText(
+                          c.description?.trim().isNotEmpty == true
+                              ? c.description!
+                              : 'Aucune description fournie.',
+                        ),
                       ],
                     ),
                   ),
@@ -116,21 +156,37 @@ class _DetailCompetitionAthletePageState extends State<DetailCompetitionAthleteP
                     child: SectionInscriptionAthlete(
                       competition: c,
                       etat: widget.inscriptions.suiviUtilisateur.pour(c.id),
-                      inscriptionEnCours: widget.inscriptions.inscriptionEnCours,
-                      desinscriptionEnCours: widget.inscriptions.desinscriptionEnCours,
-                      onReessayer: () => widget.inscriptions.verifierInscriptionUtilisateur(competition: c),
-                      onInscrire: _actualisation ? null : () => widget.onInscrire(c),
-                      onDesinscrire: _actualisation ? null : () => widget.onDesinscrire(c),
+                      inscriptionEnCours:
+                          widget.inscriptions.inscriptionEnCours,
+                      desinscriptionEnCours:
+                          widget.inscriptions.desinscriptionEnCours,
+                      onReessayer: () => widget.inscriptions
+                          .verifierInscriptionUtilisateur(competition: c),
+                      onInscrire: _actualisation
+                          ? null
+                          : () => widget.onInscrire(c),
+                      onDesinscrire: _actualisation
+                          ? null
+                          : () => widget.onDesinscrire(c),
                     ),
                   ),
                   CarteSection(
                     titre: 'Programme et classements',
                     icone: Icons.insights_outlined,
                     child: Wrap(
-                      spacing: 12, runSpacing: 12,
+                      spacing: 12,
+                      runSpacing: 12,
                       children: [
-                        OutlinedButton.icon(onPressed: () => widget.onProgramme(c), icon: const Icon(Icons.event_note_outlined), label: const Text('Voir le programme')),
-                        FilledButton.icon(onPressed: () => widget.onResultats(c), icon: const Icon(Icons.leaderboard_outlined), label: const Text('Résultats publiés')),
+                        OutlinedButton.icon(
+                          onPressed: () => widget.onProgramme(c),
+                          icon: const Icon(Icons.event_note_outlined),
+                          label: const Text('Voir le programme'),
+                        ),
+                        FilledButton.icon(
+                          onPressed: () => widget.onResultats(c),
+                          icon: const Icon(Icons.leaderboard_outlined),
+                          label: const Text('Résultats publiés'),
+                        ),
                       ],
                     ),
                   ),

@@ -470,34 +470,44 @@ class _ActionsCompetition extends StatelessWidget {
       builder: (context, contraintes) {
         final nombreColonnes = contraintes.maxWidth >= 700 ? 3 : 2;
 
-        return GridView.count(
-          crossAxisCount: nombreColonnes,
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          crossAxisSpacing: 12,
-          mainAxisSpacing: 12,
-          childAspectRatio: 1.1,
+        const espacement = 12.0;
+        final largeurCarte =
+            (contraintes.maxWidth - espacement * (nombreColonnes - 1)) /
+            nombreColonnes;
+
+        return Wrap(
+          spacing: espacement,
+          runSpacing: espacement,
           children: [
-            _CarteActionCompetition(
-              titre: 'Athlètes',
-              description: 'Gérer les inscriptions',
-              icone: Icons.groups_outlined,
-              couleur: Colors.blue,
-              onTap: onVoirAthletes,
+            SizedBox(
+              width: largeurCarte,
+              child: _CarteActionCompetition(
+                titre: 'Athlètes',
+                description: 'Gérer les inscriptions',
+                icone: Icons.groups_outlined,
+                couleur: Colors.blue,
+                onTap: onVoirAthletes,
+              ),
             ),
-            _CarteActionCompetition(
-              titre: 'Épreuves',
-              description: 'Configurer les disciplines',
-              icone: Icons.directions_run_outlined,
-              couleur: Colors.orange,
-              onTap: onVoirEpreuves,
+            SizedBox(
+              width: largeurCarte,
+              child: _CarteActionCompetition(
+                titre: 'Épreuves',
+                description: 'Configurer les disciplines',
+                icone: Icons.directions_run_outlined,
+                couleur: Colors.orange,
+                onTap: onVoirEpreuves,
+              ),
             ),
-            _CarteActionCompetition(
-              titre: 'Résultats',
-              description: 'Consulter le classement',
-              icone: Icons.leaderboard_outlined,
-              couleur: Colors.purple,
-              onTap: onVoirResultats,
+            SizedBox(
+              width: largeurCarte,
+              child: _CarteActionCompetition(
+                titre: 'Résultats',
+                description: 'Consulter le classement',
+                icone: Icons.leaderboard_outlined,
+                couleur: Colors.purple,
+                onTap: onVoirResultats,
+              ),
             ),
           ],
         );

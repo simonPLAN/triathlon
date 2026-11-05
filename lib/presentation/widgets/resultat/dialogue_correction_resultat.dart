@@ -84,7 +84,8 @@ class _DialogueCorrectionResultatState
 
   void _confirmer() {
     if (_fermetureDemandee || !_form.currentState!.validate()) return;
-    if ((widget.manche.resultatsPublies || widget.manche.resultatsValides) && !_accord) {
+    if ((widget.manche.resultatsPublies || widget.manche.resultatsValides) &&
+        !_accord) {
       setState(
         () => _erreur = 'Confirme le retrait de publication pour continuer.',
       );
@@ -169,14 +170,17 @@ class _DialogueCorrectionResultatState
                   maxLength: 1000,
                   decoration: const InputDecoration(labelText: 'Commentaire'),
                 ),
-                if (widget.manche.resultatsPublies || widget.manche.resultatsValides)
+                if (widget.manche.resultatsPublies ||
+                    widget.manche.resultatsValides)
                   CheckboxListTile(
                     contentPadding: EdgeInsets.zero,
                     value: _accord,
                     controlAffinity: ListTileControlAffinity.leading,
-                    title: Text(widget.manche.resultatsPublies
-                      ? 'Retirer toute la manche des résultats publiés. Une nouvelle validation et publication seront nécessaires.'
-                      : 'Retirer la validation de cette manche. Une nouvelle validation sera nécessaire.'),
+                    title: Text(
+                      widget.manche.resultatsPublies
+                          ? 'Retirer toute la manche des résultats publiés. Une nouvelle validation et publication seront nécessaires.'
+                          : 'Retirer la validation de cette manche. Une nouvelle validation sera nécessaire.',
+                    ),
                     onChanged: (value) => setState(() {
                       _accord = value ?? false;
                       _erreur = null;

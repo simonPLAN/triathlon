@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
+
 import '../../application/use_cases/auth/confirmer_email.dart';
 
 class ConfirmationEmailController extends ChangeNotifier {
@@ -71,7 +72,8 @@ class ConfirmationEmailController extends ChangeNotifier {
     _actualiser();
   }
 
-  String _nettoyer(Object e) => e.toString()
+  String _nettoyer(Object e) => e
+      .toString()
       .replaceFirst('Bad state: ', '')
       .replaceFirst('Invalid argument(s): ', '')
       .replaceFirst('Exception: ', '');

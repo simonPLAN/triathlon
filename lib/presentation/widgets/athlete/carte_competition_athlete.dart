@@ -89,7 +89,11 @@ class CarteCompetitionAthlete extends StatelessWidget {
             ],
             if (onVoirDetail != null) ...[
               const SizedBox(height: 12),
-              TextButton.icon(onPressed: onVoirDetail, icon: const Icon(Icons.info_outline), label: const Text('Voir le détail')),
+              TextButton.icon(
+                onPressed: onVoirDetail,
+                icon: const Icon(Icons.info_outline),
+                label: const Text('Voir le détail'),
+              ),
             ],
             const SizedBox(height: 16),
             SectionInscriptionAthlete(

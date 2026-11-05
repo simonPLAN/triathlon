@@ -157,11 +157,7 @@ class _SignupDialogState extends State<SignupDialog> {
   Future<void> go() async {
     setState(() => busy = true);
     try {
-      await widget.repo.signUp(
-        pseudo: p.text,
-        email: e.text,
-        password: m.text,
-      );
+      await widget.repo.signUp(pseudo: p.text, email: e.text, password: m.text);
       if (mounted) {
         Navigator.pop(context);
         message(context, 'Compte créé. Confirmez l’e-mail si nécessaire.');

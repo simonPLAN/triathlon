@@ -40,7 +40,9 @@ class InviteRepositorySupabase implements InviteRepository {
         );
       }
       if (e.code == 'PGRST202') {
-        throw StateError('La migration des pseudos doit être appliquée sur le serveur.');
+        throw StateError(
+          'La migration des pseudos doit être appliquée sur le serveur.',
+        );
       }
       throw StateError(e.message);
     }

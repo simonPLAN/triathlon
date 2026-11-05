@@ -88,7 +88,8 @@ class GraphiqueEpreuves extends StatelessWidget {
                       touchCallback: (event, response) {
                         final index = response?.spot?.touchedBarGroupIndex;
                         if (event.isInterestedForInteractions &&
-                            index != null && index != selection) {
+                            index != null &&
+                            index != selection) {
                           onSelection(index);
                         }
                       },

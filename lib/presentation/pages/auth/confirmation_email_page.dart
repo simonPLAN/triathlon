@@ -5,7 +5,9 @@ import '../../widgets/commun/carte_section.dart';
 
 class ConfirmationEmailPage extends StatefulWidget {
   const ConfirmationEmailPage({
-    super.key, required this.controller, this.emailInitial = '',
+    super.key,
+    required this.controller,
+    this.emailInitial = '',
   });
   final ConfirmationEmailController controller;
   final String emailInitial;
@@ -14,7 +16,9 @@ class ConfirmationEmailPage extends StatefulWidget {
 }
 
 class _ConfirmationEmailPageState extends State<ConfirmationEmailPage> {
-  late final TextEditingController _email = TextEditingController(text: widget.emailInitial);
+  late final TextEditingController _email = TextEditingController(
+    text: widget.emailInitial,
+  );
   @override
   void dispose() {
     _email.dispose();
@@ -46,15 +50,22 @@ class _ConfirmationEmailPageState extends State<ConfirmationEmailPage> {
                   padding: const EdgeInsets.all(16),
                   children: [
                     CarteSection(
-                      titre: c.confirme ? 'Adresse confirmée' : 'Confirme ton adresse e-mail',
-                      icone: c.confirme ? Icons.mark_email_read_outlined : Icons.mark_email_unread_outlined,
+                      titre: c.confirme
+                          ? 'Adresse confirmée'
+                          : 'Confirme ton adresse e-mail',
+                      icone: c.confirme
+                          ? Icons.mark_email_read_outlined
+                          : Icons.mark_email_unread_outlined,
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          if (c.operationEnCours) const LinearProgressIndicator(),
-                          Text(c.confirme
-                              ? 'Tu peux maintenant revenir à la connexion.'
-                              : 'Ouvre le lien reçu par e-mail sur le téléphone qui a demandé la confirmation. Après confirmation, connecte-toi avec ton e-mail et ton mot de passe.'),
+                          if (c.operationEnCours)
+                            const LinearProgressIndicator(),
+                          Text(
+                            c.confirme
+                                ? 'Tu peux maintenant revenir à la connexion.'
+                                : 'Ouvre le lien reçu par e-mail sur le téléphone qui a demandé la confirmation. Après confirmation, connecte-toi avec ton e-mail et ton mot de passe.',
+                          ),
                           const SizedBox(height: 20),
                           if (!c.confirme) ...[
                             TextField(
@@ -62,22 +73,44 @@ class _ConfirmationEmailPageState extends State<ConfirmationEmailPage> {
                               enabled: !c.operationEnCours,
                               keyboardType: TextInputType.emailAddress,
                               autocorrect: false,
-                              decoration: const InputDecoration(labelText: 'Adresse e-mail', prefixIcon: Icon(Icons.email_outlined)),
+                              decoration: const InputDecoration(
+                                labelText: 'Adresse e-mail',
+                                prefixIcon: Icon(Icons.email_outlined),
+                              ),
                             ),
                             const SizedBox(height: 12),
                             FilledButton.icon(
-                              onPressed: c.operationEnCours || c.secondesAvantRenvoi > 0 ? null : () => c.renvoyer(_email.text),
+                              onPressed:
+                                  c.operationEnCours ||
+                                      c.secondesAvantRenvoi > 0
+                                  ? null
+                                  : () => c.renvoyer(_email.text),
                               icon: const Icon(Icons.send_outlined),
-                              label: Text(c.secondesAvantRenvoi > 0 ? 'Renvoyer dans ${c.secondesAvantRenvoi} s' : 'Renvoyer l’e-mail'),
+                              label: Text(
+                                c.secondesAvantRenvoi > 0
+                                    ? 'Renvoyer dans ${c.secondesAvantRenvoi} s'
+                                    : 'Renvoyer l’e-mail',
+                              ),
                             ),
                           ],
                           if (c.message != null) ...[
                             const SizedBox(height: 12),
-                            Semantics(liveRegion: true, child: Text(c.message!)),
+                            Semantics(
+                              liveRegion: true,
+                              child: Text(c.message!),
+                            ),
                           ],
                           if (c.erreur != null) ...[
                             const SizedBox(height: 12),
-                            Semantics(liveRegion: true, child: Text(c.erreur!, style: TextStyle(color: Theme.of(context).colorScheme.error))),
+                            Semantics(
+                              liveRegion: true,
+                              child: Text(
+                                c.erreur!,
+                                style: TextStyle(
+                                  color: Theme.of(context).colorScheme.error,
+                                ),
+                              ),
+                            ),
                           ],
                           const SizedBox(height: 12),
                           OutlinedButton(

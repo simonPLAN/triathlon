@@ -211,18 +211,36 @@ class ResultatController extends ChangeNotifier {
     }
   }
 
-  Future<EditionResultats?> ajusterTemps({required Manche manche, required Resultat resultat,
-    required int deltaMillisecondes, required String motif, bool accepterDepublication = false}) async {
+  Future<EditionResultats?> ajusterTemps({
+    required Manche manche,
+    required Resultat resultat,
+    required int deltaMillisecondes,
+    required String motif,
+    bool accepterDepublication = false,
+  }) async {
     if (operationEnCours) return null;
-    _enregistrementEnCours = true; _erreur = null; notifyListeners();
+    _enregistrementEnCours = true;
+    _erreur = null;
+    notifyListeners();
     try {
-      final edition = await AjusterTempsResultat(_corrigerResultat).executer(manche: manche,
-        resultat: resultat, deltaMillisecondes: deltaMillisecondes, motif: motif,
-        accepterDepublication: accepterDepublication);
-      _resultats = edition.resultats; _mancheChargeeId = manche.id; _trierResultats();
+      final edition = await AjusterTempsResultat(_corrigerResultat).executer(
+        manche: manche,
+        resultat: resultat,
+        deltaMillisecondes: deltaMillisecondes,
+        motif: motif,
+        accepterDepublication: accepterDepublication,
+      );
+      _resultats = edition.resultats;
+      _mancheChargeeId = manche.id;
+      _trierResultats();
       return edition;
-    } catch (e) { _erreur = _extraireMessageErreur(e); return null; }
-    finally { _enregistrementEnCours = false; notifyListeners(); }
+    } catch (e) {
+      _erreur = _extraireMessageErreur(e);
+      return null;
+    } finally {
+      _enregistrementEnCours = false;
+      notifyListeners();
+    }
   }
 
   bool possedeResultatPour(String athleteId) {

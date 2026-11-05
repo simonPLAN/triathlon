@@ -30,6 +30,8 @@ import '../infrastructure/repositories/supabase/suivi_athlete_repository_supabas
 import '../application/use_cases/inscription/inscrire_invite.dart';
 import '../infrastructure/repositories/supabase/invite_repository_supabase.dart';
 import '../application/use_cases/ajouter_athlete.dart';
+import '../application/use_cases/athlete/gerer_groupes_athletes.dart';
+import '../infrastructure/repositories/supabase/groupe_athletes_repository_supabase.dart';
 import '../application/use_cases/competition/changer_statut_competition.dart';
 import '../application/use_cases/competition/creer_competition.dart';
 import '../application/use_cases/competition/lister_competitions.dart';
@@ -89,6 +91,9 @@ TriathlonApp assemblerApplication({
     SupprimerCompetition(competitionRepository),
   );
   final athleteRepository = AthleteRepositorySupabase(clientSupabase);
+  final groupesAthletes = GererGroupesAthletes(
+    GroupeAthletesRepositorySupabase(clientSupabase),
+  );
   final redirectionConfirmation = configuration.redirection.replace(
     path: '/confirm-email',
   );
@@ -146,11 +151,13 @@ TriathlonApp assemblerApplication({
     InscrireUtilisateurConnecte(inscriptionRepository),
     ObtenirInscriptionUtilisateurConnecte(inscriptionRepository),
     InscrireInvite(InviteRepositorySupabase(clientSupabase)),
+    groupes: groupesAthletes,
   );
   final athleteController = AthleteController(
     ajouterAthlete: AjouterAthlete(athleteRepository),
     listerAthletes: ListerAthletes(athleteRepository),
     categories: categoriesAthletes,
+    groupes: groupesAthletes,
   );
   final competitionsOuvertesController = CompetitionsOuvertesController(
     ListerCompetitionsOuvertes(competitionRepository),

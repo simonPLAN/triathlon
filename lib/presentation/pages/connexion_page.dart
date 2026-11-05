@@ -105,7 +105,14 @@ class _ConnexionPageState extends State<ConnexionPage> {
 
     final confirmation = widget.confirmationEmail;
     if (confirmation != null) {
-      await Navigator.of(context).push<void>(MaterialPageRoute(builder: (_) => ConfirmationEmailPage(controller: confirmation, emailInitial: emailCree)));
+      await Navigator.of(context).push<void>(
+        MaterialPageRoute(
+          builder: (_) => ConfirmationEmailPage(
+            controller: confirmation,
+            emailInitial: emailCree,
+          ),
+        ),
+      );
       return;
     }
     ScaffoldMessenger.of(context).showSnackBar(
@@ -249,7 +256,17 @@ class _ConnexionPageState extends State<ConnexionPage> {
                         ),
                         if (widget.confirmationEmail != null)
                           TextButton.icon(
-                            onPressed: _chargement ? null : () => Navigator.of(context).push<void>(MaterialPageRoute(builder: (_) => ConfirmationEmailPage(controller: widget.confirmationEmail!, emailInitial: _emailController.text.trim()))),
+                            onPressed: _chargement
+                                ? null
+                                : () => Navigator.of(context).push<void>(
+                                    MaterialPageRoute(
+                                      builder: (_) => ConfirmationEmailPage(
+                                        controller: widget.confirmationEmail!,
+                                        emailInitial: _emailController.text
+                                            .trim(),
+                                      ),
+                                    ),
+                                  ),
                             icon: const Icon(Icons.mark_email_unread_outlined),
                             label: const Text('Confirmer mon adresse e-mail'),
                           ),

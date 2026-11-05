@@ -36,14 +36,16 @@ class _RecuperationCompteHostState extends State<RecuperationCompteHost> {
     super.initState();
     widget.controller.addListener(_actualiser);
     widget.confirmationEmail?.addListener(_actualiser);
-    unawaited(widget.sourceLiens.demarrer((lien) async {
-      final confirmation = widget.confirmationEmail;
-      if (confirmation != null && confirmation.correspond(lien)) {
-        await confirmation.traiterLien(lien);
-      } else {
-        await widget.controller.traiterLien(lien);
-      }
-    }));
+    unawaited(
+      widget.sourceLiens.demarrer((lien) async {
+        final confirmation = widget.confirmationEmail;
+        if (confirmation != null && confirmation.correspond(lien)) {
+          await confirmation.traiterLien(lien);
+        } else {
+          await widget.controller.traiterLien(lien);
+        }
+      }),
+    );
     _actualiser();
   }
 
@@ -53,9 +55,16 @@ class _RecuperationCompteHostState extends State<RecuperationCompteHost> {
       final navigator = widget.navigatorKey.currentState;
       if (navigator == null) return;
       final confirmation = widget.confirmationEmail;
-      if (confirmation != null && confirmation.lienActif && !_confirmationOuverte) {
+      if (confirmation != null &&
+          confirmation.lienActif &&
+          !_confirmationOuverte) {
         _confirmationOuverte = true;
-        navigator.push<void>(MaterialPageRoute(builder: (_) => ConfirmationEmailPage(controller: confirmation)))
+        navigator
+            .push<void>(
+              MaterialPageRoute(
+                builder: (_) => ConfirmationEmailPage(controller: confirmation),
+              ),
+            )
             .whenComplete(() {
               _confirmationOuverte = false;
               confirmation.fermerLien();

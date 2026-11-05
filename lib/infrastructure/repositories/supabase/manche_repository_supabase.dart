@@ -199,7 +199,8 @@ class MancheRepositorySupabase implements MancheRepository {
       resultatsPublies: donnees['resultats_publies'] as bool,
       revisionResultats: (donnees['revision_resultats'] as num?)?.toInt() ?? 0,
       validationRequise: donnees.containsKey('revision_validation_resultats'),
-      revisionValidationResultats: (donnees['revision_validation_resultats'] as num?)?.toInt(),
+      revisionValidationResultats:
+          (donnees['revision_validation_resultats'] as num?)?.toInt(),
       participantsDefinis: donnees['participants_definis'] == true,
       participantsAthleteIds: _participants(donnees),
       dureeLimiteSecondes: (donnees['duree_limite_secondes'] as num?)?.toInt(),
@@ -236,8 +237,11 @@ class MancheRepositorySupabase implements MancheRepository {
 
   List<String> _participants(Map<String, dynamic> donnees) {
     final lignes = (donnees['participants_manche'] as List? ?? [])
-        .map((e) => Map<String, dynamic>.from(e as Map)).toList();
-    lignes.sort((a, b) => (a['ordre_depart'] as num).compareTo(b['ordre_depart'] as num));
+        .map((e) => Map<String, dynamic>.from(e as Map))
+        .toList();
+    lignes.sort(
+      (a, b) => (a['ordre_depart'] as num).compareTo(b['ordre_depart'] as num),
+    );
     return List.unmodifiable(lignes.map((e) => e['athlete_id'] as String));
   }
 

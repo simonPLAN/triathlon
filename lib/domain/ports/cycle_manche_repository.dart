@@ -7,7 +7,9 @@ abstract interface class CycleMancheRepository {
   Future<Manche> cloturerDelai(String mancheId);
   Future<Manche> validerResultats(String mancheId, int revision);
   Future<void> declarerStatut({
-    required String mancheId, required String athleteId,
-    required StatutResultat statut, required String motif,
+    required String mancheId,
+    required String athleteId,
+    required StatutResultat statut,
+    required String motif,
   });
 }

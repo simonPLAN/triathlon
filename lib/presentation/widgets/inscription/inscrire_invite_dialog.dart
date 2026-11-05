@@ -85,7 +85,8 @@ class _InscrireInviteDialogState extends State<InscrireInviteDialog> {
                     autocorrect: false,
                     decoration: const InputDecoration(
                       labelText: 'Pseudo',
-                      helperText: '3 à 30 caractères : lettres, chiffres, . _ -',
+                      helperText:
+                          '3 à 30 caractères : lettres, chiffres, . _ -',
                     ),
                     validator: _validerPseudo,
                   ),

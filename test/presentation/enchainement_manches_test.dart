@@ -45,6 +45,14 @@ class ManchesFake extends ChangeNotifier implements MancheController {
   }
 
   @override
+  Future<Manche?> demarrerSuivanteAutomatiquement(Manche terminee) async {
+    final suivantes =
+        manches.where((m) => m.numero > terminee.numero && m.estAVenir).toList()
+          ..sort((a, b) => a.numero.compareTo(b.numero));
+    return suivantes.isEmpty ? null : demarrer(suivantes.first);
+  }
+
+  @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 

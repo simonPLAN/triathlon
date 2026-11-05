@@ -27,43 +27,111 @@ class MancheController extends ChangeNotifier {
   });
 
   final ConfigurationMancheRepository? configurationRepository;
-  bool get cycleAtomiqueDisponible => configurationRepository is CycleMancheRepository;
+  bool get cycleAtomiqueDisponible =>
+      configurationRepository is CycleMancheRepository;
 
   Future<Manche?> validerResultats(Manche manche) {
     final repository = configurationRepository;
     if (repository is! CycleMancheRepository) return Future.value(null);
-    return _executerAction(() => (repository as CycleMancheRepository).validerResultats(manche.id, manche.revisionResultats));
+    return _executerAction(
+      () => (repository as CycleMancheRepository).validerResultats(
+        manche.id,
+        manche.revisionResultats,
+      ),
+    );
   }
 
   Future<Manche?> cloturerDelaiAtomique(Manche manche) {
     final repository = configurationRepository;
     if (repository is! CycleMancheRepository) return Future.value(null);
-    return _executerAction(() => (repository as CycleMancheRepository).cloturerDelai(manche.id));
+    return _executerAction(
+      () => (repository as CycleMancheRepository).cloturerDelai(manche.id),
+    );
   }
 
-  Future<Manche?> declarerStatut({required Manche manche, required String athleteId,
-    required StatutResultat statut, required String motif}) {
+  Future<Manche?> declarerStatut({
+    required Manche manche,
+    required String athleteId,
+    required StatutResultat statut,
+    required String motif,
+  }) {
     final repository = configurationRepository;
     if (repository is! CycleMancheRepository) return Future.value(null);
     return _executerAction(() async {
-      if (statut != StatutResultat.abandon && statut != StatutResultat.disqualifie) {
+      if (statut != StatutResultat.abandon &&
+          statut != StatutResultat.disqualifie) {
         throw ArgumentError('Choisis abandon ou disqualification.');
       }
-      if (motif.trim().isEmpty) throw ArgumentError('Le motif est obligatoire.');
-      await (repository as CycleMancheRepository).declarerStatut(mancheId: manche.id, athleteId: athleteId, statut: statut, motif: motif.trim());
+      if (motif.trim().isEmpty) {
+        throw ArgumentError('Le motif est obligatoire.');
+      }
+      await (repository as CycleMancheRepository).declarerStatut(
+        mancheId: manche.id,
+        athleteId: athleteId,
+        statut: statut,
+        motif: motif.trim(),
+      );
       return manche;
     });
   }
 
-  Future<Manche?> configurer({required Manche manche, required List<String> athleteIds, required int dureeLimiteSecondes}) {
+  Future<Manche?> configurer({
+    required Manche manche,
+    required List<String> athleteIds,
+    required int dureeLimiteSecondes,
+  }) {
     final repository = configurationRepository;
     if (repository == null) {
       _erreur = 'La configuration des participants n’est pas disponible.';
       notifyListeners();
       return Future.value(null);
     }
-    return _executerAction(() => ConfigurerManche(repository).executer(
-      manche: manche, athleteIds: athleteIds, dureeLimiteSecondes: dureeLimiteSecondes));
+    return _executerAction(
+      () => ConfigurerManche(repository).executer(
+        manche: manche,
+        athleteIds: athleteIds,
+        dureeLimiteSecondes: dureeLimiteSecondes,
+      ),
+    );
+  }
+
+  Future<Manche?> demarrerSuivanteAutomatiquement(Manche mancheTerminee) async {
+    final suivantes =
+        _manches
+            .where(
+              (manche) =>
+                  manche.epreuveId == mancheTerminee.epreuveId &&
+                  manche.numero > mancheTerminee.numero &&
+                  manche.estAVenir,
+            )
+            .toList()
+          ..sort((a, b) => a.numero.compareTo(b.numero));
+
+    if (suivantes.isEmpty) {
+      return null;
+    }
+
+    var suivante = suivantes.first;
+    if (!suivante.participantsDefinis) {
+      if (mancheTerminee.participantsAthleteIds.isEmpty ||
+          mancheTerminee.dureeLimiteSecondes == null) {
+        _erreur =
+            'La manche suivante ne peut pas reprendre une configuration vide.';
+        notifyListeners();
+        return null;
+      }
+      final configuree = await configurer(
+        manche: suivante,
+        athleteIds: mancheTerminee.participantsAthleteIds,
+        dureeLimiteSecondes: mancheTerminee.dureeLimiteSecondes!,
+      );
+      if (configuree == null) {
+        return null;
+      }
+      suivante = configuree;
+    }
+
+    return demarrer(suivante);
   }
 
   final GenererManchesPourEpreuve _genererManches;

@@ -3,7 +3,11 @@ import 'package:flutter/material.dart';
 import '../../application/use_cases/inscrire_athlete.dart';
 
 class InscriptionAthleteDialog extends StatefulWidget {
-  const InscriptionAthleteDialog({super.key, required this.inscrireAthlete, this.onCompteCree});
+  const InscriptionAthleteDialog({
+    super.key,
+    required this.inscrireAthlete,
+    this.onCompteCree,
+  });
 
   final ValueChanged<String>? onCompteCree;
 

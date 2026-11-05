@@ -32,10 +32,13 @@ class Manche {
   final bool resultatsPublies;
   final bool validationRequise;
   final int? revisionValidationResultats;
-  bool get resultatsValides => resultatsPublies ||
-      (revisionValidationResultats != null && revisionValidationResultats == revisionResultats);
+  bool get resultatsValides =>
+      resultatsPublies ||
+      (revisionValidationResultats != null &&
+          revisionValidationResultats == revisionResultats);
   final int revisionResultats;
   final bool participantsDefinis;
+
   /// Identifiants dans l’ordre de départ, distinct de l’ordre d’arrivée.
   final List<String> participantsAthleteIds;
   final int? dureeLimiteSecondes;
@@ -71,7 +74,9 @@ class Manche {
   }
 
   bool get peutPublierResultats {
-    return estTerminee && !resultatsPublies && (!validationRequise || resultatsValides);
+    return estTerminee &&
+        !resultatsPublies &&
+        (!validationRequise || resultatsValides);
   }
 
   Manche demarrer({required DateTime heure}) {
@@ -217,10 +222,12 @@ class Manche {
       resultatsPublies: resultatsPublies ?? this.resultatsPublies,
       revisionResultats: revisionResultats ?? this.revisionResultats,
       participantsDefinis: participantsDefinis ?? this.participantsDefinis,
-      participantsAthleteIds: participantsAthleteIds ?? this.participantsAthleteIds,
+      participantsAthleteIds:
+          participantsAthleteIds ?? this.participantsAthleteIds,
       dureeLimiteSecondes: dureeLimiteSecondes ?? this.dureeLimiteSecondes,
       validationRequise: validationRequise ?? this.validationRequise,
-      revisionValidationResultats: revisionValidationResultats ?? this.revisionValidationResultats,
+      revisionValidationResultats:
+          revisionValidationResultats ?? this.revisionValidationResultats,
       dateCreation: dateCreation ?? this.dateCreation,
       dateModification: dateModification ?? this.dateModification,
     );

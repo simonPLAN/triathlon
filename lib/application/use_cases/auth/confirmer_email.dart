@@ -9,7 +9,8 @@ class ConfirmerEmail {
       lien.scheme == redirection.scheme &&
       lien.host == redirection.host &&
       lien.path == redirection.path &&
-      !lien.hasPort && lien.userInfo.isEmpty;
+      !lien.hasPort &&
+      lien.userInfo.isEmpty;
 
   Future<void> renvoyer(String email) async {
     final adresse = email.trim().toLowerCase();
@@ -24,15 +25,21 @@ class ConfirmerEmail {
       throw ArgumentError('Ce lien de confirmation est invalide.');
     }
     if (_repository.possedeSession) {
-      throw StateError('Une session est déjà ouverte. Elle est conservée. Déconnecte-toi avant d’utiliser ce lien pour un autre compte.');
+      throw StateError(
+        'Une session est déjà ouverte. Elle est conservée. Déconnecte-toi avant d’utiliser ce lien pour un autre compte.',
+      );
     }
     if (lien.queryParameters.containsKey('error') ||
         lien.queryParameters.containsKey('error_code')) {
-      throw StateError('Ce lien est expiré ou déjà utilisé. Demande un nouvel e-mail de confirmation.');
+      throw StateError(
+        'Ce lien est expiré ou déjà utilisé. Demande un nouvel e-mail de confirmation.',
+      );
     }
     final code = lien.queryParameters['code'];
     if (code == null || code.isEmpty || code.length > 4096) {
-      throw StateError('Ce lien est invalide. Demande un nouvel e-mail depuis cette installation de l’application.');
+      throw StateError(
+        'Ce lien est invalide. Demande un nouvel e-mail depuis cette installation de l’application.',
+      );
     }
     await _repository.confirmer(code);
   }

@@ -2,8 +2,12 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../domain/ports/confirmation_email_repository.dart';
 
-class ConfirmationEmailRepositorySupabase implements ConfirmationEmailRepository {
-  ConfirmationEmailRepositorySupabase(this._client, {required this.redirection});
+class ConfirmationEmailRepositorySupabase
+    implements ConfirmationEmailRepository {
+  ConfirmationEmailRepositorySupabase(
+    this._client, {
+    required this.redirection,
+  });
   final SupabaseClient _client;
   final Uri redirection;
   @override
@@ -18,7 +22,9 @@ class ConfirmationEmailRepositorySupabase implements ConfirmationEmailRepository
         emailRedirectTo: redirection.toString(),
       );
     } on AuthException catch (_) {
-      throw StateError('L’e-mail n’a pas pu être renvoyé. Patiente quelques instants puis réessaie.');
+      throw StateError(
+        'L’e-mail n’a pas pu être renvoyé. Patiente quelques instants puis réessaie.',
+      );
     }
   }
 
@@ -33,7 +39,9 @@ class ConfirmationEmailRepositorySupabase implements ConfirmationEmailRepository
       // La confirmation est terminée ; l’utilisateur choisit ensuite sa connexion.
       await _client.auth.signOut(scope: SignOutScope.local);
     } on AuthException catch (_) {
-      throw StateError('Le lien a expiré, a déjà été utilisé ou a été demandé sur une autre installation. Demande un nouveau lien.');
+      throw StateError(
+        'Le lien a expiré, a déjà été utilisé ou a été demandé sur une autre installation. Demande un nouveau lien.',
+      );
     }
   }
 }

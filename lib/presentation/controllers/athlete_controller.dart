@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 
 import '../../application/use_cases/ajouter_athlete.dart';
+import '../../application/use_cases/athlete/gerer_groupes_athletes.dart';
 import '../../application/use_cases/lister_athletes.dart';
 import '../../domain/entities/athlete.dart';
 import '../../domain/ports/categorie_athlete_repository.dart';
@@ -10,11 +11,13 @@ class AthleteController extends ChangeNotifier {
     required this._ajouterAthlete,
     required this._listerAthletes,
     this.categories,
+    this.groupes,
   });
 
   final AjouterAthlete _ajouterAthlete;
   final ListerAthletes _listerAthletes;
   final CategorieAthleteRepository? categories;
+  final GererGroupesAthletes? groupes;
 
   List<Athlete> athletes = const [];
   bool chargement = false;
