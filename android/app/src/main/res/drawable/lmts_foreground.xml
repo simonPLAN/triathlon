@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp" android:height="108dp"
+    android:viewportWidth="108" android:viewportHeight="108">
+    <!-- Composition centrée dans la zone sûre des masques adaptatifs. -->
+    <path android:fillColor="#082A52"
+        android:pathData="M24,41 L48,39 L47,41 Z M20,46 L34,44 L33,46 Z M21,63 L44,63 L42,65 Z M27,69 L62,67 L60,69 Z"/>
+    <path android:fillColor="#FF7100"
+        android:pathData="M53,37 L85,37 L83,39 L51,39 Z M71,43 L88,43 L86,45 L70,45 Z M52,67 L87,65 L84,68 L50,69 Z"/>
+    <group android:translateX="25" android:translateY="43"
+        android:scaleX="0.40" android:scaleY="0.62">
+        <!-- L et M inclinés -->
+        <path android:fillColor="#082A52"
+            android:pathData="M9,0 L20,0 L11,30 L28,30 L25,40 L0,40 Z M34,0 L46,0 L51,17 L67,0 L80,0 L68,40 L56,40 L63,17 L48,32 L43,17 L36,40 L24,40 Z"/>
+        <!-- T et S orange -->
+        <path android:fillColor="#FF7100"
+            android:pathData="M83,0 L116,0 L113,10 L102,10 L93,40 L81,40 L90,10 L80,10 Z M121,0 L151,0 L148,10 L126,10 L124,15 L141,15 Q150,15 147,25 L145,31 Q142,40 132,40 L105,40 L108,30 L132,30 L134,25 L118,25 Q108,25 111,16 L113,9 Q116,0 121,0 Z"/>
+    </group>
+</vector>
