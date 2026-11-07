@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; connect-src https://*.supabase.co; base-uri 'none'; form-action 'none'">
+  <title>Supprimer mon compte — Compétition sportive (triathlon)</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="configuration.js" defer></script>
+  <script src="suppression.js" defer></script>
+</head>
+<body>
+<main>
+  <p class="marque">Compétition sportive · triathlon</p>
+  <h1>Supprimer mon compte et mes données</h1>
+  <p>Tu peux supprimer ton compte ici, sans installer l’application.</p>
+  <section aria-labelledby="consequences">
+    <h2 id="consequences">Ce qui sera supprimé</h2>
+    <p>Ton compte de connexion, ton nom, ton prénom, tes inscriptions, dossards et résultats personnels seront retirés de la base active dès que la suppression sera confirmée.</p>
+    <h2>Ce qui sera conservé</h2>
+    <p>Si tu es coach, les compétitions seront archivées sans ton identité de responsable, leur nom remplacé et leur description et lieu effacés. Les épreuves, manches, profils invités, inscriptions et résultats des autres personnes seront conservés : ils ne t’appartiennent pas. Les compétitions en préparation ou en cours seront annulées.</p>
+    <p>Les positions et points des autres athlètes sont conservés ; les classements ne contiendront plus tes résultats. Aucune réattribution automatique de places n’est effectuée.</p>
+    <p>Les sauvegardes techniques ne sont pas modifiées par cette opération et subsistent jusqu’à leur rotation. <span id="sauvegardes"></span></p>
+  </section>
+  <form id="suppression">
+    <h2>Vérifier mon identité</h2>
+    <p>Ton mot de passe sert uniquement à vérifier ton identité. Il n’est pas enregistré par cette page.</p>
+    <label for="email">Adresse e-mail du compte</label>
+    <input id="email" name="email" type="email" autocomplete="username" maxlength="254" required>
+    <label for="password">Mot de passe actuel</label>
+    <input id="password" name="password" type="password" autocomplete="current-password" maxlength="1024" required>
+    <label class="confirmation"><input id="confirmation" type="checkbox" required> Je comprends et je confirme la suppression définitive de mon compte et de mes données personnelles.</label>
+    <button type="submit">Supprimer définitivement mon compte</button>
+  </form>
+  <p id="message" role="status" aria-live="polite"></p>
+  <p id="support" hidden></p>
+  <noscript>Active JavaScript pour vérifier ton identité et demander la suppression depuis cette page.</noscript>
+</main>
+</body>
+</html>

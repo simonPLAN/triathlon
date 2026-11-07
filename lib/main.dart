@@ -1,31 +1,37 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import 'constants/sports.dart';
-import 'pages/auth_gate.dart';
+import 'composition/assembler_application.dart';
+import 'infrastructure/auth/configuration_authentification.dart';
+import 'infrastructure/auth/liens_recuperation_app_links.dart';
+import 'presentation/pages/demarrage_application.dart';
 
-Future<void> main() async {
+void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  await Supabase.initialize(
-    url: 'https://dgjtfhslcbrgsdczlvdg.supabase.co',
-    publishableKey: 'sb_publishable_YkkAvzFAOUZKJQwUxZKl-A_HJsJLBWT',
-  );
-  runApp(const TriathlonApp());
+  runApp(DemarrageApplication(charger: _initialiser));
 }
 
-class TriathlonApp extends StatelessWidget {
-  const TriathlonApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: appTitle,
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.teal),
-        useMaterial3: true,
-      ),
-      home: const AuthGate(),
-    );
-  }
+Future<Widget> _initialiser() async {
+  final configuration = ConfigurationAuthentification.environnement();
+  final stockageAuth = SharedPreferencesLocalStorage(
+    persistSessionKey:
+        'sb-${Uri.parse(configuration.urlSupabase).host.split('.').first}-auth-token',
+  );
+  await Supabase.initialize(
+    debug: kDebugMode,
+    url: configuration.urlSupabase,
+    publishableKey: configuration.clePublique,
+    authOptions: FlutterAuthClientOptions(
+      localStorage: stockageAuth,
+      authFlowType: AuthFlowType.pkce,
+      detectSessionInUri: false,
+    ),
+  );
+  return assemblerApplication(
+    clientSupabase: Supabase.instance.client,
+    configuration: configuration,
+    stockageAuth: stockageAuth,
+    sourceLiens: LiensRecuperationAppLinks(),
+  );
 }

@@ -1,0 +1,4 @@
+# La fonction vérifie le bearer via Auth.getUser(), pour accepter également
+# les JWT signés par les nouvelles clés Supabase. Aucune suppression anonyme.
+[functions.supprimer-compte]
+verify_jwt = false
