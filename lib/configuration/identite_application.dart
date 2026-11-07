@@ -3,5 +3,7 @@ class IdentiteApplication {
   static const _flavor = String.fromEnvironment('FLUTTER_APP_FLAVOR');
   static String get nom => _nom.isNotEmpty
       ? _nom
-      : (_flavor == 'staging' ? 'Triathlon (test)' : 'Triathlon');
+      : (_flavor == 'staging'
+          ? 'Le Mans Triathlon Series (test)'
+          : 'Le Mans Triathlon Series');
 }
