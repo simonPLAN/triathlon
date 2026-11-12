@@ -1,0 +1,67 @@
+name: Publier le site LMTS
+
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: github-pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.7'
+          channel: stable
+          cache: true
+      - uses: actions/configure-pages@v5
+      - name: Compiler le site
+        env:
+          SUPABASE_URL: https://dgjtfhslcbrgsdczlvdg.supabase.co
+          SUPABASE_PUBLISHABLE_KEY: sb_publishable_YkkAvzFAOUZKJQwUxZKl-A_HJsJLBWT
+          PRIVACY_POLICY_URL: ${{ vars.PRIVACY_POLICY_URL }}
+          ACCOUNT_DELETION_URL: ${{ vars.ACCOUNT_DELETION_URL }}
+          SUPPORT_EMAIL: ${{ vars.SUPPORT_EMAIL }}
+        run: |
+          flutter pub get
+          flutter build web --release \
+            --base-href "/triathlon/" \
+            --dart-define=WEB_BASE_PATH=/triathlon/ \
+            --dart-define=APP_ENV=production \
+            "--dart-define=APP_NAME=Le Mans Triathlon Series" \
+            "--dart-define=SUPABASE_URL=$SUPABASE_URL" \
+            "--dart-define=SUPABASE_PUBLISHABLE_KEY=$SUPABASE_PUBLISHABLE_KEY" \
+            "--dart-define=PRIVACY_POLICY_URL=$PRIVACY_POLICY_URL" \
+            "--dart-define=ACCOUNT_DELETION_URL=$ACCOUNT_DELETION_URL" \
+            "--dart-define=SUPPORT_EMAIL=$SUPPORT_EMAIL"
+      - name: Préparer les liens Auth pour GitHub Pages
+        run: |
+          mkdir -p build/web/auth/reset-password build/web/confirm-email
+          cp build/web/index.html build/web/auth/reset-password/index.html
+          cp build/web/index.html build/web/confirm-email/index.html
+          cp build/web/index.html build/web/404.html
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: build/web
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Déployer sur GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
