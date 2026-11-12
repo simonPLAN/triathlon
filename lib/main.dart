@@ -5,6 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'composition/assembler_application.dart';
 import 'infrastructure/auth/configuration_authentification.dart';
 import 'infrastructure/auth/liens_recuperation_app_links.dart';
+import 'infrastructure/auth/liens_recuperation_web.dart';
 import 'presentation/pages/demarrage_application.dart';
 
 void main() {
@@ -32,6 +33,6 @@ Future<Widget> _initialiser() async {
     clientSupabase: Supabase.instance.client,
     configuration: configuration,
     stockageAuth: stockageAuth,
-    sourceLiens: LiensRecuperationAppLinks(),
+    sourceLiens: kIsWeb ? LiensRecuperationWeb() : LiensRecuperationAppLinks(),
   );
 }

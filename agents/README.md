@@ -24,6 +24,7 @@ pas leur chargement automatique.
 |------------------------------------------|---------------------------------------------------------------------|
 | [developeur.md](developeur.md) | Développeur Android/Flutter, coordonne l'agent interface |
 | [agent-interface.md](agent-interface.md) | Cohérence visuelle, accessibilité et expérience utilisateur |
+| [agent-web.md](agent-web.md) | Développement web responsive, accessibilité, performance et intégration Supabase |
 | [architecture.md](architecture.md)       | Découper les responsabilités et préserver l'architecture hexagonale |
 | [flutter.md](flutter.md)                 | Construire les écrans, widgets et contrôleurs                       |
 | [supabase.md](supabase.md)               | Dépôts, migrations, autorisations et traitements serveur            |
