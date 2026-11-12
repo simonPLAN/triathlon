@@ -124,7 +124,13 @@ class ConfigurationAuthentification {
   final String environnement;
   final String urlSupabase;
   final String clePublique;
-  Uri get redirection => Uri.parse(
-    '${environnement == 'staging' ? 'triathlon-staging' : 'triathlon'}://auth/reset-password',
-  );
+  Uri get redirection => kIsWeb
+      ? Uri.base
+            .resolve(
+              const String.fromEnvironment('WEB_BASE_PATH', defaultValue: '/'),
+            )
+            .resolve('auth/reset-password')
+      : Uri.parse(
+          '${environnement == 'staging' ? 'triathlon-staging' : 'triathlon'}://auth/reset-password',
+        );
 }

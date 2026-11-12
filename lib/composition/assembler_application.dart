@@ -94,8 +94,8 @@ TriathlonApp assemblerApplication({
   final groupesAthletes = GererGroupesAthletes(
     GroupeAthletesRepositorySupabase(clientSupabase),
   );
-  final redirectionConfirmation = configuration.redirection.replace(
-    path: '/confirm-email',
+  final redirectionConfirmation = configuration.redirection.resolve(
+    '../confirm-email',
   );
   final confirmationEmail = ConfirmationEmailController(
     ConfirmerEmail(

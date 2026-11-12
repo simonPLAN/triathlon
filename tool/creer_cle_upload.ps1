@@ -18,7 +18,7 @@ $javaSignature = if ($env:JAVA_HOME) { Join-Path $env:JAVA_HOME 'bin/keytool.exe
 if (-not (Test-Path $javaSignature)) { throw 'Configurer JAVA_HOME vers le JDK Android Studio.' }
 $null = New-Item -ItemType Directory -Path $dossierCle -Force
 $sidSignature = [System.Security.Principal.WindowsIdentity]::GetCurrent().User.Value
-$null = & icacls.exe $dossierCle /inheritance:r /grant:r ("${sidSignature}:(OI)(CI)F") 'SYSTEM:(OI)(CI)F'
+$null = & icacls.exe $dossierCle /inheritance:r /grant:r ("*${sidSignature}:(OI)(CI)F") 'SYSTEM:(OI)(CI)F'
 if ($LASTEXITCODE -ne 0) { throw 'Impossible de restreindre les droits du dossier de signature.' }
 $octetsSignature = New-Object byte[] 32
 $generateurSignature = [System.Security.Cryptography.RandomNumberGenerator]::Create()
