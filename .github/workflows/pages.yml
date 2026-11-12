@@ -2,7 +2,7 @@ name: Publier le site LMTS
 
 on:
   push:
-    branches: [main, master]
+    branches: [main, master, Master]
   workflow_dispatch:
 
 permissions:
