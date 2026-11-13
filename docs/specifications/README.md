@@ -93,6 +93,74 @@ Supabase et sur des appareils réels peut rester nécessaire.
 5. **Nouveaux modes sportifs :** valider DEM-001 et DEM-002 avant tout
    développement.
 
+## Idées d’évolution à creuser
+
+Les propositions DEM-056 à DEM-074 ont toutes le statut **Idée à creuser** :
+elles ne sont ni validées ni planifiées, et leur développement n’a pas commencé.
+Les exemples servent à discuter des règles souhaitées ; les formats et barèmes
+seront définis dans une spécification après sélection d’une idée.
+
+### Nouveaux formats de compétition
+
+| ID | Idée | Exemple de fonctionnement et intérêt | Points à préciser |
+|---|---|---|---|
+| DEM-056 | Contre-la-montre individuel | Départs espacés de 30 secondes et classement au temps individuel réel ; pratique pour répartir les athlètes sur le parcours | Intervalle de départ, ordre, heure réelle de départ et gestion des retards |
+| DEM-057 | Relais par équipes | Chaque membre réalise son segment ; l’équipe est classée sur son temps total, avec les temps individuels visibles | Nombre de relayeurs, ordre, passages de relais, remplacement et abandon d’un membre ; différent du cumul des places de DEM-002 |
+| DEM-058 | Course poursuite | Les écarts d’une première épreuve déterminent les départs de la suivante ; le premier à franchir la dernière arrivée gagne | Conversion des écarts en départs, plafond du retard et traitement des pénalités ; indépendant du barème d’âge de DEM-024 |
+| DEM-059 | Manches à élimination | À chaque boucle, les derniers quittent le classement actif jusqu’à une finale | Nombre d’éliminés, égalités, minimum de finalistes et classement des éliminés |
+| DEM-060 | Qualifications et finales | Plusieurs séries qualificatives puis finales A/B selon les résultats ; chaque athlète retrouve sa prochaine série | Qualification par place ou temps, repêchages, équilibre des séries et résultats corrigés |
+| DEM-061 | Épreuve combinée avec transitions | Modèles triathlon, duathlon ou swimrun ; détail des segments et transitions, puis cumul du temps complet | Ordre des disciplines, mesure des transitions, passages intermédiaires et statut d’un segment incomplet |
+| DEM-062 | Défi à durée fixe | Pendant 30 ou 60 minutes, effectuer le plus de tours ou la plus grande distance possible | Saisie des tours, tour entamé à la fin, distance partielle et départage |
+| DEM-063 | Challenge sur une saison | Plusieurs compétitions alimentent un classement de saison ; possibilité de retenir les meilleurs résultats | Barème commun, nombre de résultats retenus, égalités, catégories et retrait d’une compétition |
+| DEM-064 | Challenge de régularité | Réaliser plusieurs répétitions au plus près d’une allure cible ; récompenser la maîtrise de l’effort | Cible personnelle ou commune, mesure de l’écart, tolérance et pénalités des répétitions manquantes |
+
+Les départs dégressifs et le cumul des places par équipes sont déjà suivis dans
+DEM-001 et DEM-002 ; ils conservent leurs spécifications et identifiants.
+
+### Organisation et expérience coach / athlète
+
+| ID | Idée | Exemple de fonctionnement et intérêt | Points à préciser |
+|---|---|---|---|
+| DEM-065 | Modèles et duplication de compétition | Réutiliser la configuration d’une séance : épreuves, manches et délais ; créer une nouvelle édition sans ressaisir tous les réglages | Champs recopiés, réutilisation des groupes et des images ; départs, inscriptions et résultats remis à zéro |
+| DEM-066 | Pointage des présents | Le coach coche les présents ou scanne un QR code avant l’épreuve ; distingue inscrits, présents et absents | Qui pointe, méthode manuelle de secours, accès au QR code et effet sur la sélection des participants |
+| DEM-067 | Capacité et liste d’attente | Limiter les places puis proposer les places libérées aux athlètes en attente | Capacité par compétition ou épreuve, ordre d’attente, délai de réponse et confirmation de la promotion |
+| DEM-068 | Répartition assistée dans les manches | Suggérer des séries de niveau ou des groupes équilibrés à partir d’un temps de référence ; laisser le coach ajuster | Critère d’équilibre, données manquantes, effectif maximal et conservation des changements manuels |
+| DEM-069 | Écran de suivi en direct | Afficher manche active, compte à rebours et arrivées sur une tablette ou un grand écran | Public autorisé, résultats provisoires ou publiés, fréquence d’actualisation et comportement hors connexion |
+| DEM-070 | Journal des corrections | Retrouver auteur, date, motif et valeurs avant/après d’une correction ; faciliter les échanges entre coachs délégués | Actions enregistrées, visibilité, durée de conservation et lien avec validation/republication |
+| DEM-071 | Saisie terrain hors connexion | Mettre les arrivées en attente quand le réseau coupe, montrer leur état puis synchroniser à la reconnexion | Horloge de référence, conflits entre appareils, doublons et confirmation avant classement officiel |
+| DEM-072 | Imports et exports utiles | Importer une liste d’athlètes/groupes en CSV et exporter résultats ou feuilles de départ en CSV/PDF | Format du fichier, contrôle des doublons, aperçu avant import et données autorisées à l’export |
+| DEM-073 | Carnet de progression personnel | Suivre ses temps comparables sur plusieurs compétitions, ses records par distance et sa régularité | Résultats publiés uniquement, comparaison par discipline/distance, effet des corrections et séparation temps bruts/ajustés |
+| DEM-074 | Parcours GPX facultatif par épreuve | Le coach ajoute un fichier GPX au choix ; coachs et athlètes autorisés visualisent le tracé sur une carte interactive et téléchargent le fichier original | Taille maximale, traces multiples, fournisseur de carte, accès hors connexion et droits de remplacement/suppression |
+
+#### DEM-074 — Parcours GPX, carte et téléchargement
+
+**Demande d’origine :** ajouter un GPX facultatif à une épreuve pour afficher
+son parcours sur une carte et pouvoir télécharger le fichier.
+
+**Parcours proposé :**
+
+- Le responsable sélectionne un fichier `.gpx` à la création ou à la
+  modification de l’épreuve, avec aperçu avant enregistrement.
+- Dans le détail ou le programme de l’épreuve, afficher le tracé sur une carte
+  avec zoom, déplacement et repères de départ/arrivée.
+- Proposer un bouton « Télécharger le GPX » aux coachs et athlètes disposant
+  d’un accès à l’épreuve, sur Android et sur le web.
+- Permettre au responsable de remplacer ou retirer le fichier ; l’épreuve
+  reste utilisable sans GPX.
+- Prévoir un message clair pour un fichier invalide, un tracé vide ou une
+  carte indisponible ; conserver le téléchargement si seul le fond de carte
+  ne charge pas. La consultation du parcours ne nécessite pas de géolocaliser
+  l’utilisateur.
+
+**Prochaine étape :** préciser les limites du fichier, les règles de visibilité
+et les éventuels parcours multiples, puis rédiger la spécification. Aucun
+développement ni changement de BDD n’est réalisé à ce stade.
+
+**Pour approfondir une idée :** sélectionner son identifiant, préciser le
+parcours attendu et les règles ci-dessus, puis rédiger une spécification avec
+critères d’acceptation avant de la passer à « À valider ». Les priorités de
+stabilisation et de publication déjà recensées restent suivies séparément.
+
 ## Détail des demandes
 
 ### DEM-001 — Séries à départs dégressifs
