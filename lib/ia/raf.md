@@ -43,6 +43,7 @@ Les fonctions « déjà présentes » restent à valider en conditions réelles.
 
 Dernières avancées :
 
+- Délégation nominative de la saisie des résultats par épreuve fournie localement : sélection du coach par pseudo, écran des épreuves partagées, révocation immédiate et migration RLS 202611130007 ; déploiement staging et test SQL Deno encore requis.
 - Récupération du mot de passe fournie ; réception d'un e-mail constatée par l'utilisateur, retour Android à vérifier pendant la recette de release.
 - Suppression de compte fournie dans Flutter, côté serveur et dans une page web à héberger.
 - États d'inscription explicites, reprise après erreur et actualisation du dossard.

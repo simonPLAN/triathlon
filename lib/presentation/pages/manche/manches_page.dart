@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../application/use_cases/epreuve/gerer_partage_epreuve.dart';
+
 import '../../widgets/commun/bouton_action_principale.dart';
 
 import '../../../domain/entities/competition.dart';
@@ -24,6 +26,8 @@ class ManchesPage extends StatefulWidget {
     required this.resultatController,
     required this.inscriptionController,
     this.affichesController,
+    this.saisieDeleguee = false,
+    this.partages,
   });
 
   final Competition competition;
@@ -32,6 +36,8 @@ class ManchesPage extends StatefulWidget {
   final ResultatController resultatController;
   final InscriptionController inscriptionController;
   final AffichesEpreuveController? affichesController;
+  final bool saisieDeleguee;
+  final GererPartageEpreuve? partages;
 
   @override
   State<ManchesPage> createState() {
@@ -202,6 +208,8 @@ class _ManchesPageState extends State<ManchesPage> {
             controller: _controller,
             resultatController: widget.resultatController,
             inscriptionController: widget.inscriptionController,
+            saisieDeleguee: widget.saisieDeleguee,
+            partages: widget.partages,
           );
         },
       ),
@@ -216,7 +224,8 @@ class _ManchesPageState extends State<ManchesPage> {
 
   @override
   Widget build(BuildContext context) {
-    final generationAutorisee = widget.competition.estBrouillon;
+    final generationAutorisee =
+        !widget.saisieDeleguee && widget.competition.estBrouillon;
 
     return Scaffold(
       appBar: AppBar(
@@ -251,7 +260,7 @@ class _ManchesPageState extends State<ManchesPage> {
               label: const Text('Générer les manches'),
             )
           : null,
-      bottomNavigationBar: _controller.manches.isEmpty
+      bottomNavigationBar: widget.saisieDeleguee || _controller.manches.isEmpty
           ? null
           : SafeArea(
               top: false,
@@ -297,6 +306,16 @@ class _ManchesPageState extends State<ManchesPage> {
               epreuve: widget.epreuve,
               generationAutorisee: generationAutorisee,
             ),
+            if (widget.saisieDeleguee)
+              Container(
+                width: double.infinity,
+                color: Theme.of(context).colorScheme.secondaryContainer,
+                padding: const EdgeInsets.all(12),
+                child: const Text(
+                  'Accès délégué : consultation des manches et saisie des résultats.',
+                  textAlign: TextAlign.center,
+                ),
+              ),
             Expanded(child: _construireContenu(generationAutorisee)),
           ],
         ),

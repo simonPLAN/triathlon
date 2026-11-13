@@ -25,8 +25,10 @@ import '../infrastructure/repositories/supabase/recuperation_compte_repository_s
 import '../presentation/controllers/recuperation_compte_controller.dart';
 import '../application/use_cases/epreuve/verifier_competition_brouillon.dart';
 import '../application/use_cases/epreuve/gerer_affiches_epreuve.dart';
+import '../application/use_cases/epreuve/gerer_partage_epreuve.dart';
 import '../infrastructure/media/source_fichier_affiche_image_picker.dart';
 import '../infrastructure/repositories/supabase/affiche_epreuve_repository_supabase.dart';
+import '../infrastructure/repositories/supabase/partage_epreuve_repository_supabase.dart';
 import '../presentation/controllers/affiches_epreuve_controller.dart';
 import '../application/use_cases/epreuve/configurer_epreuves.dart';
 import '../application/use_cases/competition/suivre_competitions_athlete.dart';
@@ -144,6 +146,9 @@ TriathlonApp assemblerApplication({
       resultatRepository,
     ),
     affiches: affichesEpreuveController,
+    partages: GererPartageEpreuve(
+      PartageEpreuveRepositorySupabase(clientSupabase),
+    ),
   );
   final mancheController = MancheController(
     GenererManchesPourEpreuve(mancheRepository),

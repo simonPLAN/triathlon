@@ -6,10 +6,12 @@ class GrilleActionsCoach extends StatelessWidget {
   const GrilleActionsCoach({
     super.key,
     required this.onVoirCompetitions,
+    required this.onVoirEpreuvesPartagees,
     required this.onVoirAthletes,
   });
 
   final VoidCallback onVoirCompetitions;
+  final VoidCallback onVoirEpreuvesPartagees;
   final VoidCallback onVoirAthletes;
 
   @override
@@ -22,6 +24,14 @@ class GrilleActionsCoach extends StatelessWidget {
         icone: Icons.emoji_events_outlined,
         couleur: couleurs.primary,
         onTap: onVoirCompetitions,
+      ),
+      CarteActionCoach(
+        titre: 'Épreuves partagées',
+        description:
+            'Saisissez les résultats des épreuves confiées par un autre coach.',
+        icone: Icons.assignment_ind_outlined,
+        couleur: couleurs.tertiary,
+        onTap: onVoirEpreuvesPartagees,
       ),
       CarteActionCoach(
         titre: 'Athlètes',
@@ -37,15 +47,21 @@ class GrilleActionsCoach extends StatelessWidget {
         if (contraintes.maxWidth < 640) {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [cartes[0], const SizedBox(height: 16), cartes[1]],
+            children: [
+              cartes[0],
+              const SizedBox(height: 16),
+              cartes[1],
+              const SizedBox(height: 16),
+              cartes[2],
+            ],
           );
         }
-        return Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        return Wrap(
+          spacing: 16,
+          runSpacing: 16,
           children: [
-            Expanded(child: cartes[0]),
-            const SizedBox(width: 16),
-            Expanded(child: cartes[1]),
+            for (final carte in cartes)
+              SizedBox(width: (contraintes.maxWidth - 16) / 2, child: carte),
           ],
         );
       },

@@ -25,6 +25,7 @@ import '../controllers/resultat_controller.dart';
 import 'athlete/athlete_dashboard_page.dart';
 import 'athletes_page.dart';
 import 'coach/coach_dashboard_page.dart';
+import 'epreuve/epreuves_partagees_page.dart';
 import 'competition/competitions_page.dart';
 import 'connexion_page.dart';
 
@@ -152,6 +153,22 @@ class _AuthGateState extends State<AuthGate> {
     );
   }
 
+  void _ouvrirEpreuvesPartagees(BuildContext context) {
+    final partages = widget.epreuveController.partages;
+    if (partages == null) return;
+    Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(
+        builder: (_) => EpreuvesPartageesPage(
+          partages: partages,
+          epreuveController: widget.epreuveController,
+          mancheController: widget.mancheController,
+          resultatController: widget.resultatController,
+          inscriptionController: widget.inscriptionController,
+        ),
+      ),
+    );
+  }
+
   void _ouvrirCompetitions(
     BuildContext context,
     ProfilUtilisateur profilCoach,
@@ -229,6 +246,9 @@ class _AuthGateState extends State<AuthGate> {
             deconnecterUtilisateur: widget.deconnecterUtilisateur,
             onVoirCompetitions: () {
               _ouvrirCompetitions(context, profil);
+            },
+            onVoirEpreuvesPartagees: () {
+              _ouvrirEpreuvesPartagees(context);
             },
             onVoirAthletes: () {
               _ouvrirAthletes(context);

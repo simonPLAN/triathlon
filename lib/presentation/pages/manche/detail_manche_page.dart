@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../application/use_cases/epreuve/gerer_partage_epreuve.dart';
+
 import '../../../domain/entities/competition.dart';
 import '../../../domain/entities/epreuve.dart';
 import '../../../domain/entities/manche.dart';
@@ -23,6 +25,8 @@ class DetailManchePage extends StatefulWidget {
     required this.controller,
     required this.resultatController,
     required this.inscriptionController,
+    this.saisieDeleguee = false,
+    this.partages,
   });
 
   final Competition competition;
@@ -32,6 +36,8 @@ class DetailManchePage extends StatefulWidget {
   final MancheController controller;
   final ResultatController resultatController;
   final InscriptionController inscriptionController;
+  final bool saisieDeleguee;
+  final GererPartageEpreuve? partages;
 
   @override
   State<DetailManchePage> createState() {
@@ -225,6 +231,8 @@ class _DetailManchePageState extends State<DetailManchePage> {
             mancheController: widget.controller,
             resultatController: widget.resultatController,
             inscriptionController: widget.inscriptionController,
+            saisieDeleguee: widget.saisieDeleguee,
+            partages: widget.partages,
           );
         },
       ),
@@ -369,7 +377,7 @@ class _DetailManchePageState extends State<DetailManchePage> {
                         ? '${_manche.participantsAthleteIds.length} participants affectés · délai ${_manche.dureeLimiteSecondes ?? widget.epreuve.dureeLimiteSecondes} s'
                         : 'Participants non configurés',
                   ),
-                  if (_manche.estAVenir)
+                  if (!widget.saisieDeleguee && _manche.estAVenir)
                     OutlinedButton.icon(
                       onPressed:
                           widget.controller.actionEnCours ||
@@ -389,13 +397,18 @@ class _DetailManchePageState extends State<DetailManchePage> {
                             : 'Participants et ordre de départ',
                       ),
                     )
-                  else
+                  else if (!widget.saisieDeleguee)
                     const Text(
                       'Les affectations et le délai sont figés après le départ.',
+                    )
+                  else
+                    const Text(
+                      'Le coach responsable conserve la configuration et le contrôle de la manche.',
                     ),
                   const SizedBox(height: 16),
 
-                  if (_manche.estTerminee &&
+                  if (!widget.saisieDeleguee &&
+                      _manche.estTerminee &&
                       _manche.validationRequise &&
                       !_manche.resultatsValides)
                     FilledButton.icon(
@@ -413,14 +426,15 @@ class _DetailManchePageState extends State<DetailManchePage> {
                           ? 'Résultats validés, non publiés'
                           : 'Résultats provisoires',
                     ),
-                  ActionsManche(
-                    manche: _manche,
-                    actionEnCours: widget.controller.actionEnCours,
-                    onDemarrer: _demarrer,
-                    onTerminer: _terminer,
-                    onAnnuler: _annuler,
-                    onPublierResultats: _publierResultats,
-                  ),
+                  if (!widget.saisieDeleguee)
+                    ActionsManche(
+                      manche: _manche,
+                      actionEnCours: widget.controller.actionEnCours,
+                      onDemarrer: _demarrer,
+                      onTerminer: _terminer,
+                      onAnnuler: _annuler,
+                      onPublierResultats: _publierResultats,
+                    ),
                   const SizedBox(height: 16),
 
                   SizedBox(

@@ -7,6 +7,8 @@ import '../compte/informations_application_page.dart';
 import '../../widgets/coach/grille_actions_coach.dart';
 import '../../widgets/commun/menu_compte_application.dart';
 
+void _actionVide() {}
+
 class CoachDashboardPage extends StatefulWidget {
   const CoachDashboardPage({
     super.key,
@@ -14,6 +16,7 @@ class CoachDashboardPage extends StatefulWidget {
     this.onMonCompte,
     required this.deconnecterUtilisateur,
     required this.onVoirCompetitions,
+    this.onVoirEpreuvesPartagees = _actionVide,
     required this.onVoirAthletes,
   });
 
@@ -21,6 +24,7 @@ class CoachDashboardPage extends StatefulWidget {
   final VoidCallback? onMonCompte;
   final DeconnecterUtilisateur deconnecterUtilisateur;
   final VoidCallback onVoirCompetitions;
+  final VoidCallback onVoirEpreuvesPartagees;
   final VoidCallback onVoirAthletes;
 
   @override
@@ -97,6 +101,7 @@ class _CoachDashboardPageState extends State<CoachDashboardPage> {
                   const SizedBox(height: 20),
                   GrilleActionsCoach(
                     onVoirCompetitions: widget.onVoirCompetitions,
+                    onVoirEpreuvesPartagees: widget.onVoirEpreuvesPartagees,
                     onVoirAthletes: widget.onVoirAthletes,
                   ),
                 ],

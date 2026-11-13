@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../application/use_cases/epreuve/gerer_partage_epreuve.dart';
+
 import '../../../domain/entities/athlete.dart';
 import '../../../domain/entities/competition.dart';
 import '../../../domain/entities/epreuve.dart';
@@ -25,6 +27,8 @@ class ResultatsManchePage extends StatefulWidget {
     required this.mancheController,
     required this.resultatController,
     required this.inscriptionController,
+    this.saisieDeleguee = false,
+    this.partages,
   });
 
   final Competition competition;
@@ -34,6 +38,8 @@ class ResultatsManchePage extends StatefulWidget {
   final MancheController mancheController;
   final ResultatController resultatController;
   final InscriptionController inscriptionController;
+  final bool saisieDeleguee;
+  final GererPartageEpreuve? partages;
 
   @override
   State<ResultatsManchePage> createState() {
@@ -47,6 +53,8 @@ class _ResultatsManchePageState extends State<ResultatsManchePage>
   bool _clotureEnCours = false;
   bool _chargementDonnees = true;
   bool _clotureDemandee = false;
+  List<Inscription> _inscriptionsDeleguees = const [];
+  String? _erreurPartage;
 
   ResultatController get _resultatController {
     return widget.resultatController;
@@ -55,6 +63,10 @@ class _ResultatsManchePageState extends State<ResultatsManchePage>
   InscriptionController get _inscriptionController {
     return widget.inscriptionController;
   }
+
+  List<Inscription> get _inscriptions => widget.saisieDeleguee
+      ? _inscriptionsDeleguees
+      : _inscriptionController.inscriptions;
 
   MancheController get _mancheController {
     return widget.mancheController;
@@ -132,7 +144,7 @@ class _ResultatsManchePageState extends State<ResultatsManchePage>
         return;
       }
 
-      final athletes = _inscriptionController.inscriptions
+      final athletes = _inscriptions
           .map((inscription) => inscription.athlete)
           .toList(growable: false);
 
@@ -244,12 +256,39 @@ class _ResultatsManchePageState extends State<ResultatsManchePage>
   }
 
   Future<void> _chargerDonnees() async {
-    setState(() => _chargementDonnees = true);
-    await Future.wait([
+    setState(() {
+      _chargementDonnees = true;
+      _erreurPartage = null;
+    });
+    final operations = <Future<void>>[
       _resultatController.charger(_manche.id),
-      _inscriptionController.charger(competitionId: widget.competition.id),
       _mancheController.charger(widget.epreuve.id),
-    ]);
+    ];
+    if (widget.saisieDeleguee) {
+      final partages = widget.partages;
+      if (partages == null) {
+        _erreurPartage = 'Accès délégué indisponible.';
+      } else {
+        operations.add(
+          partages
+              .listerParticipants(_manche.id)
+              .then((inscriptions) {
+                _inscriptionsDeleguees = inscriptions;
+              })
+              .catchError((Object erreur) {
+                _erreurPartage = erreur.toString().replaceFirst(
+                  'StateError: ',
+                  '',
+                );
+              }),
+        );
+      }
+    } else {
+      operations.add(
+        _inscriptionController.charger(competitionId: widget.competition.id),
+      );
+    }
+    await Future.wait(operations);
     if (!mounted) return;
     final idAvant = _manche.id;
     setState(() {
@@ -273,6 +312,15 @@ class _ResultatsManchePageState extends State<ResultatsManchePage>
     if (_manche.id != idAvant) {
       _resultatController.reinitialiser();
       await _resultatController.charger(_manche.id);
+      if (widget.saisieDeleguee && widget.partages != null) {
+        try {
+          _inscriptionsDeleguees = await widget.partages!.listerParticipants(
+            _manche.id,
+          );
+        } catch (erreur) {
+          _erreurPartage = erreur.toString().replaceFirst('StateError: ', '');
+        }
+      }
       if (!mounted) return;
     }
     if (_manche.estEnCours && _delaiEcoule) {
@@ -397,7 +445,7 @@ class _ResultatsManchePageState extends State<ResultatsManchePage>
       context: context,
       builder: (context) => SimpleDialog(
         title: const Text('Choisir un participant'),
-        children: _inscriptionController.inscriptions
+        children: _inscriptions
             .where((i) => _manche.contientParticipant(i.athlete.id))
             .map(
               (i) => SimpleDialogOption(
@@ -572,9 +620,7 @@ class _ResultatsManchePageState extends State<ResultatsManchePage>
   }
 
   List<Inscription> get _inscriptionsDisponibles {
-    final inscriptions = _inscriptionController.inscriptions.where((
-      inscription,
-    ) {
+    final inscriptions = _inscriptions.where((inscription) {
       return _manche.contientParticipant(inscription.athlete.id) &&
           !_resultatController.possedeResultatPour(inscription.athlete.id);
     }).toList();
@@ -605,7 +651,7 @@ class _ResultatsManchePageState extends State<ResultatsManchePage>
 
   @override
   Widget build(BuildContext context) {
-    final nombreInscrits = _inscriptionController.inscriptions
+    final nombreInscrits = _inscriptions
         .where((i) => _manche.contientParticipant(i.athlete.id))
         .length;
 
@@ -691,7 +737,9 @@ class _ResultatsManchePageState extends State<ResultatsManchePage>
   }
 
   Widget _construireContenu() {
-    if ((_resultatController.chargement || _inscriptionController.chargement) &&
+    if ((_resultatController.chargement ||
+            _chargementDonnees ||
+            (!widget.saisieDeleguee && _inscriptionController.chargement)) &&
         _resultatController.resultats.isEmpty) {
       return const ChargementResultats();
     }
@@ -704,15 +752,20 @@ class _ResultatsManchePageState extends State<ResultatsManchePage>
       );
     }
 
-    if (_inscriptionController.erreur != null &&
-        _inscriptionController.inscriptions.isEmpty) {
+    if (_erreurPartage != null && _inscriptions.isEmpty) {
+      return ErreurResultats(message: _erreurPartage!, onReessayer: _recharger);
+    }
+
+    if (!widget.saisieDeleguee &&
+        _inscriptionController.erreur != null &&
+        _inscriptions.isEmpty) {
       return ErreurResultats(
         message: _inscriptionController.erreur!,
         onReessayer: _recharger,
       );
     }
 
-    if (_inscriptionController.inscriptions.isEmpty) {
+    if (_inscriptions.isEmpty) {
       return const AucunAthleteInscrit();
     }
 
@@ -788,12 +841,19 @@ class _ResultatsManchePageState extends State<ResultatsManchePage>
           const SizedBox(height: 24),
           if (_manche.estTerminee) ...[
             OutlinedButton.icon(
-              onPressed: _operationEnCours ? null : _saisirManuellement,
+              onPressed:
+                  _operationEnCours ||
+                      (widget.saisieDeleguee && _manche.resultatsPublies)
+                  ? null
+                  : _saisirManuellement,
               icon: const Icon(Icons.edit_note),
               label: const Text('Saisir un résultat manuel'),
             ),
             OutlinedButton.icon(
-              onPressed: _operationEnCours || !resultats.any((r) => r.estArrive)
+              onPressed:
+                  _operationEnCours ||
+                      !resultats.any((r) => r.estArrive) ||
+                      (widget.saisieDeleguee && _manche.resultatsPublies)
                   ? null
                   : _ajusterTemps,
               icon: const Icon(Icons.tune),
@@ -806,13 +866,15 @@ class _ResultatsManchePageState extends State<ResultatsManchePage>
                   ? 'Classement validé, non publié.'
                   : 'Classement provisoire : vérifie puis valide les résultats.',
             ),
-            if (_manche.validationRequise && !_manche.resultatsValides)
+            if (!widget.saisieDeleguee &&
+                _manche.validationRequise &&
+                !_manche.resultatsValides)
               FilledButton.icon(
                 onPressed: _operationEnCours ? null : _valider,
                 icon: const Icon(Icons.fact_check_outlined),
                 label: const Text('Valider le classement'),
               ),
-            if (_manche.peutPublierResultats)
+            if (!widget.saisieDeleguee && _manche.peutPublierResultats)
               FilledButton.icon(
                 onPressed: _operationEnCours ? null : _publier,
                 icon: const Icon(Icons.publish),
@@ -832,7 +894,10 @@ class _ResultatsManchePageState extends State<ResultatsManchePage>
                 padding: const EdgeInsets.only(bottom: 8),
                 child: CarteResultat(
                   resultat: resultat,
-                  onCorriger: _manche.estTerminee && !_operationEnCours
+                  onCorriger:
+                      _manche.estTerminee &&
+                          !_operationEnCours &&
+                          (!widget.saisieDeleguee || !_manche.resultatsPublies)
                       ? () => _editerResultat(
                           resultat.athlete,
                           resultat: resultat,

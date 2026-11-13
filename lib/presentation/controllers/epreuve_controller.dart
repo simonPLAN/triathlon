@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import '../../application/use_cases/resultat/consulter_resultats_competition.dart';
 
 import '../../application/use_cases/epreuve/configurer_epreuves.dart';
+import '../../application/use_cases/epreuve/gerer_partage_epreuve.dart';
 
 import '../../application/use_cases/epreuve/creer_epreuve.dart';
 import '../../application/use_cases/epreuve/lister_epreuves.dart';
@@ -17,9 +18,11 @@ class EpreuveController extends ChangeNotifier {
     this._configurer, {
     this.consulterResultatsCompetition,
     this.affiches,
+    this.partages,
   });
   final ConsulterResultatsCompetition? consulterResultatsCompetition;
   final AffichesEpreuveController? affiches;
+  final GererPartageEpreuve? partages;
   final ConfigurerEpreuves _configurer;
   bool _actionEnCours = false;
   bool get operationEnCours =>

@@ -17,8 +17,81 @@ Dernière mise à jour : **13 novembre 2026**.
 | DEM-001 | Séries à départs dégressifs | [Brouillon](series_departs_degressifs.md) | 9 ouvertes | Non commencé | À concevoir | Non commencés | Non déployé |
 | DEM-002 | Compétition par équipes au cumul des places | [Brouillon](competition_equipes_cumul_places.md) | 12 ouvertes | Non commencé | À concevoir | Non commencés | Non déployé |
 | DEM-003 | Jusqu'à deux affiches par épreuve | [Validée](affiches_epreuve.md) | 0 ouverte | À vérifier | Migration prête | 133 Flutter + 56 SQL réussis | Non déployé |
-| DEM-004 | Tous les coachs voient toutes les épreuves | [Brouillon](visibilite_epreuves_coachs.md) | 8 ouvertes | Non commencé | Migration RLS à concevoir | Non commencés | Non déployé |
+| DEM-004 | Délégation de saisie par épreuve | [Validée](visibilite_epreuves_coachs.md) | 0 ouverte | À vérifier | [Migration prête](../delegation_saisie_resultats.md) | 138 Flutter réussis ; test SQL prêt | Non déployé |
 | DEM-005 | Image de couverture d’une compétition | Demande validée | 0 ouverte | À vérifier | [Migration prête](../image_competition.md) | 133 Flutter réussis | Non déployé |
+
+## Historique consolidé des demandes
+
+Ce tableau reprend les demandes formulées depuis le début du projet. Il complète
+les cinq spécifications détaillées ci-dessus. Le statut **Livré localement**
+signifie que le dépôt contient une implémentation ; une recette sur la base
+Supabase et sur des appareils réels peut rester nécessaire.
+
+| ID | Domaine | Demande suivie | État constaté | Reste à faire / preuve attendue |
+|---|---|---|---|---|
+| DEM-006 | Compétitions | Créer et modifier une compétition | Livré localement | Recette staging multi-comptes |
+| DEM-007 | Compétitions | Filtrer les compétitions par statut | Livré localement | Contrôle visuel téléphone et web |
+| DEM-008 | Compétitions | Revenir d’un statut ouvert vers brouillon | Livré localement | Vérifier les règles métier sur Supabase |
+| DEM-009 | Compétitions | Supprimer une compétition et ses données liées | Correctif prêt | Appliquer la migration 202611130008 et tester avec affiches |
+| DEM-010 | Épreuves | Gestion complète : création, modification, ordre et suppression | Livré localement | Recette avec manches et résultats existants |
+| DEM-011 | Manches | Générer automatiquement les manches | Livré localement | Recette selon chaque configuration d’épreuve |
+| DEM-012 | Manches | Configurer durée, délai, ordre de départ et participants | Livré localement | Recette staging et concurrence |
+| DEM-013 | Manches | Créer des groupes d’athlètes et les sélectionner dans une manche | Livré localement | Appliquer/vérifier la migration groupes et les droits |
+| DEM-014 | Manches | Enchaîner automatiquement la manche suivante et changer d’interface | Livré localement, à fiabiliser | Clôture serveur hors écran et test multi-appareils |
+| DEM-015 | Manches | Publier tous les résultats depuis le bas de la liste des manches | Livré localement | Recette publication groupée et reprise sur erreur |
+| DEM-016 | Arrivées | Afficher tous les participants et enregistrer une arrivée par appui | Livré localement | Recette terrain sur téléphone |
+| DEM-017 | Arrivées | Déclencher le compte à rebours au premier arrivé | Livré localement | Tester limites exactes, pause réseau et reprise |
+| DEM-018 | Arrivées | À zéro, placer les autres athlètes hors délai | Livré localement, à fiabiliser | Exécution serveur quand l’application est fermée |
+| DEM-019 | Résultats | Saisir manuellement un temps et corriger position/temps | Livré localement | Déployer la migration 202611020005 et tester la concurrence |
+| DEM-020 | Résultats | Gérer pénalités, bonus, abandons et disqualifications | Livré localement | Recette complète et cohérence des classements |
+| DEM-021 | Résultats | Validation, dépublication après correction et republication | Livré localement | Vérifier les révisions sur la base réelle |
+| DEM-022 | Classements | Classements automatiques manche, épreuve et compétition | Partiel | Rendre les trois niveaux explicites et uniformes |
+| DEM-023 | Statistiques | Dashboard avec graphiques interactifs coach et athlète | Livré localement | Recette données réelles, accessibilité et petits écrans |
+| DEM-024 | Coefficients | Appliquer les coefficients par sexe et catégorie d’âge fournis | Partiel | Confirmer la formule officielle et les tranches absentes |
+| DEM-025 | Athlète | Voir les compétitions disponibles et leur détail | Livré localement | Recette droits et états vides |
+| DEM-026 | Athlète | S’inscrire, se désinscrire et voir clairement l’état | Livré localement | Tester fermeture, dossard, erreurs et doubles actions |
+| DEM-027 | Athlète | Voir ses épreuves, manches, affectations et ordre de départ | Livré localement | Vérifier données personnelles sur staging |
+| DEM-028 | Athlète | Consulter ses résultats et les actualiser sans changer d’onglet | Livré localement | Recette après publication/dépublication et coupure réseau |
+| DEM-029 | Athlète | Voir le résultat global et les classements publiés | Livré localement | Comparer aux classements coach, ex aequo inclus |
+| DEM-030 | Coach | Refaire l’accueil sans démarrage rapide ni accès Manches global | Livré localement | Revue UX finale sur appareils |
+| DEM-031 | Coach | Améliorer le répertoire des athlètes | Livré localement | Recette recherche, groupes et états vides |
+| DEM-032 | Inscriptions | Ajouter un athlète invité sans compte | Livré localement | Vérifier RLS, doublons, RGPD et devenir des données |
+| DEM-033 | Comptes | Utiliser e-mail + mot de passe et remplacer nom/prénom par pseudo | Livré localement | Recette création, unicité et migration des anciens profils |
+| DEM-034 | Comptes | Mot de passe oublié et lien de récupération Android/web | Livré localement, à vérifier | Tester les liens en Release, expirés et sans session |
+| DEM-035 | Comptes | Confirmation de l’adresse e-mail | Livré localement, à vérifier | Configurer redirections et SMTP de production |
+| DEM-036 | Comptes | Suppression du compte dans l’application et sur le web | Livré localement, non déployé | Déployer le serveur, publier l’URL et tester l’effacement |
+| DEM-037 | Autorisations | Séparer réellement athlète, coach et éventuel administrateur | Partiel | Audit RLS complet et décision arbitre/administrateur |
+| DEM-038 | Interface | Thème partagé, composants communs et couleurs Le Mans Triathlon | Livré localement | Valider contraste, thème sombre et identité finale |
+| DEM-039 | Interface | Interface responsive, chargements, erreurs, vides et anti-double clic | Partiel | Revue écran par écran, TalkBack et tailles de téléphone |
+| DEM-040 | Identité | Nom « Le Mans Triathlon Series », icône LMTS et splash | Livré localement, à vérifier | Valider droits graphiques et rendu Release/Store |
+| DEM-041 | Architecture | Refactoriser tout le projet en architecture hexagonale | Partiel | Retirer les anciennes couches parallèles encore utilisées |
+| DEM-042 | Sécurité | RLS Supabase sur toutes les données sensibles | Partiel, bloquant | Audit réel staging, Security Advisor et tests multi-comptes |
+| DEM-043 | Android | Préparer signature, flavors, API 36, APK/AAB et version 1.0.1 | Livré localement, à vérifier | Installer depuis Play, contrôler bundle et Play App Signing |
+| DEM-044 | Google Play | Fiche Store, confidentialité, Data Safety et pistes de test | Non terminé | Documents légaux, visuels, comptes démo et test fermé |
+| DEM-045 | Web | Publier l’application Flutter Web avec GitHub Pages | Déployé à vérifier | Vérifier la branche publiée, secrets, routes et configuration Supabase |
+| DEM-046 | Organisation | Agents spécialisés, orchestrateur et suivi des spécifications | Livré localement | Maintenir les profils et ce tableau |
+| DEM-047 | Correctif manches | Refuser une arrivée antérieure au départ sans erreur de fuseau horaire | Livré localement | Recette avec horloges appareil/serveur |
+| DEM-048 | Correctif manches | Interpréter correctement une durée saisie en secondes | Livré localement | Tester 60 s, limites et anciennes données |
+| DEM-049 | Correctif interface | Supprimer les débordements verticaux sur détail et résultats | Livré localement | Refaire la recette avec texte agrandi |
+| DEM-050 | Correctif comptes | Corriger création de profil pseudo, contraintes héritées et triggers en double | Correctifs SQL prêts/appliqués à confirmer | Tester une base migrée et une base neuve |
+| DEM-051 | Correctif sécurité | Autoriser la création de compétition sans erreur RLS « production plafond » | Correctif SQL prêt/appliqué à confirmer | Test coach autorisé et utilisateur refusé |
+| DEM-052 | Correctif médias | Autoriser l’envoi/remplacement d’images de compétition dans Storage | Correctifs SQL prêts/appliqués à confirmer | Recette upload, remplacement et suppression |
+| DEM-053 | Correctif Web | Corriger le déploiement GitHub Pages et la source Flutter Web | Livré et déployé à vérifier | Contrôler le site après chaque merge sur master |
+| DEM-054 | Documentation | Notes de version courtes pour la version 1.0.1 | Livré localement | Mettre à jour à chaque livraison |
+| DEM-055 | Compatibilité | Documenter les versions Android prises en charge | Livré dans la configuration | Confirmer minSdk/targetSdk dans le bundle signé |
+
+### Lecture rapide des priorités
+
+1. **Bloquant sécurité :** appliquer et auditer les migrations/RLS sur un
+   environnement staging avec plusieurs comptes.
+2. **Fiabilité sportive :** déplacer la clôture du délai et l’enchaînement des
+   manches côté serveur, puis tester les actions concurrentes.
+3. **Cohérence métier :** terminer les niveaux de classement et décider de la
+   formule des coefficients.
+4. **Publication :** recette Release réelle, conformité, fiche Play et test
+   fermé avant la production.
+5. **Nouveaux modes sportifs :** valider DEM-001 et DEM-002 avant tout
+   développement.
 
 ## Détail des demandes
 
@@ -97,22 +170,20 @@ multi-comptes et le contrôle visuel sur téléphone.
 
 ---
 
-### DEM-004 — Visibilité des épreuves entre coachs
+### DEM-004 — Délégation de saisie des résultats
 
-**Besoin résumé :** tous les coachs actifs consultent les épreuves de tous les
-autres coachs en lecture seule, sans obtenir de droit sur les inscriptions,
-participants ou résultats provisoires.
+**Besoin résumé :** le responsable d’une épreuve choisit par pseudo les autres
+coachs autorisés à consulter ses manches et à saisir les résultats. Les autres
+coachs ne voient rien sans autorisation.
 
-**Décisions prioritaires :**
+**Implémentation locale :** gestion nominative des accès, écran « Épreuves
+partagées », saisie et correction des résultats, révocation immédiate et RLS.
+La configuration, les départs, la validation et la publication restent au
+responsable.
 
-- décider si les épreuves en brouillon sont visibles ;
-- définir le niveau de détail des manches consultables ;
-- confirmer la visibilité des résultats publiés ;
-- choisir comment identifier le coach responsable ;
-- confirmer que les affiches suivent la même visibilité.
-
-**Prochaine étape :** réponse métier aux questions de la section 13 de la
-[spécification](visibilite_epreuves_coachs.md#13-questions-et-décisions-à-confirmer).
+**Prochaine étape :** appliquer la migration selon
+[les instructions](../delegation_saisie_resultats.md), exécuter le test SQL avec
+Deno et réaliser la recette staging avec trois comptes coach.
 
 ## États utilisés
 

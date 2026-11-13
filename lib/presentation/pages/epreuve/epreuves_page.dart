@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'modifier_epreuve_page.dart';
+import 'coachs_autorises_epreuve_page.dart';
 import '../../widgets/epreuve/actions_configuration_epreuve.dart';
 
 import '../../../domain/entities/competition.dart';
@@ -163,6 +164,17 @@ class _EpreuvesPageState extends State<EpreuvesPage> {
     if (!succes) _afficherErreurConfiguration();
   }
 
+  Future<void> _gererCoachs(Epreuve epreuve) async {
+    final partages = widget.controller.partages;
+    if (partages == null || _controller.operationEnCours) return;
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(
+        builder: (_) =>
+            CoachsAutorisesEpreuvePage(epreuve: epreuve, partages: partages),
+      ),
+    );
+  }
+
   Future<void> _ouvrirEpreuve(Epreuve epreuve) async {
     await Navigator.of(context).push<void>(
       MaterialPageRoute<void>(
@@ -261,6 +273,17 @@ class _EpreuvesPageState extends State<EpreuvesPage> {
                   if (!_controller.operationEnCours) _ouvrirEpreuve(epreuve);
                 },
               ),
+              if (widget.controller.partages != null)
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton.icon(
+                    onPressed: _controller.operationEnCours
+                        ? null
+                        : () => _gererCoachs(epreuve),
+                    icon: const Icon(Icons.manage_accounts_outlined),
+                    label: const Text('Coachs autorisés'),
+                  ),
+                ),
               if (widget.competition.estBrouillon)
                 ActionsConfigurationEpreuve(
                   actives: !_controller.operationEnCours,
