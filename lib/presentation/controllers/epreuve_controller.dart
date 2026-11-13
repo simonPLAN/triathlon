@@ -8,6 +8,7 @@ import '../../application/use_cases/epreuve/creer_epreuve.dart';
 import '../../application/use_cases/epreuve/lister_epreuves.dart';
 import '../../domain/entities/epreuve.dart';
 import '../../domain/entities/type_discipline.dart';
+import 'affiches_epreuve_controller.dart';
 
 class EpreuveController extends ChangeNotifier {
   EpreuveController(
@@ -15,8 +16,10 @@ class EpreuveController extends ChangeNotifier {
     this._listerEpreuves,
     this._configurer, {
     this.consulterResultatsCompetition,
+    this.affiches,
   });
   final ConsulterResultatsCompetition? consulterResultatsCompetition;
+  final AffichesEpreuveController? affiches;
   final ConfigurerEpreuves _configurer;
   bool _actionEnCours = false;
   bool get operationEnCours =>

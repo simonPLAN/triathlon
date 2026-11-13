@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../../domain/entities/type_discipline.dart';
+import '../../controllers/affiches_epreuve_controller.dart';
+import '../../models/affiche_epreuve_en_attente.dart';
+import 'selection_affiches_epreuve.dart';
 
 class DonneesFormulaireEpreuve {
   const DonneesFormulaireEpreuve({
@@ -11,6 +14,7 @@ class DonneesFormulaireEpreuve {
     required this.nombreManches,
     required this.ordre,
     required this.dureeLimiteSecondes,
+    this.affiches = const [],
   });
 
   final TypeDiscipline discipline;
@@ -19,6 +23,7 @@ class DonneesFormulaireEpreuve {
   final int nombreManches;
   final int ordre;
   final int dureeLimiteSecondes;
+  final List<AfficheEpreuveEnAttente> affiches;
 }
 
 class FormulaireEpreuve extends StatefulWidget {
@@ -32,6 +37,8 @@ class FormulaireEpreuve extends StatefulWidget {
     this.ordreInitial = 1,
     this.dureeLimiteInitiale = 60,
     this.enregistrementEnCours = false,
+    this.champsPrincipauxActifs = true,
+    this.affichesController,
     this.libelleBouton = 'Créer l’épreuve',
   });
 
@@ -43,6 +50,8 @@ class FormulaireEpreuve extends StatefulWidget {
   final int dureeLimiteInitiale;
 
   final bool enregistrementEnCours;
+  final bool champsPrincipauxActifs;
+  final AffichesEpreuveController? affichesController;
   final String libelleBouton;
 
   final Future<void> Function(DonneesFormulaireEpreuve donnees) onValider;
@@ -63,6 +72,7 @@ class _FormulaireEpreuveState extends State<FormulaireEpreuve> {
   late final TextEditingController _dureeLimiteController;
 
   late TypeDiscipline _discipline;
+  List<AfficheEpreuveEnAttente> _affiches = const [];
 
   @override
   void initState() {
@@ -116,6 +126,7 @@ class _FormulaireEpreuveState extends State<FormulaireEpreuve> {
       nombreManches: int.parse(_nombreManchesController.text),
       ordre: int.parse(_ordreController.text),
       dureeLimiteSecondes: int.parse(_dureeLimiteController.text),
+      affiches: List.unmodifiable(_affiches),
     );
 
     await widget.onValider(donnees);
@@ -143,6 +154,7 @@ class _FormulaireEpreuveState extends State<FormulaireEpreuve> {
   @override
   Widget build(BuildContext context) {
     final desactive = widget.enregistrementEnCours;
+    final champsActifs = !desactive && widget.champsPrincipauxActifs;
 
     return Form(
       key: _cleFormulaire,
@@ -162,7 +174,7 @@ class _FormulaireEpreuveState extends State<FormulaireEpreuve> {
                 child: Text(_libelleDiscipline(discipline)),
               );
             }).toList(),
-            onChanged: desactive
+            onChanged: !champsActifs
                 ? null
                 : (discipline) {
                     if (discipline == null) {
@@ -181,7 +193,7 @@ class _FormulaireEpreuveState extends State<FormulaireEpreuve> {
           const SizedBox(height: 16),
           TextFormField(
             controller: _nomController,
-            enabled: !desactive,
+            enabled: champsActifs,
             textInputAction: TextInputAction.next,
             textCapitalization: TextCapitalization.sentences,
             maxLength: 100,
@@ -208,7 +220,7 @@ class _FormulaireEpreuveState extends State<FormulaireEpreuve> {
           const SizedBox(height: 16),
           TextFormField(
             controller: _distanceController,
-            enabled: !desactive,
+            enabled: champsActifs,
             keyboardType: TextInputType.number,
             textInputAction: TextInputAction.next,
             inputFormatters: [FilteringTextInputFormatter.digitsOnly],
@@ -226,7 +238,7 @@ class _FormulaireEpreuveState extends State<FormulaireEpreuve> {
           const SizedBox(height: 16),
           TextFormField(
             controller: _nombreManchesController,
-            enabled: !desactive,
+            enabled: champsActifs,
             keyboardType: TextInputType.number,
             textInputAction: TextInputAction.next,
             inputFormatters: [FilteringTextInputFormatter.digitsOnly],
@@ -243,7 +255,7 @@ class _FormulaireEpreuveState extends State<FormulaireEpreuve> {
           const SizedBox(height: 16),
           TextFormField(
             controller: _ordreController,
-            enabled: !desactive,
+            enabled: champsActifs,
             keyboardType: TextInputType.number,
             textInputAction: TextInputAction.next,
             inputFormatters: [FilteringTextInputFormatter.digitsOnly],
@@ -260,7 +272,7 @@ class _FormulaireEpreuveState extends State<FormulaireEpreuve> {
           const SizedBox(height: 16),
           TextFormField(
             controller: _dureeLimiteController,
-            enabled: !desactive,
+            enabled: champsActifs,
             keyboardType: TextInputType.number,
             textInputAction: TextInputAction.done,
             inputFormatters: [FilteringTextInputFormatter.digitsOnly],
@@ -280,6 +292,15 @@ class _FormulaireEpreuveState extends State<FormulaireEpreuve> {
               return _validerEntierPositif(valeur, 'La durée limite');
             },
           ),
+          if (widget.affichesController != null) ...[
+            const SizedBox(height: 24),
+            SelectionAffichesEpreuve(
+              controller: widget.affichesController!,
+              valeurs: _affiches,
+              active: !desactive,
+              onChanged: (valeurs) => setState(() => _affiches = valeurs),
+            ),
+          ],
           const SizedBox(height: 24),
           FilledButton.icon(
             onPressed: desactive ? null : _valider,

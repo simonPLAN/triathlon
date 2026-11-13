@@ -244,6 +244,7 @@ class _AuthGateState extends State<AuthGate> {
           competitionsController: widget.competitionsOuvertesController,
           inscriptionController: widget.inscriptionController,
           deconnecterUtilisateur: widget.deconnecterUtilisateur,
+          affichesController: widget.epreuveController.affiches,
         );
       },
     );

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../domain/entities/competition.dart';
 import 'badge_statut_competition.dart';
+import 'image_couverture_competition.dart';
 
 class CarteCompetition extends StatelessWidget {
   const CarteCompetition({
@@ -24,6 +25,16 @@ class CarteCompetition extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              if (competition.imageUrl != null) ...[
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(14),
+                  child: ImageCouvertureCompetition(
+                    url: competition.imageUrl!,
+                    nomCompetition: competition.nom,
+                  ),
+                ),
+                const SizedBox(height: 16),
+              ],
               _EnteteCompetition(competition: competition),
               const SizedBox(height: 14),
               _InformationCompetition(

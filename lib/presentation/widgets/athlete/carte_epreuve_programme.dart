@@ -6,8 +6,14 @@ import '../commun/carte_section.dart';
 import '../manche/badge_statut_manche.dart';
 
 class CarteEpreuveProgramme extends StatelessWidget {
-  const CarteEpreuveProgramme({super.key, required this.epreuve});
+  const CarteEpreuveProgramme({
+    super.key,
+    required this.epreuve,
+    this.onVoirAffiches,
+  });
+
   final EpreuveProgramme epreuve;
+  final VoidCallback? onVoirAffiches;
 
   @override
   Widget build(BuildContext context) {
@@ -27,6 +33,17 @@ class CarteEpreuveProgramme extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          if (onVoirAffiches != null) ...[
+            Align(
+              alignment: Alignment.centerLeft,
+              child: OutlinedButton.icon(
+                onPressed: onVoirAffiches,
+                icon: const Icon(Icons.image_outlined),
+                label: const Text('Voir les affiches'),
+              ),
+            ),
+            const SizedBox(height: 8),
+          ],
           if (epreuve.manches.isEmpty)
             const Text('Les manches ne sont pas encore définies.'),
           for (final manche in epreuve.manches)

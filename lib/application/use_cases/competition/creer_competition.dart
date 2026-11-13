@@ -1,4 +1,6 @@
 import '../../../domain/entities/competition.dart';
+import '../../../domain/entities/fichier_affiche_epreuve.dart';
+import '../../../domain/services/validation_affiche_epreuve.dart';
 import '../../../domain/entities/statut_competition.dart';
 import '../../../domain/ports/competition_repository.dart';
 
@@ -14,6 +16,7 @@ class CreerCompetition {
     required bool demarrageAutomatiqueMancheSuivante,
     String? description,
     String? lieu,
+    FichierAfficheEpreuve? image,
   }) async {
     final nomNettoye = nom.trim();
     final descriptionNettoyee = _nettoyerTexteFacultatif(description);
@@ -42,7 +45,10 @@ class CreerCompetition {
       dateModification: maintenant,
     );
 
-    return _competitionRepository.creer(competition);
+    final competitionCreee = await _competitionRepository.creer(competition);
+    if (image == null) return competitionCreee;
+    ValidationAfficheEpreuve.verifierFichier(image);
+    return _competitionRepository.enregistrerImage(competitionCreee, image);
   }
 
   String? _nettoyerTexteFacultatif(String? valeur) {

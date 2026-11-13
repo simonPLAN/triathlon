@@ -5,12 +5,14 @@ import '../../widgets/commun/bouton_action_principale.dart';
 import '../../../domain/entities/competition.dart';
 import '../../../domain/entities/epreuve.dart';
 import '../../../domain/entities/manche.dart';
+import '../../controllers/affiches_epreuve_controller.dart';
 import '../../controllers/inscription_controller.dart';
 import '../../controllers/manche_controller.dart';
 import '../../controllers/resultat_controller.dart';
 import '../../widgets/manche/carte_manche.dart';
 import '../../widgets/manche/erreur_manches.dart';
 import '../../widgets/manche/liste_manches_vide.dart';
+import '../../widgets/epreuve/galerie_affiches_epreuve.dart';
 import 'detail_manche_page.dart';
 
 class ManchesPage extends StatefulWidget {
@@ -21,6 +23,7 @@ class ManchesPage extends StatefulWidget {
     required this.controller,
     required this.resultatController,
     required this.inscriptionController,
+    this.affichesController,
   });
 
   final Competition competition;
@@ -28,6 +31,7 @@ class ManchesPage extends StatefulWidget {
   final MancheController controller;
   final ResultatController resultatController;
   final InscriptionController inscriptionController;
+  final AffichesEpreuveController? affichesController;
 
   @override
   State<ManchesPage> createState() {
@@ -218,6 +222,17 @@ class _ManchesPageState extends State<ManchesPage> {
       appBar: AppBar(
         title: const Text('Manches'),
         actions: [
+          if (widget.affichesController != null)
+            IconButton(
+              tooltip: 'Voir les affiches',
+              onPressed: () => ouvrirGalerieAffichesEpreuve(
+                context: context,
+                epreuveId: widget.epreuve.id,
+                controller: widget.affichesController!,
+                titre: 'Affiches — ${widget.epreuve.nom}',
+              ),
+              icon: const Icon(Icons.image_outlined),
+            ),
           IconButton(
             tooltip: 'Actualiser',
             onPressed: _controller.chargement

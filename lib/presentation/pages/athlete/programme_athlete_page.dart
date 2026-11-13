@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 
 import '../../../domain/entities/competition.dart';
 import '../../../domain/entities/programme_competition.dart';
+import '../../controllers/affiches_epreuve_controller.dart';
 import '../../controllers/programme_athlete_controller.dart';
 import '../../widgets/athlete/carte_epreuve_programme.dart';
+import '../../widgets/epreuve/galerie_affiches_epreuve.dart';
 import '../../widgets/commun/message_erreur.dart';
 
 class ProgrammeAthletePage extends StatefulWidget {
@@ -11,9 +13,11 @@ class ProgrammeAthletePage extends StatefulWidget {
     super.key,
     required this.competition,
     required this.charger,
+    this.affichesController,
   });
   final Competition competition;
   final Future<ProgrammeCompetition> Function() charger;
+  final AffichesEpreuveController? affichesController;
   @override
   State<ProgrammeAthletePage> createState() => _ProgrammeAthletePageState();
 }
@@ -102,7 +106,17 @@ class _ProgrammeAthletePageState extends State<ProgrammeAthletePage>
               ),
             ),
           for (final epreuve in programme.epreuves)
-            CarteEpreuveProgramme(epreuve: epreuve),
+            CarteEpreuveProgramme(
+              epreuve: epreuve,
+              onVoirAffiches: widget.affichesController == null
+                  ? null
+                  : () => ouvrirGalerieAffichesEpreuve(
+                      context: context,
+                      controller: widget.affichesController!,
+                      epreuveId: epreuve.id,
+                      titre: epreuve.nom,
+                    ),
+            ),
         ],
       ),
     );

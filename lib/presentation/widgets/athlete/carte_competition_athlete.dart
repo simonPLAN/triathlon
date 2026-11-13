@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../domain/entities/competition.dart';
 import '../../models/etat_inscription_utilisateur.dart';
 import '../competition/badge_statut_competition.dart';
+import '../competition/image_couverture_competition.dart';
 import 'section_inscription_athlete.dart';
 
 class CarteCompetitionAthlete extends StatelessWidget {
@@ -48,6 +49,16 @@ class CarteCompetitionAthlete extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            if (competition.imageUrl != null) ...[
+              ClipRRect(
+                borderRadius: BorderRadius.circular(14),
+                child: ImageCouvertureCompetition(
+                  url: competition.imageUrl!,
+                  nomCompetition: competition.nom,
+                ),
+              ),
+              const SizedBox(height: 16),
+            ],
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [

@@ -64,6 +64,16 @@ class ActionsStatutCompetition extends StatelessWidget {
                       : _libelleActionPrincipale,
                 ),
               ),
+            if (competition.estOuverte) ...[
+              const SizedBox(height: 8),
+              OutlinedButton.icon(
+                onPressed: changementEnCours
+                    ? null
+                    : () => _confirmerRetourBrouillon(context),
+                icon: const Icon(Icons.undo_outlined),
+                label: const Text('Revenir en brouillon'),
+              ),
+            ],
             const SizedBox(height: 8),
             OutlinedButton.icon(
               onPressed: changementEnCours
@@ -150,6 +160,33 @@ class ActionsStatutCompetition extends StatelessWidget {
 
       case StatutCompetition.annulee:
         return 'La compétition a été annulée.';
+    }
+  }
+
+  Future<void> _confirmerRetourBrouillon(BuildContext context) async {
+    final confirmer = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Revenir en brouillon ?'),
+        content: const Text(
+          'Les nouvelles inscriptions seront fermées. Les inscriptions déjà '
+          'enregistrées seront conservées et la configuration redeviendra '
+          'modifiable.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Garder les inscriptions ouvertes'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('Revenir en brouillon'),
+          ),
+        ],
+      ),
+    );
+    if (confirmer == true) {
+      await onChangerStatut(StatutCompetition.brouillon);
     }
   }
 

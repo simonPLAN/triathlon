@@ -31,29 +31,45 @@ class SuiviAthleteRepositorySupabase implements SuiviAthleteRepository {
   @override
   Future<List<Competition>> obtenirCompetitionsInscrites() async {
     final rows = await _lire('mes_competitions_inscrites');
-    return rows.map((row) {
-      final m = Map<String, dynamic>.from(row as Map);
-      return Competition(
-        id: m['id'] as String,
-        nom: m['nom'] as String,
-        description: m['description'] as String?,
-        lieu: m['lieu'] as String?,
-        dateCompetition: DateTime.parse(m['date_competition'] as String),
-        coachId: m['coach_id'] as String,
-        statut: switch (m['statut']) {
-          'brouillon' => StatutCompetition.brouillon,
-          'ouverte' => StatutCompetition.ouverte,
-          'en_cours' => StatutCompetition.enCours,
-          'terminee' => StatutCompetition.terminee,
-          'annulee' => StatutCompetition.annulee,
-          _ => throw const FormatException('Statut de compétition inconnu.'),
-        },
-        dateCreation: DateTime.parse(m['date_creation'] as String),
-        dateModification: DateTime.parse(m['date_modification'] as String),
-        demarrageAutomatiqueMancheSuivante:
-            m['demarrage_automatique_manche_suivante'] as bool? ?? false,
-      );
-    }).toList();
+    return Future.wait(
+      rows.map((row) async {
+        final m = Map<String, dynamic>.from(row as Map);
+        final imagePath = m['image_path'] as String?;
+        Uri? imageUrl;
+        if (imagePath != null && imagePath.isNotEmpty) {
+          try {
+            imageUrl = Uri.parse(
+              await _client.storage
+                  .from('images-competitions')
+                  .createSignedUrl(imagePath, 3600),
+            );
+          } on StorageException {
+            imageUrl = null;
+          }
+        }
+        return Competition(
+          imageUrl: imageUrl,
+          id: m['id'] as String,
+          nom: m['nom'] as String,
+          description: m['description'] as String?,
+          lieu: m['lieu'] as String?,
+          dateCompetition: DateTime.parse(m['date_competition'] as String),
+          coachId: m['coach_id'] as String,
+          statut: switch (m['statut']) {
+            'brouillon' => StatutCompetition.brouillon,
+            'ouverte' => StatutCompetition.ouverte,
+            'en_cours' => StatutCompetition.enCours,
+            'terminee' => StatutCompetition.terminee,
+            'annulee' => StatutCompetition.annulee,
+            _ => throw const FormatException('Statut de compétition inconnu.'),
+          },
+          dateCreation: DateTime.parse(m['date_creation'] as String),
+          dateModification: DateTime.parse(m['date_modification'] as String),
+          demarrageAutomatiqueMancheSuivante:
+              m['demarrage_automatique_manche_suivante'] as bool? ?? false,
+        );
+      }),
+    );
   }
 
   @override

@@ -12,6 +12,7 @@ import '../compte/informations_application_page.dart';
 import '../../widgets/commun/menu_compte_application.dart';
 import '../../../domain/entities/inscription.dart';
 import '../../../domain/entities/profil_utilisateur.dart';
+import '../../controllers/affiches_epreuve_controller.dart';
 import '../../controllers/competitions_ouvertes_controller.dart';
 import '../../controllers/inscription_controller.dart';
 import '../../widgets/athlete/carte_competition_athlete.dart';
@@ -28,6 +29,7 @@ class AthleteDashboardPage extends StatefulWidget {
     required this.competitionsController,
     required this.inscriptionController,
     required this.deconnecterUtilisateur,
+    this.affichesController,
   });
 
   final CategorieAthleteRepository? categoriesAthletes;
@@ -39,6 +41,7 @@ class AthleteDashboardPage extends StatefulWidget {
   final InscriptionController inscriptionController;
 
   final DeconnecterUtilisateur deconnecterUtilisateur;
+  final AffichesEpreuveController? affichesController;
 
   @override
   State<AthleteDashboardPage> createState() {
@@ -88,6 +91,7 @@ class _AthleteDashboardPageState extends State<AthleteDashboardPage>
           competition: competition,
           charger: () =>
               _competitionsController.programmeCompetition(competition.id),
+          affichesController: widget.affichesController,
         ),
       ),
     );

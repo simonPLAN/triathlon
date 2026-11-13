@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../../../domain/entities/fichier_affiche_epreuve.dart';
+import 'selection_image_competition.dart';
+
 class DonneesFormulaireCompetition {
   const DonneesFormulaireCompetition({
     required this.nom,
@@ -7,6 +10,8 @@ class DonneesFormulaireCompetition {
     this.description,
     this.lieu,
     required this.demarrageAutomatiqueMancheSuivante,
+    this.image,
+    this.supprimerImage = false,
   });
 
   final String nom;
@@ -14,6 +19,8 @@ class DonneesFormulaireCompetition {
   final String? lieu;
   final DateTime dateCompetition;
   final bool demarrageAutomatiqueMancheSuivante;
+  final FichierAfficheEpreuve? image;
+  final bool supprimerImage;
 }
 
 class FormulaireCompetition extends StatefulWidget {
@@ -27,6 +34,8 @@ class FormulaireCompetition extends StatefulWidget {
     this.demarrageAutomatiqueInitial = false,
     this.enregistrementEnCours = false,
     this.libelleBouton = 'Créer la compétition',
+    this.imageInitiale,
+    this.onSelectionnerImage,
   });
 
   final String nomInitial;
@@ -36,6 +45,8 @@ class FormulaireCompetition extends StatefulWidget {
   final bool demarrageAutomatiqueInitial;
   final bool enregistrementEnCours;
   final String libelleBouton;
+  final Uri? imageInitiale;
+  final Future<FichierAfficheEpreuve?> Function()? onSelectionnerImage;
 
   final Future<void> Function(DonneesFormulaireCompetition donnees) onValider;
 
@@ -54,6 +65,8 @@ class _FormulaireCompetitionState extends State<FormulaireCompetition> {
 
   DateTime? _dateSelectionnee;
   late bool _demarrageAutomatique;
+  FichierAfficheEpreuve? _image;
+  bool _supprimerImage = false;
 
   @override
   void initState() {
@@ -114,6 +127,17 @@ class _FormulaireCompetitionState extends State<FormulaireCompetition> {
     });
   }
 
+  Future<void> _choisirImage() async {
+    final selectionner = widget.onSelectionnerImage;
+    if (selectionner == null) return;
+    final image = await selectionner();
+    if (image == null || !mounted) return;
+    setState(() {
+      _image = image;
+      _supprimerImage = false;
+    });
+  }
+
   Future<void> _valider() async {
     FocusScope.of(context).unfocus();
 
@@ -137,6 +161,8 @@ class _FormulaireCompetitionState extends State<FormulaireCompetition> {
       lieu: _nettoyerTexteFacultatif(_lieuController.text),
       dateCompetition: _dateSelectionnee!,
       demarrageAutomatiqueMancheSuivante: _demarrageAutomatique,
+      image: _image,
+      supprimerImage: _supprimerImage,
     );
 
     await widget.onValider(donnees);
@@ -217,6 +243,18 @@ class _FormulaireCompetitionState extends State<FormulaireCompetition> {
               prefixIcon: Icon(Icons.location_on_outlined),
               border: OutlineInputBorder(),
             ),
+          ),
+          const SizedBox(height: 16),
+          SelectionImageCompetition(
+            imageSelectionnee: _image,
+            imageExistante: widget.imageInitiale,
+            suppressionDemandee: _supprimerImage,
+            actif: !widget.enregistrementEnCours,
+            onChoisir: _choisirImage,
+            onRetirer: () => setState(() {
+              _image = null;
+              _supprimerImage = true;
+            }),
           ),
           const SizedBox(height: 16),
           _ChampDateCompetition(

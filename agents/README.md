@@ -11,7 +11,7 @@ Flutter/Supabase. Il ne contient aucun service exécutable et ne lance pas autom
 
 Exemple de demande à copier dans la conversation de l'assistant :
 
-> Utilise agents/developeur.md pour améliorer la page de détail d'une compétition côté athlète.
+> Utilise agents/agent-developeur.md pour améliorer la page de détail d'une compétition côté athlète.
 > Consulte agents/agent-interface.md comme prévu dans le profil, préserve les règles métier et
 > vérifie les parcours modifiés.
 
@@ -20,22 +20,29 @@ pas leur chargement automatique.
 
 ## Profils
 
-| Fichier                                  | Rôle                                                                |
-|------------------------------------------|---------------------------------------------------------------------|
-| [developeur.md](developeur.md) | Développeur Android/Flutter, coordonne l'agent interface |
-| [agent-interface.md](agent-interface.md) | Cohérence visuelle, accessibilité et expérience utilisateur |
-| [agent-web.md](agent-web.md) | Développement web responsive, accessibilité, performance et intégration Supabase |
-| [architecture.md](architecture.md)       | Découper les responsabilités et préserver l'architecture hexagonale |
-| [flutter.md](flutter.md)                 | Construire les écrans, widgets et contrôleurs                       |
-| [supabase.md](supabase.md)               | Dépôts, migrations, autorisations et traitements serveur            |
-| [tests.md](tests.md)                     | Reproduire les anomalies et vérifier les comportements              |
-| [android_release.md](android_release.md) | Préparer les APK, AAB, environnements et signatures                 |
+| Fichier                                  | Rôle                                                                             |
+|------------------------------------------|----------------------------------------------------------------------------------|
+| [agent-orchestrateur.md](agent-orchestrateur.md) | Coordonne les spécifications, agents, migrations, interfaces et vérifications    |
+| [agent-developeur.md](agent-developeur.md) | Développeur Android/Flutter, coordonne l'agent interface                         |
+| [agent-interface.md](agent-interface.md) | Cohérence visuelle, accessibilité et expérience utilisateur                      |
+| [agent-web.md](agent-web.md)             | Développement web responsive, accessibilité, performance et intégration Supabase |
+| [agent-spec.md](agent-spec.md)           | Transformer les informations en spécifications et critères d’acceptation         |
+| [agent-architecture.md](agent-architecture.md) | Découpage transverse et respect de l'architecture hexagonale                    |
+| [agent-base-donnees.md](agent-base-donnees.md) | PostgreSQL, Supabase, Storage, migrations, RPC et RLS                         |
+| [agent-tests.md](agent-tests.md)         | Stratégie de tests, critères d'acceptation et non-régression                       |
+| [agent-release-android.md](agent-release-android.md) | APK, AAB, signature et préparation Play Store                         |
+| [flutter.md](flutter.md)                 | Référence ciblée pour les écrans, widgets et contrôleurs                          |
+| [supabase.md](supabase.md)               | Ancien profil Supabase conservé pour compatibilité                                |
+| [tests.md](tests.md)                     | Ancien profil de tests conservé pour compatibilité                                |
+| [architecture.md](architecture.md)       | Ancien profil d'architecture conservé pour compatibilité                          |
+| [android_release.md](android_release.md) | Ancien profil release conservé pour compatibilité                                 |
 
 [Consignes communes](consignes_communes.md) : à lire avec chaque profil.
 
 ## Ajouter un agent
 
-Créer un fichier Markdown décrivant la mission, le périmètre, la méthode et les validations de l'agent,
+Créer un fichier Markdown décrivant la mission, le périmètre, la méthode et les validations de
+l'agent,
 puis ajouter son lien au tableau. Garder chaque profil centré sur une responsabilité ; les règles
 partagées restent dans les consignes communes.
 
@@ -43,5 +50,7 @@ Le profil développeur prévoit la consultation de l'agent interface avant impl�
 revue des changements visibles après implémentation. L'utilisateur a demandé cette collaboration.
 Si l'outil permet les sous-agents, le développeur peut lui déléguer la revue ; sinon, le même
 assistant applique les deux profils et le signale. Les fichiers seuls ne démarrent aucun agent.
-Pour d'autres collaborations, demander explicitement leur utilisation et répartir les fichiers
-avant les modifications.
+Le profil orchestrateur peut coordonner les profils nécessaires à une demande déjà spécifiée :
+l'invoquer explicitement autorise ces consultations dans les limites de la tâche, sans autoriser un
+déploiement distant. Pour les autres collaborations, demander explicitement leur utilisation et
+répartir les fichiers avant les modifications.

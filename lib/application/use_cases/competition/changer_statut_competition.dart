@@ -25,10 +25,7 @@ class ChangerStatutCompetition {
       StatutCompetition.terminee => competition.terminer(),
       StatutCompetition.annulee => competition.annuler(),
 
-      // On n’autorise pas encore le retour vers brouillon.
-      StatutCompetition.brouillon => throw StateError(
-        'Une compétition ne peut pas revenir au statut brouillon.',
-      ),
+      StatutCompetition.brouillon => competition.repasserEnBrouillon(),
     };
 
     return _competitionRepository.modifier(competitionActualisee);

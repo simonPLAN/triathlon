@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 
 import '../../../domain/entities/competition.dart';
+import '../../../domain/entities/epreuve.dart';
 import '../../controllers/epreuve_controller.dart';
 import '../../widgets/epreuve/formulaire_epreuve.dart';
 
-class CreerEpreuvePage extends StatelessWidget {
+class CreerEpreuvePage extends StatefulWidget {
   const CreerEpreuvePage({
     super.key,
     required this.competition,
@@ -14,49 +15,105 @@ class CreerEpreuvePage extends StatelessWidget {
   final Competition competition;
   final EpreuveController controller;
 
+  @override
+  State<CreerEpreuvePage> createState() => _CreerEpreuvePageState();
+}
+
+class _CreerEpreuvePageState extends State<CreerEpreuvePage> {
+  Epreuve? _epreuveCreee;
+  bool _envoiAffiches = false;
+  String? _erreurAffiches;
+
+  bool get _operationEnCours =>
+      widget.controller.creationEnCours ||
+      _envoiAffiches ||
+      (widget.controller.affiches?.operationEnCours ?? false);
+
+  @override
+  void initState() {
+    super.initState();
+    widget.controller.affiches?.reinitialiser();
+  }
+
   Future<void> _creerEpreuve(
     BuildContext context,
     DonneesFormulaireEpreuve donnees,
   ) async {
-    controller.effacerErreur();
+    if (_operationEnCours) return;
+    widget.controller.effacerErreur();
+    setState(() {
+      _envoiAffiches = true;
+      _erreurAffiches = null;
+    });
 
-    final epreuveCreee = await controller.creer(
-      competitionId: competition.id,
-      discipline: donnees.discipline,
-      nom: donnees.nom,
-      distanceMetres: donnees.distanceMetres,
-      nombreManches: donnees.nombreManches,
-      ordre: donnees.ordre,
-      dureeLimiteSecondes: donnees.dureeLimiteSecondes,
+    try {
+      var epreuve = _epreuveCreee;
+      if (epreuve == null) {
+        epreuve = await widget.controller.creer(
+          competitionId: widget.competition.id,
+          discipline: donnees.discipline,
+          nom: donnees.nom,
+          distanceMetres: donnees.distanceMetres,
+          nombreManches: donnees.nombreManches,
+          ordre: donnees.ordre,
+          dureeLimiteSecondes: donnees.dureeLimiteSecondes,
+        );
+        if (!mounted) return;
+        if (epreuve == null) {
+          _afficherErreur(
+            widget.controller.erreur ?? 'L’épreuve n’a pas pu être créée.',
+          );
+          return;
+        }
+        setState(() => _epreuveCreee = epreuve);
+      }
+
+      final affiches = widget.controller.affiches;
+      if (affiches != null) {
+        for (var index = 0; index < donnees.affiches.length; index++) {
+          final position = index + 1;
+          if (affiches.affiches.any((a) => a.position == position)) continue;
+          final attente = donnees.affiches[index];
+          final succes = await affiches.ajouterFichier(
+            epreuveId: epreuve.id,
+            position: position,
+            texteAlternatif: attente.texteAlternatif,
+            fichier: attente.fichier,
+          );
+          if (!mounted) return;
+          if (!succes) {
+            setState(() {
+              _erreurAffiches =
+                  affiches.erreur ??
+                  'L’épreuve est créée, mais une affiche n’a pas été envoyée.';
+            });
+            return;
+          }
+        }
+      }
+
+      if (context.mounted) Navigator.of(context).pop(epreuve);
+    } finally {
+      if (mounted) setState(() => _envoiAffiches = false);
+    }
+  }
+
+  void _afficherErreur(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Theme.of(context).colorScheme.error,
+      ),
     );
-
-    if (!context.mounted) {
-      return;
-    }
-
-    if (epreuveCreee == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            controller.erreur ?? 'L’épreuve n’a pas pu être créée.',
-          ),
-          backgroundColor: Theme.of(context).colorScheme.error,
-        ),
-      );
-
-      return;
-    }
-
-    Navigator.of(context).pop(epreuveCreee);
   }
 
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
-      animation: controller,
+      animation: widget.controller,
       builder: (context, child) {
         return PopScope(
-          canPop: !controller.creationEnCours,
+          canPop: !_operationEnCours,
           child: Scaffold(
             appBar: AppBar(title: const Text('Créer une épreuve')),
             body: SafeArea(
@@ -68,18 +125,48 @@ class CreerEpreuvePage extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        _EnteteCreationEpreuve(nomCompetition: competition.nom),
+                        _EnteteCreationEpreuve(
+                          nomCompetition: widget.competition.nom,
+                        ),
+                        if (_epreuveCreee != null) ...[
+                          const SizedBox(height: 16),
+                          Material(
+                            color: Theme.of(context)
+                                .colorScheme
+                                .secondaryContainer,
+                            borderRadius: BorderRadius.circular(12),
+                            child: const Padding(
+                              padding: EdgeInsets.all(16),
+                              child: Text(
+                                'L’épreuve est créée. Les informations principales sont verrouillées pendant la reprise de l’envoi des affiches.',
+                              ),
+                            ),
+                          ),
+                        ],
                         const SizedBox(height: 24),
-                        if (controller.erreur != null) ...[
+                        if (widget.controller.erreur != null) ...[
                           _MessageErreurEpreuve(
-                            message: controller.erreur!,
-                            onFermer: controller.effacerErreur,
+                            message: widget.controller.erreur!,
+                            onFermer: widget.controller.effacerErreur,
+                          ),
+                          const SizedBox(height: 16),
+                        ],
+                        if (_erreurAffiches != null) ...[
+                          _MessageErreurEpreuve(
+                            message: _erreurAffiches!,
+                            onFermer: () =>
+                                setState(() => _erreurAffiches = null),
                           ),
                           const SizedBox(height: 16),
                         ],
                         FormulaireEpreuve(
-                          ordreInitial: controller.prochainOrdre(),
-                          enregistrementEnCours: controller.creationEnCours,
+                          ordreInitial: widget.controller.prochainOrdre(),
+                          enregistrementEnCours: _operationEnCours,
+                          champsPrincipauxActifs: _epreuveCreee == null,
+                          affichesController: widget.controller.affiches,
+                          libelleBouton: _epreuveCreee == null
+                              ? 'Créer l’épreuve'
+                              : 'Réessayer l’envoi',
                           onValider: (donnees) {
                             return _creerEpreuve(context, donnees);
                           },

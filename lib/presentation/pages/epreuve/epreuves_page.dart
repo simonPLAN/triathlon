@@ -173,6 +173,7 @@ class _EpreuvesPageState extends State<EpreuvesPage> {
             controller: widget.mancheController,
             resultatController: widget.resultatController,
             inscriptionController: widget.inscriptionController,
+            affichesController: widget.controller.affiches,
           );
         },
       ),

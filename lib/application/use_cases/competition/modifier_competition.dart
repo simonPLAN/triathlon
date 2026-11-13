@@ -1,4 +1,6 @@
 import '../../../domain/entities/competition.dart';
+import '../../../domain/entities/fichier_affiche_epreuve.dart';
+import '../../../domain/services/validation_affiche_epreuve.dart';
 import '../../../domain/ports/competition_repository.dart';
 
 class ModifierCompetition {
@@ -13,6 +15,8 @@ class ModifierCompetition {
     required bool demarrageAutomatiqueMancheSuivante,
     String? description,
     String? lieu,
+    FichierAfficheEpreuve? image,
+    bool supprimerImage = false,
   }) async {
     final nomNettoye = nom.trim();
     final descriptionNettoyee = _nettoyerTexteFacultatif(description);
@@ -35,7 +39,19 @@ class ModifierCompetition {
       dateModification: DateTime.now(),
     );
 
-    return _competitionRepository.modifier(competitionModifiee);
+    var enregistree = await _competitionRepository.modifier(
+      competitionModifiee,
+    );
+    if (image != null) {
+      ValidationAfficheEpreuve.verifierFichier(image);
+      enregistree = await _competitionRepository.enregistrerImage(
+        enregistree,
+        image,
+      );
+    } else if (supprimerImage && enregistree.imageUrl != null) {
+      enregistree = await _competitionRepository.supprimerImage(enregistree);
+    }
+    return enregistree;
   }
 
   String? _nettoyerTexteFacultatif(String? valeur) {

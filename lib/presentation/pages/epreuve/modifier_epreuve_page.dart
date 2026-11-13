@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 
 import '../../../domain/entities/epreuve.dart';
 import '../../controllers/epreuve_controller.dart';
-import '../../widgets/epreuve/formulaire_epreuve.dart';
 import '../../widgets/commun/carte_section.dart';
+import '../../widgets/epreuve/formulaire_epreuve.dart';
+import '../../widgets/epreuve/gestion_affiches_epreuve.dart';
 
 class ModifierEpreuvePage extends StatelessWidget {
   const ModifierEpreuvePage({
@@ -11,6 +12,7 @@ class ModifierEpreuvePage extends StatelessWidget {
     required this.epreuve,
     required this.controller,
   });
+
   final Epreuve epreuve;
   final EpreuveController controller;
 
@@ -44,7 +46,9 @@ class ModifierEpreuvePage extends StatelessWidget {
   Widget build(BuildContext context) => AnimatedBuilder(
     animation: controller,
     builder: (context, _) => PopScope(
-      canPop: !controller.operationEnCours,
+      canPop:
+          !controller.operationEnCours &&
+          !(controller.affiches?.operationEnCours ?? false),
       child: Scaffold(
         appBar: AppBar(title: const Text('Modifier l’épreuve')),
         body: SafeArea(
@@ -53,22 +57,38 @@ class ModifierEpreuvePage extends StatelessWidget {
             child: Center(
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 640),
-                child: CarteSection(
-                  titre: epreuve.nom,
-                  sousTitre:
-                      'Les manches à venir sont ajustées automatiquement au nombre choisi. '
-                      'Les manches déjà commencées ou avec résultats sont protégées.',
-                  child: FormulaireEpreuve(
-                    disciplineInitiale: epreuve.discipline,
-                    nomInitial: epreuve.nom,
-                    distanceInitiale: epreuve.distanceMetres,
-                    nombreManchesInitial: epreuve.nombreManches,
-                    ordreInitial: epreuve.ordre,
-                    dureeLimiteInitiale: epreuve.dureeLimiteSecondes,
-                    enregistrementEnCours: controller.operationEnCours,
-                    libelleBouton: 'Enregistrer les modifications',
-                    onValider: (donnees) => _enregistrer(context, donnees),
-                  ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    CarteSection(
+                      titre: epreuve.nom,
+                      sousTitre:
+                          'Les manches à venir sont ajustées automatiquement au nombre choisi. '
+                          'Les manches déjà commencées ou avec résultats sont protégées.',
+                      child: FormulaireEpreuve(
+                        disciplineInitiale: epreuve.discipline,
+                        nomInitial: epreuve.nom,
+                        distanceInitiale: epreuve.distanceMetres,
+                        nombreManchesInitial: epreuve.nombreManches,
+                        ordreInitial: epreuve.ordre,
+                        dureeLimiteInitiale: epreuve.dureeLimiteSecondes,
+                        enregistrementEnCours: controller.operationEnCours,
+                        libelleBouton: 'Enregistrer les modifications',
+                        onValider: (donnees) => _enregistrer(context, donnees),
+                      ),
+                    ),
+                    if (controller.affiches != null) ...[
+                      const SizedBox(height: 16),
+                      CarteSection(
+                        titre: 'Affiches de l’épreuve',
+                        sousTitre: 'Les affiches sont modifiables tant que la compétition reste en brouillon.',
+                        child: GestionAffichesEpreuve(
+                          epreuveId: epreuve.id,
+                          controller: controller.affiches!,
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
               ),
             ),

@@ -28,6 +28,8 @@ class ModifierCompetitionPage extends StatelessWidget {
       dateCompetition: donnees.dateCompetition,
       demarrageAutomatiqueMancheSuivante:
           donnees.demarrageAutomatiqueMancheSuivante,
+      image: donnees.image,
+      supprimerImage: donnees.supprimerImage,
     );
 
     if (!context.mounted) {
@@ -82,6 +84,8 @@ class ModifierCompetitionPage extends StatelessWidget {
                           dateInitiale: competition.dateCompetition,
                           demarrageAutomatiqueInitial:
                               competition.demarrageAutomatiqueMancheSuivante,
+                          imageInitiale: competition.imageUrl,
+                          onSelectionnerImage: controller.selectionnerImage,
                           enregistrementEnCours: controller.modificationEnCours,
                           libelleBouton: 'Enregistrer les modifications',
                           onValider: (donnees) {

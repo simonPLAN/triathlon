@@ -11,6 +11,7 @@ class Competition {
     required this.dateModification,
     this.description,
     this.lieu,
+    this.imageUrl,
     required this.demarrageAutomatiqueMancheSuivante,
   });
 
@@ -18,6 +19,7 @@ class Competition {
   final String nom;
   final String? description;
   final String? lieu;
+  final Uri? imageUrl;
   final DateTime dateCompetition;
   final StatutCompetition statut;
   final String coachId;
@@ -52,6 +54,19 @@ class Competition {
 
     return copierAvec(
       statut: StatutCompetition.ouverte,
+      dateModification: DateTime.now(),
+    );
+  }
+
+  Competition repasserEnBrouillon() {
+    if (statut != StatutCompetition.ouverte) {
+      throw StateError(
+        'Seule une compétition ouverte peut revenir en brouillon.',
+      );
+    }
+
+    return copierAvec(
+      statut: StatutCompetition.brouillon,
       dateModification: DateTime.now(),
     );
   }
@@ -98,6 +113,8 @@ class Competition {
     String? nom,
     String? description,
     String? lieu,
+    Uri? imageUrl,
+    bool supprimerImage = false,
     DateTime? dateCompetition,
     StatutCompetition? statut,
     String? coachId,
@@ -110,6 +127,7 @@ class Competition {
       nom: nom ?? this.nom,
       description: description ?? this.description,
       lieu: lieu ?? this.lieu,
+      imageUrl: supprimerImage ? null : imageUrl ?? this.imageUrl,
       dateCompetition: dateCompetition ?? this.dateCompetition,
       statut: statut ?? this.statut,
       coachId: coachId ?? this.coachId,

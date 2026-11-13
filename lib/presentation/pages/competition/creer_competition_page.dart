@@ -20,7 +20,7 @@ class CreerCompetitionPage extends StatelessWidget {
   ) async {
     controller.effacerErreur();
 
-    final succes = await controller.creer(
+    final competitionCreee = await controller.creer(
       nom: donnees.nom,
       description: donnees.description,
       lieu: donnees.lieu,
@@ -28,13 +28,14 @@ class CreerCompetitionPage extends StatelessWidget {
       coachId: profilCoach.id,
       demarrageAutomatiqueMancheSuivante:
           donnees.demarrageAutomatiqueMancheSuivante,
+      image: donnees.image,
     );
 
     if (!context.mounted) {
       return;
     }
 
-    if (succes) {
+    if (competitionCreee != null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('La compétition a été créée.')),
       );
@@ -142,6 +143,7 @@ class CreerCompetitionPage extends StatelessWidget {
                         ],
                         FormulaireCompetition(
                           enregistrementEnCours: controller.creationEnCours,
+                          onSelectionnerImage: controller.selectionnerImage,
                           onValider: (donnees) {
                             return _creerCompetition(context, donnees);
                           },

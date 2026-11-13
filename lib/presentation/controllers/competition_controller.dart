@@ -6,7 +6,10 @@ import '../../application/use_cases/competition/lister_competitions.dart';
 import '../../application/use_cases/competition/modifier_competition.dart';
 import '../../application/use_cases/competition/supprimer_competition.dart';
 import '../../domain/entities/competition.dart';
+import '../../domain/entities/fichier_affiche_epreuve.dart';
 import '../../domain/entities/statut_competition.dart';
+import '../../domain/services/validation_affiche_epreuve.dart';
+import '../../infrastructure/media/source_fichier_affiche_image_picker.dart';
 
 class CompetitionController extends ChangeNotifier {
   CompetitionController(
@@ -14,8 +17,9 @@ class CompetitionController extends ChangeNotifier {
     this._listerCompetitions,
     this._modifierCompetition,
     this._changerStatutCompetition,
-    this._supprimerCompetition,
-  );
+    this._supprimerCompetition, [
+    this._sourceImage,
+  ]);
 
   final CreerCompetition _creerCompetition;
   final ListerCompetitions _listerCompetitions;
@@ -28,6 +32,7 @@ class CompetitionController extends ChangeNotifier {
   String? _erreur;
   bool _changementStatutEnCours = false;
   final SupprimerCompetition _supprimerCompetition;
+  final SourceFichierAffiche? _sourceImage;
 
   List<Competition> get competitions {
     return List.unmodifiable(_competitions);
@@ -113,16 +118,31 @@ class CompetitionController extends ChangeNotifier {
     }
   }
 
-  Future<bool> creer({
+  Future<FichierAfficheEpreuve?> selectionnerImage() async {
+    final source = _sourceImage;
+    if (source == null) return null;
+    try {
+      final image = await source.selectionner();
+      if (image != null) ValidationAfficheEpreuve.verifierFichier(image);
+      return image;
+    } catch (exception) {
+      _erreur = _extraireMessageErreur(exception);
+      notifyListeners();
+      return null;
+    }
+  }
+
+  Future<Competition?> creer({
     required String nom,
     required DateTime dateCompetition,
     required String coachId,
     String? description,
     String? lieu,
     bool demarrageAutomatiqueMancheSuivante = false,
+    FichierAfficheEpreuve? image,
   }) async {
     if (_creationEnCours) {
-      return false;
+      return null;
     }
 
     _creationEnCours = true;
@@ -137,23 +157,24 @@ class CompetitionController extends ChangeNotifier {
         description: description,
         lieu: lieu,
         demarrageAutomatiqueMancheSuivante: demarrageAutomatiqueMancheSuivante,
+        image: image,
       );
 
       _competitions = [..._competitions, nouvelleCompetition];
 
       _trierCompetitions();
 
-      return true;
+      return nouvelleCompetition;
     } on ArgumentError catch (exception) {
       _erreur =
           exception.message?.toString() ??
           'Les informations saisies sont invalides.';
 
-      return false;
+      return null;
     } catch (exception) {
       _erreur = _extraireMessageErreur(exception);
 
-      return false;
+      return null;
     } finally {
       _creationEnCours = false;
       notifyListeners();
@@ -239,6 +260,8 @@ class CompetitionController extends ChangeNotifier {
     required bool demarrageAutomatiqueMancheSuivante,
     String? description,
     String? lieu,
+    FichierAfficheEpreuve? image,
+    bool supprimerImage = false,
   }) async {
     if (_modificationEnCours) {
       return null;
@@ -256,6 +279,8 @@ class CompetitionController extends ChangeNotifier {
         lieu: lieu,
         dateCompetition: dateCompetition,
         demarrageAutomatiqueMancheSuivante: demarrageAutomatiqueMancheSuivante,
+        image: image,
+        supprimerImage: supprimerImage,
       );
 
       final index = _competitions.indexWhere(
